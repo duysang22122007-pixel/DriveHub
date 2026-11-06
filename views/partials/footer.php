@@ -123,7 +123,7 @@
                     </span>
                     <span class="footer__contact-text">
                         <strong>Địa chỉ</strong>
-                        <span>Đang cập nhật</span>
+                        <span>13B Trịnh Văn Bô, Quận Nam Từ Liêm, Hà Nội</span>
                     </span>
                 </li>
                 <li>
@@ -134,7 +134,7 @@
                     </span>
                     <span class="footer__contact-text">
                         <strong>Hotline</strong>
-                        <span>Đang cập nhật</span>
+                        <span>0337085291</span>
                     </span>
                 </li>
                 <li>
@@ -146,7 +146,7 @@
                     </span>
                     <span class="footer__contact-text">
                         <strong>Email</strong>
-                        <span>Đang cập nhật</span>
+                        <span>drivehub@gmail.com</span>
                     </span>
                 </li>
                 <li>
@@ -158,7 +158,7 @@
                     </span>
                     <span class="footer__contact-text">
                         <strong>Giờ làm việc</strong>
-                        <span>Đang cập nhật</span>
+                        <span>08:00 - 22:00</span>
                     </span>
                 </li>
             </ul>
