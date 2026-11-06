@@ -14,6 +14,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
+
+    <?php if (($view ?? '') === 'services'): ?>
+        <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/services.css">
+    <?php endif; ?>
 </head>
 
 <body>
