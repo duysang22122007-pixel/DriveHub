@@ -31,7 +31,7 @@
                 <?= ($currentUser['role'] ?? '') === 'admin' ? 'Lịch hẹn gara' : 'Đặt lịch ngay' ?>
             </a>
             <?php if ($currentUser === null): ?>
-                <a class="site-nav__link header-auth<?= $currentAction === 'auth' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=auth&amp;mode=login">Đăng nhập</a>
+                <a class="btn btn--primary header-login" href="<?= BASE_URL ?>?action=auth&amp;mode=login">Đăng nhập</a>
             <?php else: ?>
                 <form class="header-logout" method="post" action="<?= BASE_URL ?>?action=logout">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
