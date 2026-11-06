@@ -1,7 +1,7 @@
 <?php
 $e = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $statusLabels = ['received' => 'Đã tiếp nhận', 'in_progress' => 'Đang sửa chữa', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã hủy'];
-$isAdmin = current_user()['role'] === 'admin';
+$isAdmin = current_admin() !== null;
 ?>
 <section class="workflow-page">
     <div class="container workflow-narrow">

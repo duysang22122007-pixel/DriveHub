@@ -1,0 +1,7 @@
+RewriteEngine On
+RewriteBase /DriveHub/
+
+RewriteRule ^login/?$ index.php?action=login [QSA,L]
+RewriteRule ^logout/?$ index.php?action=logout [QSA,L]
+RewriteRule ^admin/login/?$ index.php?action=admin/login [QSA,L]
+RewriteRule ^admin/logout/?$ index.php?action=admin/logout [QSA,L]

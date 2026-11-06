@@ -22,31 +22,67 @@ if (!function_exists('upload_file')) {
     }
 }
 
-if (!function_exists('current_user')) {
-    function current_user(): ?array
+if (!function_exists('current_customer')) {
+    function current_customer(): ?array
     {
-        $user = $_SESSION['user'] ?? null;
+        $customer = $_SESSION['customer'] ?? null;
 
-        return is_array($user) ? $user : null;
+        return is_array($customer) ? $customer : null;
+    }
+}
+
+if (!function_exists('current_admin')) {
+    function current_admin(): ?array
+    {
+        $admin = $_SESSION['admin'] ?? null;
+
+        return is_array($admin) ? $admin : null;
+    }
+}
+
+if (!function_exists('checkCustomerAuth')) {
+    function checkCustomerAuth(): array
+    {
+        $customer = current_customer();
+
+        if ($customer === null || !isset($customer['user_id'], $customer['customer_id'])) {
+            header('Location: ' . BASE_URL . 'login');
+            exit;
+        }
+
+        return $customer;
+    }
+}
+
+if (!function_exists('checkAdminAuth')) {
+    function checkAdminAuth(): array
+    {
+        $admin = current_admin();
+
+        if ($admin === null || !isset($admin['user_id'], $admin['employee_id'])
+            || ($admin['role'] ?? '') !== 'admin'
+        ) {
+            header('Location: ' . BASE_URL . 'admin/login');
+            exit;
+        }
+
+        return $admin;
     }
 }
 
 if (!function_exists('require_role')) {
     function require_role(string $role): array
     {
-        $user = current_user();
-
-        if ($user === null) {
-            header('Location: ' . BASE_URL . '?action=auth&mode=login');
-            exit;
+        if ($role === 'customer') {
+            return checkCustomerAuth();
         }
 
-        if (($user['role'] ?? '') !== $role) {
-            http_response_code(403);
-            exit('Bạn không có quyền truy cập chức năng này.');
+        if ($role === 'admin') {
+            return checkAdminAuth();
         }
 
-        return $user;
+        http_response_code(403);
+        exit('Bạn không có quyền truy cập chức năng này.');
     }
 }
 

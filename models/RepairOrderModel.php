@@ -86,7 +86,13 @@ class RepairOrderModel extends BaseModel
         return $order;
     }
 
-    public function createFromAppointment(int $appointmentId, int $carId, int $employeeId, string $problemDesc): int
+    public function createFromAppointment(
+        int $appointmentId,
+        int $carId,
+        int $employeeId,
+        string $problemDesc,
+        ?int $changedByUserId = null
+    ): int
     {
         $this->pdo->beginTransaction();
 
@@ -144,8 +150,9 @@ class RepairOrderModel extends BaseModel
                 'note' => $problemDesc,
             ]);
 
-            $statusStatement = $this->pdo->prepare("UPDATE APPOINTMENTS SET status = 'checked_in' WHERE id = :id");
-            $statusStatement->execute(['id' => $appointmentId]);
+            if (!(new AppointmentModel())->updateStatus($appointmentId, 'checked_in', $changedByUserId)) {
+                throw new DomainException('Không thể cập nhật lịch hẹn khi tiếp nhận xe.');
+            }
 
             $this->pdo->commit();
             return $repairOrderId;
@@ -174,7 +181,7 @@ class RepairOrderModel extends BaseModel
         return $statement->rowCount() > 0;
     }
 
-    public function complete(int $id, int $mileage, string $diagnosis): void
+    public function complete(int $id, int $mileage, string $diagnosis, ?int $changedByUserId = null): void
     {
         $this->pdo->beginTransaction();
 
@@ -209,10 +216,9 @@ class RepairOrderModel extends BaseModel
             $updateOrder->execute(['diagnosis' => $diagnosis, 'mileage' => $mileage, 'id' => $id]);
 
             if ($order['appointment_id'] !== null) {
-                $updateAppointment = $this->pdo->prepare(
-                    "UPDATE APPOINTMENTS SET status = 'completed' WHERE id = :appointment_id"
-                );
-                $updateAppointment->execute(['appointment_id' => $order['appointment_id']]);
+                if (!(new AppointmentModel())->updateStatus((int) $order['appointment_id'], 'completed', $changedByUserId)) {
+                    throw new DomainException('Không thể cập nhật lịch hẹn khi hoàn tất sửa chữa.');
+                }
             }
 
             $historyStatement = $this->pdo->prepare(

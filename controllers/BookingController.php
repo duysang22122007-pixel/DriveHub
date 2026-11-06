@@ -94,7 +94,8 @@ class BookingController
                                     $carId,
                                     (int) $service['id'],
                                     $validated['preferred_date'] . ' ' . $validated['preferred_time'] . ':00',
-                                    $description
+                                    $description,
+                                    (int) $user['user_id']
                                 );
                                 $pdo->commit();
                                 $this->clearDraft();
