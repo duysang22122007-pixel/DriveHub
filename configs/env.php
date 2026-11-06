@@ -1,6 +1,6 @@
 <?php
 
-define('BASE_URL',          'http://localhost/base-duanmau/');
+define('BASE_URL',          'http://localhost/DriveHub/');
 
 define('PATH_ROOT',         __DIR__ . '/../');
 
@@ -16,7 +16,7 @@ define('PATH_CONTROLLER',       PATH_ROOT . 'controllers/');
 
 define('PATH_MODEL',            PATH_ROOT . 'models/');
 
-define('DB_HOST',     'localhost');
+define('DB_HOST',     'drivehub');
 define('DB_PORT',     '3306');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');

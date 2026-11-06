@@ -10,13 +10,25 @@
     <!-- Latest compiled and minified CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <style>
+        .page-title {
+            font-size: clamp(1.5rem, 4vw, 2.25rem);
+            overflow-wrap: anywhere;
+        }
+
+        .page-content,
+        .page-content > * {
+            min-width: 0;
+        }
+    </style>
+
     <!-- Latest compiled JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
 <body>
 
-    <nav class="navbar navbar-expand-xxl bg-light justify-content-center">
+    <nav class="navbar navbar-expand-lg bg-light justify-content-center px-3 px-sm-4">
         <ul class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link text-uppercase" href="<?= BASE_URL ?>"><b>Home</b></a>
@@ -24,17 +36,17 @@
         </ul>
     </nav>
 
-    <div class="container">
-        <h1 class="mt-3 mb-3"><?= $title ?? 'Home' ?></h1>
+    <main class="container py-3 py-md-4">
+        <h1 class="page-title mb-3"><?= $title ?? 'Home' ?></h1>
 
-        <div class="row">
+        <div class="row page-content">
             <?php
             if (isset($view)) {
                 require_once PATH_VIEW . $view . '.php';
             }
             ?>
         </div>
-    </div>
+    </main>
 
 </body>
 
