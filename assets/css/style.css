@@ -247,6 +247,17 @@ section {
     width: 100%;
 }
 
+.header-logout {
+    display: inline-flex;
+    align-items: center;
+}
+
+.header-logout button {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
 .nav-toggle {
     display: none;
 }

@@ -22,6 +22,10 @@
     <?php if (($view ?? '') === 'booking/create'): ?>
         <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/booking.css">
     <?php endif; ?>
+
+    <?php if (in_array(($view ?? ''), ['auth/form', 'appointments/customer', 'appointments/admin', 'cars/index', 'cars/history', 'repairs/index', 'repairs/create', 'repairs/show'], true)): ?>
+        <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/workflow.css">
+    <?php endif; ?>
 </head>
 
 <body>
