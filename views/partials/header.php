@@ -1,17 +1,18 @@
 <header class="site-header" id="site-header">
     <div class="container header__inner">
         <?php require PATH_VIEW . 'partials/logo.php'; ?>
+        <?php $currentAction = $_GET['action'] ?? '/'; ?>
 
         <nav class="site-nav" id="site-nav" aria-label="Điều hướng chính">
             <ul class="site-nav__list">
                 <li>
-                    <a class="site-nav__link is-active" href="<?= BASE_URL ?>" aria-current="page">Trang chủ</a>
+                    <a class="site-nav__link<?= $currentAction === '/' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>"<?= $currentAction === '/' ? ' aria-current="page"' : '' ?>>Trang chủ</a>
                 </li>
                 <li>
                     <a class="site-nav__link" href="#gioi-thieu">Giới thiệu</a>
                 </li>
                 <li>
-                    <a class="site-nav__link" href="#dich-vu">Dịch vụ</a>
+                    <a class="site-nav__link<?= $currentAction === 'services' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=services"<?= $currentAction === 'services' ? ' aria-current="page"' : '' ?>>Dịch vụ</a>
                 </li>
                 <!-- Route lịch sử bảo dưỡng chưa có trong dự án: giữ placeholder chờ tích hợp -->
                 <li>
