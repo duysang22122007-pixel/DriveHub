@@ -4,13 +4,21 @@ class AuthController
 {
     public function index()
     {
-        if (current_user() !== null) {
-            $this->redirectForRole(current_user()['role']);
+        if (current_customer() !== null) {
+            $this->redirectForRole('customer');
         }
 
-        $mode = (string) ($_GET['mode'] ?? 'login');
-        if (!in_array($mode, ['login', 'register'], true)) {
-            $mode = 'login';
+        $requestedMode = $_SERVER['REQUEST_METHOD'] === 'POST'
+            ? (string) ($_POST['mode'] ?? '')
+            : (string) ($_GET['mode'] ?? 'customer-login');
+        $mode = $this->normalizeMode($requestedMode);
+
+        if ($mode === 'admin-login') {
+            $this->redirectPath('admin/login');
+        }
+
+        if ($mode !== 'register') {
+            $this->redirectPath('login');
         }
 
         $errors = [];
@@ -18,10 +26,9 @@ class AuthController
         $csrfToken = csrf_token();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $mode = (string) ($_POST['mode'] ?? 'login');
-
-            if (!in_array($mode, ['login', 'register'], true)) {
-                $mode = 'login';
+            if ($this->normalizeMode((string) ($_POST['mode'] ?? '')) !== 'register') {
+                http_response_code(400);
+                exit('Yêu cầu đăng ký không hợp lệ.');
             }
 
             foreach (array_keys($old) as $key) {
@@ -30,7 +37,7 @@ class AuthController
 
             if (!verify_csrf_token((string) ($_POST['csrf_token'] ?? ''))) {
                 $errors['form'] = 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.';
-            } elseif ($mode === 'register') {
+            } else {
                 $password = (string) ($_POST['password'] ?? '');
                 $passwordConfirmation = (string) ($_POST['password_confirmation'] ?? '');
 
@@ -76,6 +83,43 @@ class AuthController
                         $errors['form'] = 'Tên đăng nhập hoặc email này đã được sử dụng.';
                     }
                 }
+            }
+        }
+
+        $title = 'Đăng ký khách hàng - DriveHub';
+        $view = 'auth/form';
+        require_once PATH_VIEW_MAIN;
+    }
+
+    public function customerLogin()
+    {
+        $this->loginAs('customer');
+    }
+
+    public function adminLogin()
+    {
+        $this->loginAs('admin');
+    }
+
+    private function loginAs(string $role): void
+    {
+        if ($role === 'customer' && current_customer() !== null) {
+            $this->redirectForRole('customer');
+        }
+
+        if ($role === 'admin' && current_admin() !== null) {
+            $this->redirectForRole('admin');
+        }
+
+        $errors = [];
+        $old = ['login' => ''];
+        $csrfToken = csrf_token();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $old['login'] = trim((string) ($_POST['login'] ?? ''));
+
+            if (!verify_csrf_token((string) ($_POST['csrf_token'] ?? ''))) {
+                $errors['form'] = 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.';
             } else {
                 $password = (string) ($_POST['password'] ?? '');
                 $user = (new AuthModel())->findByLogin($old['login']);
@@ -84,11 +128,16 @@ class AuthController
                     !$user
                     || (int) $user['status'] !== 1
                     || !password_verify($password, $user['password_hash'])
-                    || !in_array($user['role'], ['customer', 'admin'], true)
-                    || ($user['role'] === 'customer' && $user['customer_id'] === null)
-                    || ($user['role'] === 'admin' && $user['employee_id'] === null)
                 ) {
                     $errors['form'] = 'Thông tin đăng nhập không hợp lệ hoặc tài khoản đã bị khóa.';
+                } elseif ($user['role'] !== $role) {
+                    $errors['form'] = $role === 'customer'
+                        ? 'Tài khoản Quản trị viên, vui lòng đăng nhập tại trang Quản trị!'
+                        : 'Bạn không có quyền truy cập trang Quản trị!';
+                } elseif (($role === 'customer' && $user['customer_id'] === null)
+                    || ($role === 'admin' && $user['employee_id'] === null)
+                ) {
+                    $errors['form'] = 'Hồ sơ tài khoản chưa được liên kết hợp lệ.';
                 } else {
                     $this->signIn($user);
                     $this->redirectForRole($user['role']);
@@ -96,21 +145,54 @@ class AuthController
             }
         }
 
-        $title = $mode === 'register' ? 'Đăng ký khách hàng - DriveHub' : 'Đăng nhập - DriveHub';
-        $view = 'auth/form';
+        $isAdmin = $role === 'admin';
+        $title = $isAdmin ? 'Đăng nhập quản trị - DriveHub' : 'Đăng nhập khách hàng - DriveHub';
+        $view = $isAdmin ? 'auth/admin_login' : 'auth/customer_login';
         require_once PATH_VIEW_MAIN;
+    }
+
+    private function normalizeMode(string $mode): string
+    {
+        if ($mode === 'login') {
+            return 'customer-login';
+        }
+
+        return in_array($mode, ['customer-login', 'admin-login', 'register'], true)
+            ? $mode
+            : 'customer-login';
     }
 
     public function logout()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf_token((string) ($_POST['csrf_token'] ?? ''))) {
+        $this->logoutRole('customer');
+    }
+
+    public function customerLogout()
+    {
+        $this->logoutRole('customer');
+    }
+
+    public function adminLogout()
+    {
+        $this->logoutRole('admin');
+    }
+
+    private function logoutRole(string $role): void
+    {
+        if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST'], true)
+            || ($_SERVER['REQUEST_METHOD'] === 'POST'
+                && !verify_csrf_token((string) ($_POST['csrf_token'] ?? '')))
+        ) {
             http_response_code(400);
             exit('Yêu cầu đăng xuất không hợp lệ.');
         }
 
-        $_SESSION = [];
+        unset($_SESSION[$role]);
+        if ($role === 'customer') {
+            unset($_SESSION['booking_draft'], $_SESSION['booking_csrf']);
+        }
         session_regenerate_id(true);
-        header('Location: ' . BASE_URL);
+        header('Location: ' . BASE_URL . ($role === 'admin' ? 'admin/login' : 'login'));
         exit;
     }
 
@@ -121,20 +203,39 @@ class AuthController
         }
 
         session_regenerate_id(true);
-        unset($_SESSION['booking_draft'], $_SESSION['booking_csrf']);
-        $_SESSION['user'] = [
-            'id' => (int) $user['id'],
-            'username' => $user['username'],
-            'role' => $user['role'],
-            'customer_id' => $user['customer_id'] !== null ? (int) $user['customer_id'] : null,
-            'employee_id' => $user['employee_id'] !== null ? (int) $user['employee_id'] : null,
-        ];
+
+        if ($user['role'] === 'customer') {
+            unset($_SESSION['booking_draft'], $_SESSION['booking_csrf']);
+            $_SESSION['customer'] = [
+                'user_id' => (int) $user['id'],
+                'customer_id' => (int) $user['customer_id'],
+                'name' => $user['customer_name'],
+            ];
+        } else {
+            $_SESSION['admin'] = [
+                'user_id' => (int) $user['id'],
+                'employee_id' => (int) $user['employee_id'],
+                'name' => $user['employee_name'],
+                'role' => 'admin',
+            ];
+        }
     }
 
     private function redirectForRole(string $role): void
     {
         $action = $role === 'admin' ? 'admin-appointments' : 'my-appointments';
+        $this->redirect($action);
+    }
+
+    private function redirect(string $action): void
+    {
         header('Location: ' . BASE_URL . '?action=' . $action);
+        exit;
+    }
+
+    private function redirectPath(string $path): void
+    {
+        header('Location: ' . BASE_URL . $path);
         exit;
     }
 }

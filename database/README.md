@@ -20,6 +20,8 @@
    ```
 
    Do not store a plaintext password in the database.
-4. Sign in as a customer to book and view that customer's appointments/cars. Sign in as an admin account to manage appointments, check vehicles in, and manage repair orders.
+4. Sign in as a customer at `/DriveHub/login` to book and view that customer's appointments/cars. Sign in as an admin at `/DriveHub/admin/login` to manage appointments, check vehicles in, and manage repair orders. The application stores these separately in `$_SESSION['customer']` and `$_SESSION['admin']`; logging out of one role does not sign out the other.
 
-The script is a fresh-install schema. If you already imported an earlier schema that uses the `staff` role, back up the database, then run `database/migrate_staff_to_admin.sql` once to convert existing staff users to admin without changing their passwords or employee profiles. For other existing tables, reconcile columns/constraints before importing; `CREATE TABLE IF NOT EXISTS` does not alter existing tables.
+For testing, create a customer through **Đăng ký**. The sample admin identity above uses username `admin1` or email `admin@example.com`; its password is the one used to generate the hash, not a built-in default. Do not use a shared demo password on a deployed system.
+
+The script is a fresh-install schema. If you already imported an earlier schema, back up the database and run `database/migrate_appointment_status_history.sql` to enable appointment timelines. If the earlier schema uses the `staff` role, also run `database/migrate_staff_to_admin.sql` to convert existing staff users to admin without changing their passwords or employee profiles. The timeline migration marks the status observed at migration time; it does not invent timestamps for earlier status changes. For other existing tables, reconcile columns/constraints before importing; `CREATE TABLE IF NOT EXISTS` does not alter existing tables.

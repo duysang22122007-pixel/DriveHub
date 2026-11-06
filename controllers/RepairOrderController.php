@@ -34,7 +34,8 @@ class RepairOrderController
                         (int) $appointment['id'],
                         (int) $appointment['car_id'],
                         (int) $user['employee_id'],
-                        $appointment['description']
+                        $appointment['description'],
+                        (int) $user['user_id']
                     );
                     header('Location: ' . BASE_URL . '?action=repair-order&id=' . $repairOrderId);
                     exit;
@@ -52,10 +53,12 @@ class RepairOrderController
 
     public function show()
     {
-        $user = current_user();
-        if ($user === null) {
-            require_role('admin');
+        $admin = current_admin();
+        $customer = current_customer();
+        if ($admin === null && $customer === null) {
+            checkAdminAuth();
         }
+        $isAdmin = $admin !== null;
 
         $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
         if (!$id) {
@@ -63,13 +66,10 @@ class RepairOrderController
             exit('Không tìm thấy phiếu sửa chữa.');
         }
 
-        if ($user['role'] === 'customer') {
-            $order = (new RepairOrderModel())->getForCustomer((int) $id, (int) $user['customer_id']);
-        } elseif ($user['role'] === 'admin') {
+        if ($isAdmin) {
             $order = (new RepairOrderModel())->getById((int) $id);
         } else {
-            http_response_code(403);
-            exit('Bạn không có quyền truy cập chức năng này.');
+            $order = (new RepairOrderModel())->getForCustomer((int) $id, (int) $customer['customer_id']);
         }
 
         if (!$order) {
@@ -79,7 +79,7 @@ class RepairOrderController
 
         $errors = [];
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            require_role('admin');
+            $admin = require_role('admin');
 
             if (!verify_csrf_token((string) ($_POST['csrf_token'] ?? ''))) {
                 $errors[] = 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.';
@@ -91,7 +91,7 @@ class RepairOrderController
                     $errors[] = 'Vui lòng nhập số km hợp lệ và chẩn đoán không quá 5000 ký tự.';
                 } else {
                     try {
-                        (new RepairOrderModel())->complete((int) $id, (int) $mileage, $diagnosis);
+                        (new RepairOrderModel())->complete((int) $id, (int) $mileage, $diagnosis, (int) $admin['user_id']);
                         header('Location: ' . BASE_URL . '?action=repair-order&id=' . $id);
                         exit;
                     } catch (DomainException $exception) {

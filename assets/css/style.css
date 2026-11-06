@@ -262,6 +262,13 @@ section {
     flex-shrink: 0;
 }
 
+.header-login-group {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 12px;
+}
+
 .header-login {
     min-height: 44px;
     padding: 0 22px;
@@ -1327,11 +1334,21 @@ section {
         width: 100%;
     }
 
+    .header-login-group,
     .header-login,
     .header-auth {
         width: 100%;
         margin-top: 8px;
         text-align: left;
+    }
+
+    .header-login-group {
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .header-login {
+        width: auto;
     }
 
     .intro__grid {

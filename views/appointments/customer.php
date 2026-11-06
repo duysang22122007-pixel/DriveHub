@@ -15,6 +15,7 @@ $statusLabels = [
         <nav class="workflow-tabs" aria-label="Các nhóm lịch hẹn">
             <a href="#upcoming">Sắp tới / Đang xử lý (<?= count($upcoming) ?>)</a>
             <a href="#history">Lịch sử đặt hẹn (<?= count($history) ?>)</a>
+            <a href="<?= BASE_URL ?>?action=appointment-history">Xem timeline các mốc</a>
         </nav>
 
         <?php if ($flash !== null): ?><div class="workflow-alert"><?= $e($flash) ?></div><?php endif; ?>

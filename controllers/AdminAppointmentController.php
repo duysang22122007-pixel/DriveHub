@@ -4,7 +4,7 @@ class AdminAppointmentController
 {
     public function index()
     {
-        require_role('admin');
+        $user = require_role('admin');
         $errors = [];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,7 +18,7 @@ class AdminAppointmentController
                 if (!$appointment || $appointment['status'] !== 'pending') {
                     $errors[] = 'Chỉ có thể xác nhận lịch hẹn đang chờ.';
                 } else {
-                    $appointmentModel->updateStatus((int) $appointment['id'], 'confirmed');
+                    $appointmentModel->updateStatus((int) $appointment['id'], 'confirmed', (int) $user['user_id']);
                     header('Location: ' . BASE_URL . '?action=admin-appointments');
                     exit;
                 }

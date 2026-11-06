@@ -149,6 +149,37 @@
     font-weight: 700;
 }
 
+.admin-login-page {
+    color: #e8edf5;
+    background: #111827;
+}
+
+.admin-login-page h1,
+.admin-login-page .eyebrow,
+.admin-login-page .workflow-lead {
+    color: #e8edf5;
+}
+
+.admin-login-page .workflow-card {
+    border-color: #374151;
+    background: #1f2937;
+}
+
+.admin-login-page .workflow-form label {
+    color: #e8edf5;
+}
+
+.admin-login-page .workflow-form input {
+    border-color: #4b5563;
+    color: #f9fafb;
+    background: #111827;
+}
+
+.admin-login-page .workflow-switch,
+.admin-login-page .workflow-switch a {
+    color: #cbd5e1;
+}
+
 .workflow-help {
     color: var(--muted);
     font-size: 0.9rem;
@@ -184,6 +215,30 @@
     font-weight: 700;
 }
 
+.appointment-history-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 24px;
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.appointment-history-details dt {
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.appointment-history-details dd {
+    margin: 3px 0 0;
+    font-weight: 600;
+}
+
+.workflow-timeline__event {
+    display: grid;
+    gap: 4px;
+}
+
 @media (max-width: 760px) {
     .workflow-page {
         padding: 48px 0 64px;
@@ -191,5 +246,9 @@
 
     .workflow-card {
         padding: 18px;
+    }
+
+    .appointment-history-details {
+        grid-template-columns: 1fr;
     }
 }

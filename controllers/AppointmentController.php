@@ -20,7 +20,7 @@ class AppointmentController
                 if (!$appointment || !in_array($appointment['status'], ['pending', 'confirmed'], true)) {
                     $errors[] = 'Lịch hẹn không tồn tại hoặc không thể hủy ở trạng thái hiện tại.';
                 } else {
-                    $appointmentModel->updateStatus((int) $appointment['id'], 'cancelled');
+                    $appointmentModel->updateStatus((int) $appointment['id'], 'cancelled', (int) $user['user_id']);
                     header('Location: ' . BASE_URL . '?action=my-appointments&notice=cancelled');
                     exit;
                 }
@@ -37,6 +37,22 @@ class AppointmentController
         $csrfToken = csrf_token();
         $title = 'Lịch hẹn của tôi - DriveHub';
         $view = 'appointments/customer';
+        require_once PATH_VIEW_MAIN;
+    }
+
+    public function history()
+    {
+        $user = require_role('customer');
+        $appointments = (new AppointmentModel())->getTimelineByCustomerId((int) $user['customer_id']);
+        $statusLabels = [
+            'pending' => 'Đã gửi yêu cầu',
+            'confirmed' => 'Lịch hẹn được xác nhận',
+            'checked_in' => 'Xe đã được tiếp nhận',
+            'completed' => 'Sửa chữa đã hoàn tất',
+            'cancelled' => 'Lịch hẹn đã hủy',
+        ];
+        $title = 'Lịch sử đặt lịch - DriveHub';
+        $view = 'appointments/history';
         require_once PATH_VIEW_MAIN;
     }
 }
