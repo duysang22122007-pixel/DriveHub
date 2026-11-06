@@ -2,8 +2,15 @@
 
 class HomeController
 {
-    public function index() 
+    public function index()
     {
-        require_once PATH_VIEW . 'main.php';
+        // Tiêu đề trang chủ
+        $title = 'DriveHub - Chăm sóc xe toàn diện';
+
+        // Xác định View cần hiển thị
+        $view = 'home';
+
+        // Gọi Layout chính
+        require_once PATH_VIEW_MAIN;
     }
 }
