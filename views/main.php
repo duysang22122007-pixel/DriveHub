@@ -1,53 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title><?= $title ?? 'Home' ?></title>
+    <title><?= htmlspecialchars($title ?? 'DriveHub', ENT_QUOTES, 'UTF-8') ?></title>
 
-    <!-- Latest compiled and minified CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="description" content="DriveHub - Dịch vụ bảo dưỡng và chăm sóc ô tô chuyên nghiệp, minh bạch và an toàn.">
 
-    <style>
-        .page-title {
-            font-size: clamp(1.5rem, 4vw, 2.25rem);
-            overflow-wrap: anywhere;
-        }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-        .page-content,
-        .page-content > * {
-            min-width: 0;
-        }
-    </style>
-
-    <!-- Latest compiled JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
 </head>
 
 <body>
 
-    <nav class="navbar navbar-expand-lg bg-light justify-content-center px-3 px-sm-4">
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link text-uppercase" href="<?= BASE_URL ?>"><b>Home</b></a>
-            </li>
-        </ul>
-    </nav>
+    <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
 
-    <main class="container py-3 py-md-4">
-        <h1 class="page-title mb-3"><?= $title ?? 'Home' ?></h1>
+    <?php require PATH_VIEW . 'partials/header.php'; ?>
 
-        <div class="row page-content">
-            <?php
-            if (isset($view)) {
-                require_once PATH_VIEW . $view . '.php';
-            }
-            ?>
-        </div>
+    <main id="main-content">
+        <?php
+        if (isset($view)) {
+            require_once PATH_VIEW . $view . '.php';
+        }
+        ?>
     </main>
 
+    <?php require PATH_VIEW . 'partials/footer.php'; ?>
+
+    <script src="<?= BASE_URL ?>assets/js/main.js" defer></script>
 </body>
 
 </html>
