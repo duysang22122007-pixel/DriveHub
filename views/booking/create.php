@@ -97,21 +97,21 @@ if (is_array($draft) && !empty($draft['preferred_date'])) {
                         </svg>
                     </div>
 
-                    <p class="eyebrow"><span></span>Đã kiểm tra thông tin</p>
+                    <p class="eyebrow"><span></span>Đã ghi nhận yêu cầu</p>
                     <h2 class="booking-complete__title">
-                        <?= $e($flash['title'] ?? 'Thông tin đã được kiểm tra') ?>
+                        <?= $e($flash['title'] ?? 'Đã ghi nhận lịch hẹn') ?>
                     </h2>
                     <p class="booking-complete__desc">
-                        <?= $e($flash['message'] ?? 'Chức năng gửi yêu cầu đặt lịch đang trong quá trình hoàn thiện và chưa kết nối hệ thống. DriveHub chưa ghi nhận lịch hẹn từ thông tin này.') ?>
+                        <?= $e($flash['message'] ?? 'Lịch hẹn đã được lưu. Bạn có thể theo dõi trạng thái trong mục Lịch hẹn của tôi.') ?>
                     </p>
 
                     <div class="booking-complete__notice">
-                        <strong>Chưa có lịch hẹn nào được tạo.</strong>
-                        Nếu cần hỗ trợ ngay, vui lòng gọi
-                        <a href="tel:0337085291">0337 085 291</a>.
+                        <strong>Trạng thái hiện tại: Chờ xác nhận.</strong>
+                        DriveHub sẽ liên hệ với bạn nếu cần thêm thông tin.
                     </div>
 
                     <div class="booking-complete__actions">
+                        <a class="btn btn--primary" href="<?= BASE_URL ?>?action=my-appointments">Xem lịch hẹn</a>
                         <a class="btn btn--primary" href="<?= BASE_URL ?>?action=booking">Đặt lịch mới</a>
                         <a class="btn booking-btn--outline" href="<?= BASE_URL ?>?action=services">Xem dịch vụ</a>
                     </div>
@@ -339,13 +339,13 @@ if (is_array($draft) && !empty($draft['preferred_date'])) {
                                         <span class="booking-step">02</span>
                                         <div>
                                             <h2 id="booking-step-vehicle">Thông tin xe</h2>
-                                            <p>Thông tin không bắt buộc, giúp kỹ thuật viên chuẩn bị tốt hơn.</p>
+                                            <p>Nhập đầy đủ hãng xe, dòng xe và biển số để tạo lịch hẹn cho đúng phương tiện.</p>
                                         </div>
                                     </div>
 
                                     <div class="booking-grid">
                                         <div class="booking-field">
-                                            <label class="booking-label" for="car_brand">Hãng xe</label>
+                                            <label class="booking-label" for="car_brand">Hãng xe <span class="booking-required">*</span></label>
                                             <input
                                                 class="<?= $e($fieldClass('car_brand')) ?>"
                                                 type="text"
@@ -363,7 +363,7 @@ if (is_array($draft) && !empty($draft['preferred_date'])) {
                                         </div>
 
                                         <div class="booking-field">
-                                            <label class="booking-label" for="car_model">Dòng xe</label>
+                                            <label class="booking-label" for="car_model">Dòng xe <span class="booking-required">*</span></label>
                                             <input
                                                 class="<?= $e($fieldClass('car_model')) ?>"
                                                 type="text"
@@ -380,7 +380,7 @@ if (is_array($draft) && !empty($draft['preferred_date'])) {
                                         </div>
 
                                         <div class="booking-field">
-                                            <label class="booking-label" for="license_plate">Biển số xe</label>
+                                            <label class="booking-label" for="license_plate">Biển số xe <span class="booking-required">*</span></label>
                                             <input
                                                 class="<?= $e($fieldClass('license_plate')) ?>"
                                                 type="text"
@@ -542,73 +542,25 @@ if (is_array($draft) && !empty($draft['preferred_date'])) {
                                     <div class="booking-form__section-head">
                                         <span class="booking-step">05</span>
                                         <div>
-                                            <h2 id="booking-step-contact">Thông tin liên hệ</h2>
-                                            <p>DriveHub sẽ dùng thông tin này để liên hệ xác nhận.</p>
+                                            <h2 id="booking-step-contact">Thông tin tài khoản</h2>
+                                            <p>DriveHub sẽ dùng hồ sơ khách hàng đã đăng nhập để liên hệ xác nhận.</p>
                                         </div>
                                     </div>
 
-                                    <div class="booking-grid">
-                                        <div class="booking-field">
-                                            <label class="booking-label" for="full_name">
-                                                Họ tên <span class="booking-required">*</span>
-                                            </label>
-                                            <input
-                                                class="<?= $e($fieldClass('full_name')) ?>"
-                                                type="text"
-                                                id="full_name"
-                                                name="full_name"
-                                                value="<?= $e($oldValue('full_name')) ?>"
-                                                maxlength="100"
-                                                placeholder="Nguyễn Văn A"
-                                                autocomplete="name"
-                                                <?= $fieldAttributes('full_name') ?>
-                                            >
-                                            <?php if ($hasError('full_name')): ?>
-                                                <p class="booking-error" id="full_name-error"><?= $e($errorFor('full_name')) ?></p>
-                                            <?php endif; ?>
+                                    <dl class="booking-review__list">
+                                        <div class="booking-review__item">
+                                            <dt>Họ tên</dt>
+                                            <dd><?= $e($oldValue('full_name')) ?></dd>
                                         </div>
-
-                                        <div class="booking-field">
-                                            <label class="booking-label" for="phone">
-                                                Số điện thoại <span class="booking-required">*</span>
-                                            </label>
-                                            <input
-                                                class="<?= $e($fieldClass('phone')) ?>"
-                                                type="tel"
-                                                id="phone"
-                                                name="phone"
-                                                value="<?= $e($oldValue('phone')) ?>"
-                                                maxlength="15"
-                                                placeholder="0912 345 678"
-                                                autocomplete="tel"
-                                                inputmode="tel"
-                                                <?= $fieldAttributes('phone') ?>
-                                            >
-                                            <?php if ($hasError('phone')): ?>
-                                                <p class="booking-error" id="phone-error"><?= $e($errorFor('phone')) ?></p>
-                                            <?php endif; ?>
+                                        <div class="booking-review__item">
+                                            <dt>Số điện thoại</dt>
+                                            <dd><?= $e($oldValue('phone')) ?></dd>
                                         </div>
-
-                                        <div class="booking-field booking-field--full">
-                                            <label class="booking-label" for="email">
-                                                Email <span class="booking-required">*</span>
-                                            </label>
-                                            <input
-                                                class="<?= $e($fieldClass('email')) ?>"
-                                                type="email"
-                                                id="email"
-                                                name="email"
-                                                value="<?= $e($oldValue('email')) ?>"
-                                                maxlength="150"
-                                                placeholder="ban@example.com"
-                                                autocomplete="email"
-                                                <?= $fieldAttributes('email') ?>
-                                            >
-                                            <?php if ($hasError('email')): ?>
-                                                <p class="booking-error" id="email-error"><?= $e($errorFor('email')) ?></p>
-                                            <?php endif; ?>
+                                        <div class="booking-review__item booking-review__item--full">
+                                            <dt>Email</dt>
+                                            <dd><?= $e($oldValue('email')) ?></dd>
                                         </div>
-                                    </div>
+                                    </dl>
                                 </section>
 
                                 <section class="booking-form__section booking-form__section--submit" aria-labelledby="booking-step-review">
@@ -651,7 +603,7 @@ if (is_array($draft) && !empty($draft['preferred_date'])) {
                                 <li>Khung giờ bạn chọn là mong muốn, DriveHub sẽ liên hệ xác nhận.</li>
                                 <li>Chưa thanh toán trực tuyến trên trang này.</li>
                                 <li>Chi phí sửa chữa được tư vấn sau khi kiểm tra tình trạng xe.</li>
-                                <li>Thông tin xe không bắt buộc, nhưng giúp việc chuẩn bị chính xác hơn.</li>
+                                <li>Thông tin hãng xe, dòng xe và biển số là bắt buộc để lưu lịch hẹn đúng phương tiện.</li>
                             </ul>
                         </div>
                     </aside>

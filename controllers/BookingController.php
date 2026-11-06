@@ -10,6 +10,13 @@ class BookingController
     public function index()
     {
         date_default_timezone_set('Asia/Ho_Chi_Minh');
+        $user = require_role('customer');
+        $profile = (new AuthModel())->getCustomerProfile((int) $user['customer_id']);
+
+        if ($profile === null) {
+            http_response_code(403);
+            exit('Tài khoản chưa có hồ sơ khách hàng hợp lệ.');
+        }
 
         $title = 'DriveHub - Đặt lịch dịch vụ';
         $view = 'booking/create';
@@ -21,6 +28,9 @@ class BookingController
 
         $errors = [];
         $old = $this->defaultInput();
+        $old['full_name'] = $profile['full_name'];
+        $old['phone'] = $profile['phone'];
+        $old['email'] = $profile['email'];
         $draft = null;
         $step = 'form';
         $flash = null;
@@ -28,6 +38,9 @@ class BookingController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postedStep = (string) ($_POST['step'] ?? 'review');
             $old = $this->inputFromPost();
+            $old['full_name'] = $profile['full_name'];
+            $old['phone'] = $profile['phone'];
+            $old['email'] = $profile['email'];
 
             if (!$this->verifyCsrf((string) ($_POST['csrf_token'] ?? ''))) {
                 $this->rotateCsrf();
@@ -58,14 +71,55 @@ class BookingController
                         $draft = null;
                         $step = 'form';
                     } else {
-                        $this->clearDraft();
-                        $this->rotateCsrf();
-                        $this->setFlash([
-                            'type' => 'notice',
-                            'title' => 'Thông tin đã được kiểm tra',
-                            'message' => 'Chức năng gửi yêu cầu đặt lịch đang trong quá trình hoàn thiện và chưa kết nối hệ thống. DriveHub chưa ghi nhận lịch hẹn từ thông tin này.',
-                        ]);
-                        $this->redirect('complete');
+                        $service = (new ServiceModel())->getByCode($validated['service_key']);
+
+                        if ($service === null) {
+                            $old = $validated;
+                            $errors['form'] = 'Dịch vụ đã chọn hiện không khả dụng. Vui lòng chọn dịch vụ khác.';
+                            $draft = null;
+                            $step = 'form';
+                        } else {
+                            $pdo = Database::getConnection();
+                            $pdo->beginTransaction();
+
+                            try {
+                                $carId = (new CarModel())->getOrCreateForCustomer((int) $profile['id'], $validated);
+                                $description = implode("\n\n", array_filter([
+                                    $validated['problem_description'],
+                                    $validated['symptoms'] !== '' ? 'Triệu chứng: ' . $validated['symptoms'] : '',
+                                    $validated['note'] !== '' ? 'Ghi chú: ' . $validated['note'] : '',
+                                ]));
+                                $appointmentId = (new AppointmentModel())->create(
+                                    (int) $profile['id'],
+                                    $carId,
+                                    (int) $service['id'],
+                                    $validated['preferred_date'] . ' ' . $validated['preferred_time'] . ':00',
+                                    $description
+                                );
+                                $pdo->commit();
+                                $this->clearDraft();
+                                $this->rotateCsrf();
+                                $this->setFlash([
+                                    'type' => 'notice',
+                                    'title' => 'Đã ghi nhận lịch hẹn',
+                                    'message' => 'Lịch hẹn #' . $appointmentId . ' đã được lưu. Bạn có thể theo dõi trạng thái trong mục Lịch hẹn của tôi.',
+                                ]);
+                                $this->redirect('complete');
+                            } catch (DomainException $exception) {
+                                if ($pdo->inTransaction()) {
+                                    $pdo->rollBack();
+                                }
+                                $old = $validated;
+                                $errors['form'] = $exception->getMessage();
+                                $draft = null;
+                                $step = 'form';
+                            } catch (Throwable $exception) {
+                                if ($pdo->inTransaction()) {
+                                    $pdo->rollBack();
+                                }
+                                throw $exception;
+                            }
+                        }
                     }
                 }
             } else {
@@ -101,6 +155,26 @@ class BookingController
                 }
             } elseif ($flash !== null) {
                 $step = 'complete';
+            }
+
+            if ($step === 'form') {
+                $carId = filter_var($_GET['car_id'] ?? null, FILTER_VALIDATE_INT);
+                $car = $carId ? (new CarModel())->getOwnedCar((int) $carId, (int) $profile['id']) : null;
+
+                if ($car) {
+                    $old['car_brand'] = $car['brand'];
+                    $old['car_model'] = $car['model'];
+                    $old['license_plate'] = $car['license_plate'];
+                    $old['manufacture_year'] = (string) ($car['manufacture_year'] ?? '');
+                }
+
+                $serviceId = filter_var($_GET['service_id'] ?? null, FILTER_VALIDATE_INT);
+                $service = $serviceId ? (new ServiceModel())->getById((int) $serviceId) : null;
+
+                if ($service && isset($groups[$service['service_group']]['services'][$service['service_code']])) {
+                    $old['service_group'] = $service['service_group'];
+                    $old['service_key'] = $service['service_code'];
+                }
             }
         }
 
@@ -243,24 +317,20 @@ class BookingController
             $errors['email'] = 'Email chưa đúng định dạng.';
         }
 
-        if ($data['car_brand'] !== '') {
-            if (mb_strlen($data['car_brand']) < 2 || mb_strlen($data['car_brand']) > 80) {
-                $errors['car_brand'] = 'Hãng xe phải từ 2 đến 80 ký tự.';
-            } elseif (!preg_match('~^[\p{L}\p{N}\s.,/&()+\-]+$~u', $data['car_brand'])) {
-                $errors['car_brand'] = 'Hãng xe chứa ký tự không hợp lệ.';
-            }
+        if (mb_strlen($data['car_brand']) < 2 || mb_strlen($data['car_brand']) > 80) {
+            $errors['car_brand'] = 'Vui lòng nhập hãng xe từ 2 đến 80 ký tự.';
+        } elseif (!preg_match('~^[\p{L}\p{N}\s.,/&()+\-]+$~u', $data['car_brand'])) {
+            $errors['car_brand'] = 'Hãng xe chứa ký tự không hợp lệ.';
         }
 
-        if ($data['car_model'] !== '') {
-            if (mb_strlen($data['car_model']) < 2 || mb_strlen($data['car_model']) > 120) {
-                $errors['car_model'] = 'Dòng xe phải từ 2 đến 120 ký tự.';
-            } elseif (!preg_match('~^[\p{L}\p{N}\s.,/&()+\-]+$~u', $data['car_model'])) {
-                $errors['car_model'] = 'Dòng xe chứa ký tự không hợp lệ.';
-            }
+        if (mb_strlen($data['car_model']) < 2 || mb_strlen($data['car_model']) > 120) {
+            $errors['car_model'] = 'Vui lòng nhập dòng xe từ 2 đến 120 ký tự.';
+        } elseif (!preg_match('~^[\p{L}\p{N}\s.,/&()+\-]+$~u', $data['car_model'])) {
+            $errors['car_model'] = 'Dòng xe chứa ký tự không hợp lệ.';
         }
 
-        if ($data['license_plate'] !== '' && !preg_match('/^[A-Z0-9.\-\s]{4,20}$/', $data['license_plate'])) {
-            $errors['license_plate'] = 'Biển số xe phải từ 4 đến 20 ký tự và chỉ gồm chữ, số, dấu chấm hoặc gạch nối.';
+        if (!preg_match('/^[A-Z0-9.\-\s]{4,20}$/', $data['license_plate'])) {
+            $errors['license_plate'] = 'Vui lòng nhập biển số xe từ 4 đến 20 ký tự, gồm chữ, số, dấu chấm hoặc gạch nối.';
         }
 
         if ($data['manufacture_year'] !== '') {

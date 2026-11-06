@@ -44,8 +44,8 @@
                 <li><a href="<?= BASE_URL ?>"><span class="footer__arrow" aria-hidden="true"></span>Trang chủ</a></li>
                 <li><a href="#gioi-thieu"><span class="footer__arrow" aria-hidden="true"></span>Giới thiệu</a></li>
                 <li><a href="#dich-vu"><span class="footer__arrow" aria-hidden="true"></span>Dịch vụ</a></li>
-                <li><a href="#" data-pending="Đặt lịch"><span class="footer__arrow" aria-hidden="true"></span>Đặt lịch</a></li>
-                <li><a href="#" data-pending="Lịch sử bảo dưỡng"><span class="footer__arrow" aria-hidden="true"></span>Lịch sử bảo dưỡng</a></li>
+                <li><a href="<?= BASE_URL ?>?action=booking"><span class="footer__arrow" aria-hidden="true"></span>Đặt lịch</a></li>
+                <li><a href="<?= BASE_URL ?>?action=my-cars"><span class="footer__arrow" aria-hidden="true"></span>Lịch sử bảo dưỡng</a></li>
                 <li><a href="#lien-he"><span class="footer__arrow" aria-hidden="true"></span>Liên hệ</a></li>
             </ul>
         </nav>

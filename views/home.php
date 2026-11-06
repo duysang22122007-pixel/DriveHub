@@ -23,8 +23,7 @@
 
         <div class="hero__actions">
             <a class="btn btn--primary" href="#dich-vu">Khám phá dịch vụ</a>
-            <!-- Route đặt lịch chưa tồn tại, giữ placeholder chờ tích hợp -->
-            <a class="btn btn--ghost" href="#" data-pending="Đặt lịch">Đặt lịch ngay</a>
+            <a class="btn btn--ghost" href="<?= BASE_URL ?>?action=booking">Đặt lịch ngay</a>
         </div>
 
         <ul class="hero__points">
