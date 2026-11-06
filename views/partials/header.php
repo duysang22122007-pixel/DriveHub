@@ -23,7 +23,7 @@
                 </li>
             </ul>
 
-            <a class="btn btn--primary header__cta" href="#" data-pending="Đặt lịch" title="Chức năng đặt lịch sẽ được tích hợp">
+            <a class="btn btn--primary header__cta" href="<?= BASE_URL ?>?action=booking">
                 Đặt lịch ngay
             </a>
         </nav>
