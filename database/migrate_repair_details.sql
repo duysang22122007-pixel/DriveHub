@@ -1,0 +1,12 @@
+USE drivehub;
+
+CREATE TABLE IF NOT EXISTS REPAIR_DETAILS (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    repair_order_id INT UNSIGNED NOT NULL,
+    service_id INT UNSIGNED NOT NULL,
+    quantity INT UNSIGNED NOT NULL DEFAULT 1,
+    unit_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+    note TEXT NULL,
+    CONSTRAINT fk_repair_details_order FOREIGN KEY (repair_order_id) REFERENCES REPAIR_ORDERS(id),
+    CONSTRAINT fk_repair_details_service FOREIGN KEY (service_id) REFERENCES SERVICES(id)
+) ENGINE=InnoDB;
