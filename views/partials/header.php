@@ -21,8 +21,6 @@
                 <?php elseif (($currentUser['role'] ?? '') === 'admin'): ?>
                     <li><a class="site-nav__link<?= $currentAction === 'admin-appointments' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=admin-appointments">Lịch hẹn gara</a></li>
                     <li><a class="site-nav__link<?= in_array($currentAction, ['repair-orders', 'repair-order', 'repair-order-create'], true) ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=repair-orders">Phiếu sửa chữa</a></li>
-                <?php else: ?>
-                    <li><a class="site-nav__link<?= $currentAction === 'auth' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=auth&amp;mode=login">Đăng nhập</a></li>
                 <?php endif; ?>
                 <li>
                     <a class="site-nav__link" href="#lien-he">Liên hệ</a>
@@ -32,10 +30,12 @@
             <a class="btn btn--primary header__cta" href="<?= BASE_URL ?>?action=<?= ($currentUser['role'] ?? '') === 'admin' ? 'admin-appointments' : 'booking' ?>">
                 <?= ($currentUser['role'] ?? '') === 'admin' ? 'Lịch hẹn gara' : 'Đặt lịch ngay' ?>
             </a>
-            <?php if ($currentUser !== null): ?>
+            <?php if ($currentUser === null): ?>
+                <a class="site-nav__link header-auth<?= $currentAction === 'auth' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=auth&amp;mode=login">Đăng nhập</a>
+            <?php else: ?>
                 <form class="header-logout" method="post" action="<?= BASE_URL ?>?action=logout">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-                    <button class="site-nav__link" type="submit">Đăng xuất</button>
+                    <button class="site-nav__link header-auth" type="submit">Đăng xuất</button>
                 </form>
             <?php endif; ?>
         </nav>

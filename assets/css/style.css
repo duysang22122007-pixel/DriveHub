@@ -258,6 +258,10 @@ section {
     cursor: pointer;
 }
 
+.header-auth {
+    flex-shrink: 0;
+}
+
 .nav-toggle {
     display: none;
 }
@@ -1303,6 +1307,16 @@ section {
     .header__cta {
         width: 100%;
         margin-top: 18px;
+    }
+
+    .header-logout {
+        width: 100%;
+    }
+
+    .header-auth {
+        width: 100%;
+        margin-top: 8px;
+        text-align: left;
     }
 
     .intro__grid {
