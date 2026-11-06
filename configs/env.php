@@ -16,11 +16,11 @@ define('PATH_CONTROLLER',       PATH_ROOT . 'controllers/');
 
 define('PATH_MODEL',            PATH_ROOT . 'models/');
 
-define('DB_HOST',     'drivehub');
-define('DB_PORT',     '3306');
+define('DB_HOST', '127.0.0.1');
+define('DB_PORT', '3306');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
-define('DB_NAME',     '');
+define('DB_NAME', 'drivehub');
 define('DB_OPTIONS', [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
