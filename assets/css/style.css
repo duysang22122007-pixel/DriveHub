@@ -262,6 +262,20 @@ section {
     flex-shrink: 0;
 }
 
+.header-login {
+    min-height: 44px;
+    padding: 0 22px;
+    color: var(--ink);
+    background: #35c6d0;
+    font-size: 0.76rem;
+}
+
+.header-login:hover {
+    color: var(--ink);
+    background: #63dce3;
+    box-shadow: 0 12px 24px rgba(53, 198, 208, 0.25);
+}
+
 .nav-toggle {
     display: none;
 }
@@ -1313,6 +1327,7 @@ section {
         width: 100%;
     }
 
+    .header-login,
     .header-auth {
         width: 100%;
         margin-top: 8px;
