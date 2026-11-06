@@ -243,7 +243,7 @@ $valueIcons = [
                 </div>
 
                 <div class="services-cta__actions">
-                    <a class="btn btn--primary" href="#" data-pending="Đặt lịch">Đặt lịch ngay</a>
+                    <a class="btn btn--primary" href="<?= BASE_URL ?>?action=booking">Đặt lịch ngay</a>
                     <a class="btn btn--ghost" href="#lien-he">Liên hệ tư vấn</a>
                 </div>
             </div>

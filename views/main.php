@@ -18,6 +18,10 @@
     <?php if (($view ?? '') === 'services'): ?>
         <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/services.css">
     <?php endif; ?>
+
+    <?php if (($view ?? '') === 'booking/create'): ?>
+        <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/booking.css">
+    <?php endif; ?>
 </head>
 
 <body>
@@ -37,6 +41,10 @@
     <?php require PATH_VIEW . 'partials/footer.php'; ?>
 
     <script src="<?= BASE_URL ?>assets/js/main.js" defer></script>
+
+    <?php if (($view ?? '') === 'booking/create'): ?>
+        <script src="<?= BASE_URL ?>assets/js/booking.js" defer></script>
+    <?php endif; ?>
 </body>
 
 </html>
