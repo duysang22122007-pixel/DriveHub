@@ -21,17 +21,24 @@
                     <li><a class="site-nav__link<?= in_array($currentAction, ['my-cars', 'car-history'], true) ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=my-cars">Xe của tôi</a></li>
                 <?php endif; ?>
                 <?php if ($currentAdmin !== null): ?>
+                    <li><a class="site-nav__link<?= $currentAction === 'admin-dashboard' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=admin-dashboard">Tổng quan quản trị</a></li>
                     <li><a class="site-nav__link<?= $currentAction === 'admin-appointments' ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=admin-appointments">Lịch hẹn gara</a></li>
                     <li><a class="site-nav__link<?= in_array($currentAction, ['repair-orders', 'repair-order', 'repair-order-create'], true) ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=repair-orders">Phiếu sửa chữa</a></li>
+                    <li><a class="site-nav__link<?= in_array($currentAction, ['admin-users', 'admin-user', 'admin-user-create'], true) ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=admin-users">Tài khoản Admin</a></li>
+                    <li><a class="site-nav__link<?= in_array($currentAction, ['admin-customers', 'admin-customer'], true) ? ' is-active' : '' ?>" href="<?= BASE_URL ?>?action=admin-customers">Khách hàng</a></li>
                 <?php endif; ?>
                 <li>
                     <a class="site-nav__link" href="#lien-he">Liên hệ</a>
                 </li>
             </ul>
 
-            <a class="btn btn--primary header__cta" href="<?= BASE_URL ?>?action=<?= $currentAdmin !== null ? 'admin-appointments' : 'booking' ?>">
-                <?= $currentAdmin !== null ? 'Lịch hẹn gara' : 'Đặt lịch ngay' ?>
-            </a>
+            <?php if ($currentAdmin !== null || $currentCustomer !== null): ?>
+                <a class="btn btn--primary header__cta" href="<?= BASE_URL ?>?action=<?= $currentAdmin !== null ? 'admin-dashboard' : 'booking' ?>">
+                    <?= $currentAdmin !== null ? 'Quản trị' : 'Đặt lịch ngay' ?>
+                </a>
+            <?php else: ?>
+                <a class="btn btn--primary header__cta" href="<?= BASE_URL ?>?action=booking">Đặt lịch ngay</a>
+            <?php endif; ?>
             <div class="header-login-group">
                 <?php if ($currentCustomer === null && $currentAdmin === null): ?>
                     <a class="btn btn--primary header-login" href="<?= BASE_URL ?>login">Đăng nhập</a>
@@ -90,8 +97,11 @@
                                     <a href="<?= BASE_URL ?>?action=my-cars">Xe của tôi</a>
                                     <a href="<?= BASE_URL ?>?action=appointment-history">Lịch sử đặt lịch</a>
                                 <?php else: ?>
+                                    <a href="<?= BASE_URL ?>?action=admin-dashboard">Tổng quan quản trị</a>
                                     <a href="<?= BASE_URL ?>?action=admin-appointments">Lịch hẹn gara</a>
                                     <a href="<?= BASE_URL ?>?action=repair-orders">Phiếu sửa chữa</a>
+                                    <a href="<?= BASE_URL ?>?action=admin-users">Tài khoản Admin</a>
+                                    <a href="<?= BASE_URL ?>?action=admin-customers">Khách hàng</a>
                                 <?php endif; ?>
                             </div>
                             <form class="profile-dropdown__logout" method="post" action="<?= BASE_URL . htmlspecialchars($logoutPath, ENT_QUOTES, 'UTF-8') ?>">

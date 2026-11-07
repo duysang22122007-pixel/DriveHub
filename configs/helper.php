@@ -45,7 +45,10 @@ if (!function_exists('checkCustomerAuth')) {
     {
         $customer = current_customer();
 
-        if ($customer === null || !isset($customer['user_id'], $customer['customer_id'])) {
+        if ($customer === null
+            || !isset($customer['user_id'], $customer['customer_id'])
+            || ($customer['role'] ?? '') !== 'customer'
+        ) {
             header('Location: ' . BASE_URL . 'login');
             exit;
         }
@@ -83,6 +86,50 @@ if (!function_exists('require_role')) {
 
         http_response_code(403);
         exit('Bạn không có quyền truy cập chức năng này.');
+    }
+}
+
+if (!function_exists('refreshAuthenticatedSessions')) {
+    function refreshAuthenticatedSessions(): void
+    {
+        $sessionRoles = [
+            'customer' => ['profile_key' => 'customer_id'],
+            'admin' => ['profile_key' => 'employee_id'],
+        ];
+        $sessionChanged = false;
+        $authModel = null;
+
+        foreach ($sessionRoles as $role => $configuration) {
+            $sessionAccount = $_SESSION[$role] ?? null;
+
+            if ($sessionAccount === null) {
+                continue;
+            }
+
+            if (!is_array($sessionAccount) || !isset($sessionAccount['user_id'], $sessionAccount[$configuration['profile_key']])) {
+                unset($_SESSION[$role]);
+                $sessionChanged = true;
+                continue;
+            }
+
+            $authModel ??= new AuthModel();
+            $identity = $authModel->getSessionIdentity((int) $sessionAccount['user_id']);
+            $profileId = $identity[$configuration['profile_key']] ?? null;
+
+            if ($identity === null
+                || (int) $identity['status'] !== 1
+                || $identity['role'] !== $role
+                || $profileId === null
+                || (int) $profileId !== (int) $sessionAccount[$configuration['profile_key']]
+            ) {
+                unset($_SESSION[$role]);
+                $sessionChanged = true;
+            }
+        }
+
+        if ($sessionChanged) {
+            session_regenerate_id(true);
+        }
     }
 }
 

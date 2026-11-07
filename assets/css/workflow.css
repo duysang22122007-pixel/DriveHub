@@ -191,7 +191,10 @@
 }
 
 .workflow-form input,
-.workflow-form textarea {
+.workflow-form textarea,
+.workflow-form select,
+.workflow-filter input,
+.workflow-filter select {
     width: 100%;
     padding: 11px 12px;
     border: 1px solid #c8cdd3;
@@ -207,11 +210,47 @@
 }
 
 .workflow-form input:focus,
-.workflow-form textarea:focus {
+.workflow-form textarea:focus,
+.workflow-form select:focus,
+.workflow-filter input:focus,
+.workflow-filter select:focus {
     border-color: var(--orange);
     outline: none;
     background: #fffdfb;
     box-shadow: 0 0 0 3px rgba(244, 119, 33, 0.14);
+}
+
+.workflow-filter {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    align-items: end;
+    margin: 20px 0;
+}
+
+.workflow-filter label,
+.workflow-form--inline label {
+    display: grid;
+    gap: 6px;
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.workflow-detail-list {
+    display: grid;
+    gap: 12px;
+}
+
+.workflow-detail {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.workflow-form--inline {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-items: end;
+    margin-top: 8px;
 }
 
 .workflow-alert,

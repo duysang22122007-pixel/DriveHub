@@ -19,4 +19,14 @@ class ServiceModel extends BaseModel
 
         return $service ?: null;
     }
+
+    public function getActiveServices(): array
+    {
+        return $this->pdo->query(
+            'SELECT id, name, price
+             FROM SERVICES
+             WHERE status = 1
+             ORDER BY name'
+        )->fetchAll();
+    }
 }
