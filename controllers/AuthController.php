@@ -4,8 +4,8 @@ class AuthController
 {
     public function index()
     {
-        if (current_customer() !== null) {
-            $this->redirectForRole('customer');
+        if (current_customer() !== null || current_admin() !== null) {
+            $this->redirectForRole(current_admin() !== null ? 'admin' : 'customer');
         }
 
         $requestedMode = $_SERVER['REQUEST_METHOD'] === 'POST'
@@ -93,15 +93,15 @@ class AuthController
 
     public function customerLogin()
     {
-        $this->loginAs();
+        $this->loginAs('customer');
     }
 
     public function adminLogin()
     {
-        $this->loginAs();
+        $this->loginAs('admin');
     }
 
-    private function loginAs(): void
+    private function loginAs(string $expectedRole): void
     {
         if (current_admin() !== null) {
             $this->redirectForRole('admin');
@@ -130,6 +130,10 @@ class AuthController
                     || !password_verify($password, $user['password_hash'])
                 ) {
                     $errors['form'] = 'Thông tin đăng nhập không hợp lệ hoặc tài khoản đã bị khóa.';
+                } elseif ($user['role'] !== $expectedRole) {
+                    $errors['form'] = $expectedRole === 'admin'
+                        ? 'Tài khoản này không có quyền quản trị.'
+                        : 'Vui lòng sử dụng cổng đăng nhập quản trị viên.';
                 } elseif (!in_array($user['role'], ['customer', 'admin'], true)
                     || ($user['role'] === 'customer' && $user['customer_id'] === null)
                     || ($user['role'] === 'admin' && $user['employee_id'] === null)
@@ -142,7 +146,8 @@ class AuthController
             }
         }
 
-        $title = 'Đăng nhập DriveHub';
+        $loginRole = $expectedRole;
+        $title = $expectedRole === 'admin' ? 'Đăng nhập quản trị - DriveHub' : 'Đăng nhập DriveHub';
         $view = 'auth/customer_login';
         require_once PATH_VIEW_MAIN;
     }
@@ -224,7 +229,7 @@ class AuthController
 
     private function redirectForRole(string $role): void
     {
-        $action = $role === 'admin' ? 'admin-appointments' : 'my-appointments';
+        $action = $role === 'admin' ? 'admin-dashboard' : 'my-appointments';
         $this->redirect($action);
     }
 

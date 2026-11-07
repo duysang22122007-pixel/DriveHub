@@ -2,6 +2,24 @@
 
 class AuthModel extends BaseModel
 {
+    public function getSessionIdentity(int $userId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT u.id, u.status, r.name AS role,
+                    c.id AS customer_id, e.id AS employee_id
+             FROM USERS u
+             JOIN ROLES r ON r.id = u.role_id
+             LEFT JOIN CUSTOMERS c ON c.user_id = u.id
+             LEFT JOIN EMPLOYEES e ON e.user_id = u.id
+             WHERE u.id = :user_id
+             LIMIT 1'
+        );
+        $statement->execute(['user_id' => $userId]);
+        $identity = $statement->fetch();
+
+        return $identity ?: null;
+    }
+
     public function findByLogin(string $login): ?array
     {
         $statement = $this->pdo->prepare(

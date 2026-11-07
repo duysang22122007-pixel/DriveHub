@@ -2,7 +2,7 @@
 
 1. Import `database/schema.sql` into MySQL (for example, with phpMyAdmin). It creates the `drivehub` database, the appointment/repair/history tables, and the service records used by the booking form.
 2. Keep `configs/env.php` pointed at the same database. Create a customer account through **Đăng ký** in the application.
-3. Admin accounts are provisioned by a trusted database administrator; public registration cannot create admin accounts. Generate a password hash with PHP:
+3. Provision the initial Admin account through a trusted database administrator; public registration cannot create admin accounts. After the first Admin is provisioned, signed-in Admin users can create and manage additional Admin accounts from the management screen. Generate the initial password hash with PHP:
 
    ```sh
    php -r "echo password_hash('replace-with-a-strong-password', PASSWORD_DEFAULT), PHP_EOL;"
@@ -20,7 +20,7 @@
    ```
 
    Do not store a plaintext password in the database.
-4. Sign in as a customer at `/DriveHub/login` to book and view that customer's appointments/cars. Sign in as an admin at `/DriveHub/admin/login` to manage appointments, check vehicles in, and manage repair orders. The application stores these separately in `$_SESSION['customer']` and `$_SESSION['admin']`; logging out of one role does not sign out the other.
+4. Sign in as a customer at `/DriveHub/login` to book and view that customer's appointments/cars. Sign in as an admin at `/DriveHub/admin/login` to open the admin dashboard and manage appointments, repair orders, Admin accounts, and customers. The two login routes accept only their corresponding account role. Active sessions are revalidated against the account role and status in MySQL on each request, so a disabled account loses access without waiting for logout. The application stores customer and admin sessions separately in `$_SESSION['customer']` and `$_SESSION['admin']`.
 
 For testing, create a customer through **Đăng ký**. The sample admin identity above uses username `admin1` or email `admin@example.com`; its password is the one used to generate the hash, not a built-in default. Do not use a shared demo password on a deployed system.
 
