@@ -36,9 +36,9 @@
                 <?= $currentAdmin !== null ? 'Lịch hẹn gara' : 'Đặt lịch ngay' ?>
             </a>
             <div class="header-login-group">
-                <?php if ($currentCustomer === null): ?>
+                <?php if ($currentCustomer === null && $currentAdmin === null): ?>
                     <a class="btn btn--primary header-login" href="<?= BASE_URL ?>login">Đăng nhập</a>
-                <?php else: ?>
+                <?php elseif ($currentCustomer !== null): ?>
                     <form class="header-logout" method="post" action="<?= BASE_URL ?>logout">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                         <button class="site-nav__link header-auth" type="submit">Đăng xuất khách hàng</button>

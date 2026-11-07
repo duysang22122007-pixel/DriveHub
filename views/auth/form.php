@@ -4,7 +4,7 @@ $e = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES,
 <section class="workflow-page">
     <div class="container workflow-narrow">
         <p class="eyebrow"><span></span>Tài khoản DriveHub</p>
-        <h1>Đăng ký khách hàng</h1>
+        <h1>Đăng ký</h1>
         <p class="workflow-lead">
             Tạo tài khoản để đặt lịch và theo dõi lịch sử xe của bạn.
         </p>

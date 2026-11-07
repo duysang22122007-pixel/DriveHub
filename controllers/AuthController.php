@@ -86,29 +86,29 @@ class AuthController
             }
         }
 
-        $title = 'Đăng ký khách hàng - DriveHub';
+        $title = 'Đăng ký- DriveHub';
         $view = 'auth/form';
         require_once PATH_VIEW_MAIN;
     }
 
     public function customerLogin()
     {
-        $this->loginAs('customer');
+        $this->loginAs();
     }
 
     public function adminLogin()
     {
-        $this->loginAs('admin');
+        $this->loginAs();
     }
 
-    private function loginAs(string $role): void
+    private function loginAs(): void
     {
-        if ($role === 'customer' && current_customer() !== null) {
-            $this->redirectForRole('customer');
+        if (current_admin() !== null) {
+            $this->redirectForRole('admin');
         }
 
-        if ($role === 'admin' && current_admin() !== null) {
-            $this->redirectForRole('admin');
+        if (current_customer() !== null) {
+            $this->redirectForRole('customer');
         }
 
         $errors = [];
@@ -130,12 +130,9 @@ class AuthController
                     || !password_verify($password, $user['password_hash'])
                 ) {
                     $errors['form'] = 'Thông tin đăng nhập không hợp lệ hoặc tài khoản đã bị khóa.';
-                } elseif ($user['role'] !== $role) {
-                    $errors['form'] = $role === 'customer'
-                        ? 'Tài khoản Quản trị viên, vui lòng đăng nhập tại trang Quản trị!'
-                        : 'Bạn không có quyền truy cập trang Quản trị!';
-                } elseif (($role === 'customer' && $user['customer_id'] === null)
-                    || ($role === 'admin' && $user['employee_id'] === null)
+                } elseif (!in_array($user['role'], ['customer', 'admin'], true)
+                    || ($user['role'] === 'customer' && $user['customer_id'] === null)
+                    || ($user['role'] === 'admin' && $user['employee_id'] === null)
                 ) {
                     $errors['form'] = 'Hồ sơ tài khoản chưa được liên kết hợp lệ.';
                 } else {
@@ -145,9 +142,8 @@ class AuthController
             }
         }
 
-        $isAdmin = $role === 'admin';
-        $title = $isAdmin ? 'Đăng nhập quản trị - DriveHub' : 'Đăng nhập khách hàng - DriveHub';
-        $view = $isAdmin ? 'auth/admin_login' : 'auth/customer_login';
+        $title = 'Đăng nhập DriveHub';
+        $view = 'auth/customer_login';
         require_once PATH_VIEW_MAIN;
     }
 
@@ -192,7 +188,7 @@ class AuthController
             unset($_SESSION['booking_draft'], $_SESSION['booking_csrf']);
         }
         session_regenerate_id(true);
-        header('Location: ' . BASE_URL . ($role === 'admin' ? 'admin/login' : 'login'));
+        header('Location: ' . BASE_URL . 'login');
         exit;
     }
 
