@@ -4,8 +4,8 @@ $e = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES,
 <section class="workflow-page customer-login-page">
     <div class="container workflow-narrow">
         <p class="eyebrow"><span></span>Tài khoản DriveHub</p>
-        <h1>Đăng nhập khách hàng</h1>
-        <p class="workflow-lead">Đăng nhập để đặt lịch và xem lịch sử xe của bạn.</p>
+        <h1>Đăng nhập DriveHub</h1>
+        <p class="workflow-lead">Dùng tài khoản khách hàng hoặc quản trị viên để tiếp tục.</p>
 
         <?php if ($errors !== []): ?>
             <div class="workflow-alert workflow-alert--error" role="alert">
@@ -23,7 +23,7 @@ $e = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES,
             </label>
             <button class="btn btn--primary" type="submit">Đăng nhập</button>
             <p class="workflow-switch">
-                Chưa có tài khoản? <a href="<?= BASE_URL ?>?action=auth&amp;mode=register">Đăng ký khách hàng</a>
+                Chưa có tài khoản? <a href="<?= BASE_URL ?>?action=auth&amp;mode=register">Đăng ký</a>
             </p>
         </form>
     </div>
