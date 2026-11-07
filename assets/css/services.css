@@ -207,6 +207,17 @@
     box-shadow: 0 22px 44px rgba(23, 25, 28, 0.1);
 }
 
+@media (hover: hover) and (pointer: fine) {
+    .services-card[data-motion-card] {
+        transform-style: preserve-3d;
+    }
+
+    .services-card[data-motion-card]:hover {
+        transform: translateY(-4px) rotateX(var(--card-rotate-x, 0deg)) rotateY(var(--card-rotate-y, 0deg));
+        will-change: transform;
+    }
+}
+
 .services-card__media {
     position: relative;
     aspect-ratio: 16 / 10;

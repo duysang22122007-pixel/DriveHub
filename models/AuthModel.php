@@ -79,3 +79,23 @@
             return $profile ?: null;
         }
     }
+
+    public function getAccountProfileByUserId(int $userId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT u.username, u.email, r.name AS role,
+                    COALESCE(c.full_name, e.full_name, u.username) AS full_name,
+                    COALESCE(c.phone, e.phone) AS phone, c.address, e.position
+             FROM USERS u
+             JOIN ROLES r ON r.id = u.role_id
+             LEFT JOIN CUSTOMERS c ON c.user_id = u.id
+             LEFT JOIN EMPLOYEES e ON e.user_id = u.id
+             WHERE u.id = :user_id AND u.status = 1
+             LIMIT 1'
+        );
+        $statement->execute(['user_id' => $userId]);
+        $profile = $statement->fetch();
+
+        return $profile ?: null;
+    }
+}

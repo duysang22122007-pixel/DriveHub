@@ -206,13 +206,18 @@ class AuthController
                 'user_id' => (int) $user['id'],
                 'customer_id' => (int) $user['customer_id'],
                 'name' => $user['customer_name'],
+                'username' => $user['username'],
+                'email' => $user['email'],
+                'role' => $user['role'],
             ];
         } else {
             $_SESSION['admin'] = [
                 'user_id' => (int) $user['id'],
                 'employee_id' => (int) $user['employee_id'],
                 'name' => $user['employee_name'],
-                'role' => 'admin',
+                'username' => $user['username'],
+                'email' => $user['email'],
+                'role' => $user['role'],
             ];
         }
     }
