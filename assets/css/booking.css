@@ -462,6 +462,14 @@ textarea.booking-input {
     box-shadow: 0 0 0 3px rgba(244, 119, 33, 0.14);
 }
 
+.booking-field .booking-label {
+    transition: color 0.2s ease;
+}
+
+.booking-field:focus-within .booking-label {
+    color: var(--orange-dark);
+}
+
 .booking-input.is-invalid {
     border-color: #c53b3b;
     background: #fffafa;
@@ -485,6 +493,19 @@ textarea.booking-input {
     font-size: 0.76rem;
     font-weight: 600;
     line-height: 1.55;
+    animation: booking-message-enter 0.28s ease-out both;
+}
+
+@keyframes booking-message-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .booking-inline-note {

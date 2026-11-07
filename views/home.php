@@ -6,27 +6,27 @@
     <div class="hero__overlay" aria-hidden="true"></div>
 
     <div class="container hero__content">
-        <p class="eyebrow eyebrow--light">
+        <p class="eyebrow eyebrow--light hero__reveal hero__reveal--eyebrow">
             <span></span>
             Dịch vụ ô tô chuyên nghiệp
         </p>
 
-        <h1 class="hero__title" id="hero-title">
+        <h1 class="hero__title hero__reveal hero__reveal--title" id="hero-title">
             Chăm sóc xe toàn diện
             <span>An tâm trên mọi hành trình</span>
         </h1>
 
-        <p class="hero__desc">
+        <p class="hero__desc hero__reveal hero__reveal--desc">
             DriveHub đồng hành cùng bạn trong việc bảo dưỡng và chăm sóc ô tô,
             hướng đến sự an toàn, bền bỉ và hiệu suất vận hành tối ưu.
         </p>
 
-        <div class="hero__actions">
+        <div class="hero__actions hero__reveal hero__reveal--actions">
             <a class="btn btn--primary" href="#dich-vu">Khám phá dịch vụ</a>
             <a class="btn btn--ghost" href="<?= BASE_URL ?>?action=booking">Đặt lịch ngay</a>
         </div>
 
-        <ul class="hero__points">
+        <ul class="hero__points hero__reveal hero__reveal--points">
             <li>
                 <span class="hero__point-mark" aria-hidden="true"></span>
                 <span>
@@ -58,7 +58,7 @@
 ============================================================ -->
 <section class="section intro" id="gioi-thieu" aria-labelledby="intro-title">
     <div class="container intro__grid">
-        <div class="intro__media" data-reveal>
+        <div class="intro__media" data-reveal="media">
             <img
                 src="<?= BASE_URL ?>assets/images/intro-garage.jpg"
                 alt="Không gian gara hiện đại của DriveHub"
@@ -118,7 +118,7 @@
 
         <div class="service-grid">
             <!-- Bảo dưỡng định kỳ -->
-            <article class="service-card" data-reveal>
+            <article class="service-card" data-reveal data-motion-card>
                 <div class="service-card__media">
                     <img src="<?= BASE_URL ?>assets/images/service-maintenance.jpg"
                          alt="Xe được nâng kiểm tra tại gara DriveHub"
@@ -143,7 +143,7 @@
             </article>
 
             <!-- Thay dầu động cơ -->
-            <article class="service-card" data-reveal>
+            <article class="service-card" data-reveal data-motion-card>
                 <div class="service-card__media">
                     <img src="<?= BASE_URL ?>assets/images/service-oil.jpg"
                          alt="Kỹ thuật viên thay dầu động cơ"
@@ -167,7 +167,7 @@
             </article>
 
             <!-- Kiểm tra hệ thống phanh -->
-            <article class="service-card" data-reveal>
+            <article class="service-card" data-reveal data-motion-card>
                 <div class="service-card__media">
                     <img src="<?= BASE_URL ?>assets/images/service-brake.jpg"
                          alt="Kỹ thuật viên kiểm tra hệ thống phanh"
@@ -193,7 +193,7 @@
             </article>
 
             <!-- Kiểm tra lốp và bánh xe -->
-            <article class="service-card" data-reveal>
+            <article class="service-card" data-reveal data-motion-card>
                 <div class="service-card__media">
                     <img src="<?= BASE_URL ?>assets/images/service-tire.jpg"
                          alt="Bánh xe và cụm phanh được kiểm tra"
@@ -219,7 +219,7 @@
             </article>
 
             <!-- Kiểm tra ắc quy -->
-            <article class="service-card" data-reveal>
+            <article class="service-card" data-reveal data-motion-card>
                 <div class="service-card__media">
                     <img src="<?= BASE_URL ?>assets/images/service-battery.jpg"
                          alt="Kiểm tra ắc quy trong khoang động cơ"
@@ -244,7 +244,7 @@
             </article>
 
             <!-- Kiểm tra điều hòa ô tô -->
-            <article class="service-card" data-reveal>
+            <article class="service-card" data-reveal data-motion-card>
                 <div class="service-card__media">
                     <img src="<?= BASE_URL ?>assets/images/service-ac.jpg"
                          alt="Cửa gió điều hòa trên xe ô tô"

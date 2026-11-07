@@ -20,6 +20,7 @@ match ($action) {
     'services' => (new ServicesController)->index(),
     'booking' => (new BookingController)->index(),
     'auth' => (new AuthController)->index(),
+    'profile' => (new ProfileController)->index(),
     'login' => (new AuthController)->customerLogin(),
     'customer-login' => (new AuthController)->customerLogin(),
     'admin/login' => (new AuthController)->adminLogin(),

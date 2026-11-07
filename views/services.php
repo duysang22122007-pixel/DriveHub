@@ -38,7 +38,7 @@ $valueIcons = [
 
     <section class="section services-intro" id="gioi-thieu-dich-vu" aria-labelledby="services-intro-title">
         <div class="container services-intro__grid">
-            <div class="services-intro__media" data-reveal>
+            <div class="services-intro__media" data-reveal="media">
                 <img src="<?= BASE_URL ?>assets/images/intro-garage.jpg"
                      alt="Không gian gara hiện đại của DriveHub"
                      loading="lazy">
@@ -87,7 +87,7 @@ $valueIcons = [
 
             <div class="services-grid">
                 <?php foreach ($services as $index => $service): ?>
-                    <article class="services-card" data-reveal>
+                    <article class="services-card" data-reveal data-motion-card>
                         <div class="services-card__media">
                             <img src="<?= BASE_URL ?>assets/images/<?= $e($service['image']) ?>"
                                  alt="<?= $e($service['alt']) ?>"
