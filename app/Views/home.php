@@ -128,7 +128,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
         .copyright { padding-top: 18px; border-top: 1px solid #ffffff1a; color: #aebfce; font-size: .8rem; }
         @media (max-width: 920px) {
             .nav-links { gap: 17px; }
-            .nav-actions .btn-outline { display: none; }
+            .nav-account { display: none; }
             .service-grid { grid-template-columns: repeat(2, 1fr); }
             .steps { grid-template-columns: repeat(2, 1fr); }
         }
@@ -139,11 +139,11 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
             .nav-wrap { min-height: 66px; flex-wrap: wrap; gap: 0; }
             .brand { font-size: 1rem; }
             .brand-mark { width: 38px; height: 38px; }
-            .nav-actions { gap: 8px; }
+            .nav-actions { order: 2; gap: 8px; }
             .nav-actions .btn { min-height: 39px; padding: 0 12px; font-size: .82rem; }
             .menu-toggle { display: block; position: absolute; opacity: 0; pointer-events: none; }
             .menu-label { display: grid; place-items: center; width: 40px; height: 40px; margin-left: 2px; border: 1px solid var(--line); border-radius: 9px; color: var(--navy); font-size: 1.2rem; cursor: pointer; }
-            .nav-links { display: none; width: 100%; padding: 3px 0 17px; flex-direction: column; align-items: stretch; gap: 0; }
+            .nav-links { display: none; order: 3; width: 100%; padding: 3px 0 17px; flex-direction: column; align-items: stretch; gap: 0; }
             .nav-links a { padding: 11px 4px; border-top: 1px solid var(--line); }
             .menu-toggle:checked ~ .nav-links { display: flex; }
             .nav-wrap { position: relative; }
@@ -180,11 +180,6 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
             </span>
             <span>AutoCare Hub</span>
         </a>
-        <div class="nav-actions">
-            <a class="btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
-            <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
-            <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
-        </div>
         <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
         <nav class="nav-links" aria-label="Điều hướng chính">
             <a href="<?= e(url()) ?>">Trang chủ</a>
@@ -193,6 +188,11 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
             <a href="#contact">Liên hệ</a>
             <?php if ($userRole === 'customer'): ?><a href="<?= e(url('vehicles')) ?>">Xe của tôi</a><?php endif; ?>
         </nav>
+        <div class="nav-actions">
+            <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
+            <a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
+            <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
+        </div>
     </div>
 </header>
 
