@@ -199,9 +199,9 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
 <main>
     <section class="hero">
         <div class="hero-background" aria-hidden="true">
-            <div class="hero-slide is-active" style="background-image: url('<?= e(url('d6036d73ca06c0f44b8b851c343eafdd.jpg')) ?>')"></div>
-            <div class="hero-slide" style="background-image: url('<?= e(url('d2d7a74f06ba822c9da94503ef0748a7.jpg')) ?>')"></div>
-            <div class="hero-slide" style="background-image: url('<?= e(url('0d6c1b9e335745cf224304410dfa70fc.jpg')) ?>')"></div>
+            <div class="hero-slide is-active" style="background-image: url('<?= e(url('assets/images/d6036d73ca06c0f44b8b851c343eafdd.jpg')) ?>')"></div>
+            <div class="hero-slide" style="background-image: url('<?= e(url('assets/images/d2d7a74f06ba822c9da94503ef0748a7.jpg')) ?>')"></div>
+            <div class="hero-slide" style="background-image: url('<?= e(url('assets/images/0d6c1b9e335745cf224304410dfa70fc.jpg')) ?>')"></div>
         </div>
         <div class="container hero-grid">
             <div>
