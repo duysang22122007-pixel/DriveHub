@@ -1,6 +1,6 @@
 # AutoCare Hub
 
-AutoCare Hub is being built in agreed phases as a single-garage vehicle maintenance system. The existing starter source is retained; the new application entry point is `public/index.php`.
+AutoCare Hub is a single-garage vehicle maintenance system built with a PHP MVC structure. The application entry point is `public/index.php`; the root `index.php` is a compatibility wrapper for Laragon.
 
 ## Phase 1 — Requirements, ERD, and database
 
@@ -19,6 +19,9 @@ This SQL is the proposed clean-install schema, not the current `autocare_hub` sc
 Implemented:
 
 - Namespace-based autoloading for `App\` classes.
+- MVC source organization: controllers, models, middleware, core services, helpers, and views live under `app/`.
+- Web routes live in `routes/web.php`; application settings live in `config/`; public static files live in `public/`.
+- Public homepage images live in `public/assets/images/`; user-upload storage remains outside the public directory in `assets/uploads/`.
 - A small GET/POST router with path parameters, middleware support, 404, and 405 responses.
 - Request/response objects, a base controller, and view rendering.
 - PDO MySQL connection configuration for `utf8mb4`, exception reporting, and native prepared statements.
