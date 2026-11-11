@@ -22,7 +22,7 @@ final class Customer
             "SELECT u.id, u.full_name, u.email, u.phone, u.status, u.created_at,
                     COUNT(DISTINCT v.id) AS vehicle_count
              FROM users AS u
-             LEFT JOIN vehicles AS v ON v.owner_id = u.id
+             LEFT JOIN vehicles AS v ON v.user_id = u.id
              WHERE u.role = 'customer'
              GROUP BY u.id, u.full_name, u.email, u.phone, u.status, u.created_at
              ORDER BY u.created_at DESC, u.id DESC
@@ -46,8 +46,11 @@ final class Customer
         $params = [];
 
         if ($keyword !== '') {
-            $conditions[] = "(u.full_name LIKE :kw OR u.email LIKE :kw OR u.phone LIKE :kw)";
-            $params['kw'] = '%' . $keyword . '%';
+            $conditions[] = '(u.full_name LIKE :name_kw OR u.email LIKE :email_kw OR u.phone LIKE :phone_kw)';
+            $keywordPattern = '%' . $keyword . '%';
+            $params['name_kw'] = $keywordPattern;
+            $params['email_kw'] = $keywordPattern;
+            $params['phone_kw'] = $keywordPattern;
         }
 
         if (in_array($status, ['active', 'inactive', 'locked'], true)) {
@@ -61,7 +64,7 @@ final class Customer
             "SELECT u.id, u.full_name, u.email, u.phone, u.status, u.created_at,
                     COUNT(DISTINCT v.id) AS vehicle_count
              FROM users AS u
-             LEFT JOIN vehicles AS v ON v.owner_id = u.id
+             LEFT JOIN vehicles AS v ON v.user_id = u.id
              WHERE {$where}
              GROUP BY u.id, u.full_name, u.email, u.phone, u.status, u.created_at
              ORDER BY u.created_at DESC, u.id DESC
