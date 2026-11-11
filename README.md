@@ -36,6 +36,7 @@ Implemented against the existing `autocare_hub.users` schema, without database c
 - Customer-only registration using `users.password`, `role`, and `status`.
 - Password hashing and verification, session ID rotation, status checks, and role-based route middleware.
 - CSRF-protected registration, login, and logout forms.
+- Profile updates, password changes, and one-hour password-reset links with one-time token use.
 - A one-time Admin CLI that prompts for a password and refuses to create another Admin.
 
 Set `DB_NAME=autocare_hub` and the local MySQL credentials in `.env`. Create the first Admin interactively from the project root:
@@ -64,8 +65,10 @@ Online booking, service catalog administration, appointments, and repair-ticket 
 1. Start Apache and MySQL in Laragon.
 2. The existing `autocare_hub` database is retained. Do not import `database/schema.sql` into it; it documents a different proposed schema.
 3. Copy `.env.example` to `.env`, set `DB_NAME=autocare_hub`, and configure local MySQL credentials and the URL.
-4. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
-5. Ensure PHP can write to `storage/logs`.
+4. Run `database/create_password_resets.sql` against `autocare_hub` to add the password-reset token table. This is separate from the proposed `database/schema.sql`.
+5. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. `APP_ENV=local` displays reset links on the forgot-password page for development only.
+6. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
+7. Ensure PHP can write to `storage/logs`.
 
 The root `index.php` and root `.htaccess` support Laragon's folder-based local URL. For deployment, use `public/` as the document root; the root rules also deny direct requests to application source and configuration paths.
 
