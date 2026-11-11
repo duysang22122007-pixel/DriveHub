@@ -35,6 +35,7 @@ declare(strict_types=1);
         <label for="password">Mật khẩu</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required>
         <?php if (isset($errors['password'])): ?><p class="error"><?= e($errors['password']) ?></p><?php endif; ?>
+        <p style="text-align:right;margin:6px 0 0"><a href="<?= e(url('forgot-password')) ?>">Quên mật khẩu?</a></p>
         <button type="submit">Đăng nhập</button>
     </form>
     <p>Chưa có tài khoản? <a href="<?= e(url('register')) ?>">Đăng ký khách hàng</a></p>

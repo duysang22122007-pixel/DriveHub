@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
@@ -24,9 +24,13 @@
             <a class="link" href="<?= e(url('admin/customers')) ?>">Quản lý khách hàng</a>
             <a class="link secondary" href="<?= e(url('admin/vehicles')) ?>">Danh sách phương tiện</a>
             <a class="link secondary" href="<?= e(url('admin/brands')) ?>">Quản lý hãng xe</a>
+            <a class="link secondary" href="<?= e(url('profile')) ?>">Thông tin cá nhân</a>
+            <a class="link secondary" href="<?= e(url('profile/change-password')) ?>">Đổi mật khẩu</a>
         <?php else: ?>
             <a class="link" href="<?= e(url('vehicles')) ?>">Quản lý xe của tôi</a>
             <a class="link secondary" href="<?= e(url('#services')) ?>">Xem dịch vụ</a>
+            <a class="link secondary" href="<?= e(url('profile')) ?>">Thông tin cá nhân</a>
+            <a class="link secondary" href="<?= e(url('profile/change-password')) ?>">Đổi mật khẩu</a>
         <?php endif; ?>
     </div>
     <form method="post" action="<?= e(url('logout')) ?>">
