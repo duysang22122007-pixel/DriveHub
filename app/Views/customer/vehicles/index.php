@@ -31,7 +31,7 @@
 <body>
 <header><div class="top">
     <a class="brand" href="<?= e(url()) ?>">AutoCare Hub</a>
-    <nav><a href="<?= e(url('customer')) ?>">Tài khoản</a><a href="<?= e(url()) ?>">Trang chủ</a>
+    <nav><a href="<?= e(url()) ?>">Trang chủ</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
     </nav>
 </div></header>

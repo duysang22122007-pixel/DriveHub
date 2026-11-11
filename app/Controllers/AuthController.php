@@ -158,9 +158,9 @@ final class AuthController extends Controller
 
     public function dashboard(): Response
     {
-        return Response::redirect(
-            url(($_SESSION['user_role'] ?? null) === 'admin' ? 'admin' : 'customer')
-        );
+        $role = $_SESSION['user_role'] ?? null;
+
+        return Response::redirect(url($role === 'admin' ? 'admin' : ''));
     }
 
     public function adminHome(): Response
@@ -175,11 +175,6 @@ final class AuthController extends Controller
 
     public function customerHome(): Response
     {
-        return $this->view('auth/dashboard', [
-            'dashboardTitle' => 'Tài khoản khách hàng',
-            'roleLabel' => 'Khách hàng',
-            'userName' => (string) ($_SESSION['user_name'] ?? ''),
-            'role' => 'customer',
-        ]);
+        return Response::redirect(url());
     }
 }

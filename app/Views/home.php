@@ -9,7 +9,7 @@ $primaryAction = $userRole === 'admin'
 $primaryActionLabel = $userRole === 'admin'
     ? 'Mở quản trị'
     : ($isCustomer ? 'Quản lý xe của tôi' : 'Tạo tài khoản khách hàng');
-$accountAction = $userRole === 'admin' ? url('admin') : ($isCustomer ? url('customer') : url('login'));
+$accountAction = $userRole === 'admin' ? url('admin') : url('login');
 $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 'Quản trị' : 'Tài khoản');
 
 ?>
@@ -52,7 +52,10 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
         .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; color: white; border-radius: 13px; background: var(--blue); box-shadow: 0 8px 18px #2563eb35; }
         .brand-mark svg { width: 25px; height: 25px; }
         .nav-links { display: flex; align-items: center; gap: 28px; color: #4a5b6d; font-size: .92rem; font-weight: 600; }
-        .nav-links a:hover, .footer-links a:hover { color: var(--blue); }
+        .nav-links a:not(.nav-account) { position: relative; padding: 8px 0; transition: color .18s ease; }
+        .nav-links a:not(.nav-account)::after { position: absolute; right: 0; bottom: 1px; left: 0; height: 2px; background: var(--blue); content: ""; transform: scaleX(0); transform-origin: left; transition: transform .18s ease; }
+        .nav-links a:not(.nav-account):hover, .nav-links a[aria-current="page"], .footer-links a:hover { color: var(--blue); }
+        .nav-links a:not(.nav-account):hover::after, .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
         .nav-actions { display: flex; align-items: center; gap: 12px; }
         .menu-toggle { display: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 19px; border: 1px solid transparent; border-radius: 9px; font-size: .92rem; font-weight: 700; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; cursor: pointer; }
@@ -182,7 +185,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
         </a>
         <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
         <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="<?= e(url()) ?>">Trang chủ</a>
+            <a href="<?= e(url()) ?>" aria-current="page">Trang chủ</a>
             <a href="#services">Dịch vụ</a>
             <a href="#process">Quy trình</a>
             <a href="#contact">Liên hệ</a>
@@ -190,7 +193,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
         </nav>
         <div class="nav-actions">
             <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
-            <a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
+            <?php if (!$isCustomer): ?><a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a><?php endif; ?>
             <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
         </div>
     </div>
