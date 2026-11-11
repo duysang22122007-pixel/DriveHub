@@ -9,7 +9,10 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Validator;
+use App\Models\AdminDashboard;
+use App\Models\Customer;
 use App\Models\User;
+use App\Models\Vehicle;
 use PDOException;
 
 final class AuthController extends Controller
@@ -158,28 +161,40 @@ final class AuthController extends Controller
 
     public function dashboard(): Response
     {
-        return Response::redirect(
-            url(($_SESSION['user_role'] ?? null) === 'admin' ? 'admin' : 'customer')
-        );
+        $role = $_SESSION['user_role'] ?? null;
+
+        return Response::redirect(url($role === 'admin' ? 'admin' : ''));
     }
 
     public function adminHome(): Response
     {
-        return $this->view('auth/dashboard', [
-            'dashboardTitle' => 'Khu vực quản trị',
-            'roleLabel' => 'Admin',
+        $pdo = Database::connection($this->databaseConfig);
+        $dashboard = new AdminDashboard($pdo);
+        $startDate = new \DateTimeImmutable('today -6 days');
+        $activityByDate = $dashboard->activitySince($startDate->format('Y-m-d 00:00:00'));
+        $activity = [];
+
+        for ($dayOffset = 0; $dayOffset < 7; $dayOffset++) {
+            $date = $startDate->modify('+' . $dayOffset . ' days');
+            $dateKey = $date->format('Y-m-d');
+            $activity[] = [
+                'label' => $date->format('d/m'),
+                'customers' => $activityByDate[$dateKey]['customers'] ?? 0,
+                'vehicles' => $activityByDate[$dateKey]['vehicles'] ?? 0,
+            ];
+        }
+
+        return $this->view('admin/dashboard', [
             'userName' => (string) ($_SESSION['user_name'] ?? ''),
-            'role' => 'admin',
+            'summary' => $dashboard->summary($startDate->format('Y-m-d 00:00:00')),
+            'activity' => $activity,
+            'customers' => (new Customer($pdo))->list(5),
+            'vehicles' => (new Vehicle($pdo))->latestForAdmin(),
         ]);
     }
 
-    public function customerHome(): Response
+    public function redirectCustomerToHome(): Response
     {
-        return $this->view('auth/dashboard', [
-            'dashboardTitle' => 'Tài khoản khách hàng',
-            'roleLabel' => 'Khách hàng',
-            'userName' => (string) ($_SESSION['user_name'] ?? ''),
-            'role' => 'customer',
-        ]);
+        return Response::redirect(url());
     }
 }

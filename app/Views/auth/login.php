@@ -8,7 +8,7 @@ declare(strict_types=1);
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Đăng nhập | AutoCare Hub</title>
+    <title>Đăng nhập | DriveHub</title>
     <style>
         :root { font-family: Arial, sans-serif; color: #123b5d; background: #f3f6fa; }
         * { box-sizing: border-box; }
@@ -24,7 +24,7 @@ declare(strict_types=1);
 <body>
 <main>
     <h1>Đăng nhập</h1>
-    <p>Truy cập tài khoản AutoCare Hub của bạn.</p>
+    <p>Truy cập tài khoản DriveHub của bạn.</p>
     <?php if (is_string($success) && $success !== ''): ?><p class="notice"><?= e($success) ?></p><?php endif; ?>
     <?php if (isset($errors['credentials'])): ?><p class="error" role="alert"><?= e($errors['credentials']) ?></p><?php endif; ?>
     <form method="post" action="<?= e(url('login')) ?>">

@@ -31,7 +31,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/logout', [$authController, 'logout'], [$authenticated, $verifyCsrf]);
     $router->get('/dashboard', [$authController, 'dashboard'], [$authenticated]);
     $router->get('/admin', [$authController, 'adminHome'], [$authenticated, new RequireRole('admin')]);
-    $router->get('/customer', [$authController, 'customerHome'], [$authenticated, new RequireRole('customer')]);
+    $router->get('/customer', [$authController, 'redirectCustomerToHome'], [$authenticated, new RequireRole('customer')]);
 
     $router->get('/vehicles', [$vehicleController, 'index'], [$authenticated, $customer]);
     $router->get('/vehicles/create', [$vehicleController, 'create'], [$authenticated, $customer]);

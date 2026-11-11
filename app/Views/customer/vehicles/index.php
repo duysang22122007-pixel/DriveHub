@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Xe của tôi | AutoCare Hub</title>
+    <title>Xe của tôi | DriveHub</title>
     <style>
         :root { font-family: Inter, Arial, sans-serif; color: #172b3b; background: #f4f7fb; }
         * { box-sizing: border-box; } body { margin: 0; }
@@ -30,8 +30,8 @@
 </head>
 <body>
 <header><div class="top">
-    <a class="brand" href="<?= e(url()) ?>">AutoCare Hub</a>
-    <nav><a href="<?= e(url('customer')) ?>">Tài khoản</a><a href="<?= e(url()) ?>">Trang chủ</a>
+    <a class="brand" href="<?= e(url()) ?>">DriveHub</a>
+    <nav><a href="<?= e(url()) ?>">Trang chủ</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
     </nav>
 </div></header>
@@ -65,6 +65,6 @@
         <?php endif; ?>
     </section>
 </main>
-<footer>AutoCare Hub · Thông tin phương tiện chỉ hiển thị trong tài khoản sở hữu.</footer>
+<footer>DriveHub · Thông tin phương tiện chỉ hiển thị trong tài khoản sở hữu.</footer>
 </body>
 </html>

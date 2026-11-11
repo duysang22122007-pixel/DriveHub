@@ -8,7 +8,7 @@ declare(strict_types=1);
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Đăng ký | AutoCare Hub</title>
+    <title>Đăng ký | DriveHub</title>
     <style>
         :root { font-family: Arial, sans-serif; color: #123b5d; background: #f3f6fa; }
         * { box-sizing: border-box; }

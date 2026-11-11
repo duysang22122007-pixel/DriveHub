@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hãng xe | AutoCare Hub</title>
+    <title>Hãng xe | DriveHub</title>
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b5d;color:#fff}
         .top,main{width:min(980px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}
@@ -15,9 +15,10 @@
         .brand-list{display:grid;gap:10px}.brand-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #e8edf2;border-radius:9px}.brand-row strong{display:block;color:#123b5d}.state{display:block;margin-top:4px;color:#718096;font-size:.82rem}
         @media(max-width:680px){.top{align-items:flex-start;flex-direction:column;padding:13px 0}.top nav{flex-wrap:wrap;gap:12px}.grid{grid-template-columns:1fr}}
     </style>
+    <link rel="stylesheet" href="<?= e(url('assets/admin.css')) ?>">
 </head>
 <body>
-<header><div class="top"><a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a><nav><a href="<?= e(url('admin/customers')) ?>">Khách hàng</a><a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a><a href="<?= e(url()) ?>">Trang chủ</a><form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form></nav></div></header>
+<?php $activeAdminPage = 'brands'; require __DIR__ . '/../partials/navigation.php'; ?>
 <main>
     <h1>Hãng xe</h1><p class="sub">Quản lý danh mục thật được dùng trong biểu mẫu đăng ký phương tiện.</p>
     <?php if (is_string($success) && $success !== ''): ?><p class="notice" role="status"><?= e($success) ?></p><?php endif; ?>
@@ -49,5 +50,7 @@
         </section>
     </div>
 </main>
+</div>
+</div>
 </body>
 </html>

@@ -9,7 +9,7 @@ $primaryAction = $userRole === 'admin'
 $primaryActionLabel = $userRole === 'admin'
     ? 'Mở quản trị'
     : ($isCustomer ? 'Quản lý xe của tôi' : 'Tạo tài khoản khách hàng');
-$accountAction = $userRole === 'admin' ? url('admin') : ($isCustomer ? url('customer') : url('login'));
+$accountAction = $userRole === 'admin' ? url('admin') : url('login');
 $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 'Quản trị' : 'Tài khoản');
 
 ?>
@@ -18,8 +18,8 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="AutoCare Hub hỗ trợ chăm sóc, bảo dưỡng và quản lý sửa chữa ô tô với quy trình minh bạch.">
-    <title>AutoCare Hub | Chăm xe an tâm, hành trình trọn vẹn</title>
+    <meta name="description" content="DriveHub hỗ trợ chăm sóc, bảo dưỡng và quản lý sửa chữa ô tô với quy trình minh bạch.">
+    <title>DriveHub | Chăm xe an tâm, hành trình trọn vẹn</title>
     <style>
         :root {
             color-scheme: light;
@@ -52,7 +52,10 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
         .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; color: white; border-radius: 13px; background: var(--blue); box-shadow: 0 8px 18px #2563eb35; }
         .brand-mark svg { width: 25px; height: 25px; }
         .nav-links { display: flex; align-items: center; gap: 28px; color: #4a5b6d; font-size: .92rem; font-weight: 600; }
-        .nav-links a:hover, .footer-links a:hover { color: var(--blue); }
+        .nav-links a:not(.nav-account) { position: relative; padding: 8px 0; transition: color .18s ease; }
+        .nav-links a:not(.nav-account)::after { position: absolute; right: 0; bottom: 1px; left: 0; height: 2px; background: var(--blue); content: ""; transform: scaleX(0); transform-origin: left; transition: transform .18s ease; }
+        .nav-links a:not(.nav-account):hover, .nav-links a[aria-current="page"], .footer-links a:hover { color: var(--blue); }
+        .nav-links a:not(.nav-account):hover::after, .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
         .nav-actions { display: flex; align-items: center; gap: 12px; }
         .menu-toggle { display: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 19px; border: 1px solid transparent; border-radius: 9px; font-size: .92rem; font-weight: 700; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; cursor: pointer; }
@@ -174,15 +177,15 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
 </div>
 <header class="site-header">
     <div class="container nav-wrap">
-        <a class="brand" href="<?= e(url()) ?>" aria-label="AutoCare Hub - Trang chủ">
+        <a class="brand" href="<?= e(url()) ?>" aria-label="DriveHub - Trang chủ">
             <span class="brand-mark" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M3 13.5h18l-1.6-5a2 2 0 0 0-1.9-1.4H6.5a2 2 0 0 0-1.9 1.4L3 13.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 13.5v4a1.5 1.5 0 0 0 1.5 1.5H7m13-5.5v4a1.5 1.5 0 0 1-1.5 1.5H17M3 15h2m14 0h2m-13-8 1 4m7-4-1 4m-5 5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </span>
-            <span>AutoCare Hub</span>
+            <span>DriveHub</span>
         </a>
         <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
         <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="<?= e(url()) ?>">Trang chủ</a>
+            <a href="<?= e(url()) ?>" aria-current="page">Trang chủ</a>
             <a href="#services">Dịch vụ</a>
             <a href="#process">Quy trình</a>
             <a href="#contact">Liên hệ</a>
@@ -190,7 +193,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
         </nav>
         <div class="nav-actions">
             <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
-            <a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
+            <?php if (!$isCustomer): ?><a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a><?php endif; ?>
             <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
         </div>
     </div>
@@ -314,7 +317,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
     <div class="container">
         <div class="footer-main">
             <div>
-                <a class="brand footer-brand" href="<?= e(url()) ?>"><span class="brand-mark" aria-hidden="true">A</span><span>AutoCare Hub</span></a>
+                <a class="brand footer-brand" href="<?= e(url()) ?>"><span class="brand-mark" aria-hidden="true">D</span><span>DriveHub</span></a>
                 <p class="footer-copy">Nền tảng quản lý chăm sóc và sửa chữa ô tô, kết nối thông tin phương tiện, lịch dịch vụ và lịch sử bảo dưỡng.</p>
             </div>
             <nav class="footer-links" aria-label="Điều hướng chân trang">
@@ -322,7 +325,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
                 <a href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
             </nav>
         </div>
-        <div class="copyright">© <?= e(date('Y')) ?> AutoCare Hub. Chăm xe an tâm, hành trình trọn vẹn.</div>
+        <div class="copyright">© <?= e(date('Y')) ?> DriveHub. Chăm xe an tâm, hành trình trọn vẹn.</div>
     </div>
 </footer>
 <script>

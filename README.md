@@ -1,6 +1,6 @@
-# AutoCare Hub
+# DriveHub
 
-AutoCare Hub is a single-garage vehicle maintenance system built with a PHP MVC structure. The application entry point is `public/index.php`; the root `index.php` is a compatibility wrapper for Laragon.
+DriveHub is a single-garage vehicle maintenance system built with a PHP MVC structure. The application entry point is `public/index.php`; the root `index.php` is a compatibility wrapper for Laragon.
 
 ## Phase 1 — Requirements, ERD, and database
 
@@ -50,7 +50,7 @@ The command does not print or store a default password. Customer registration al
 
 Implemented against the existing database schema:
 
-- Responsive AutoCare Hub landing page with navigation, service/process/contact sections, and live service catalog data from MySQL.
+- Responsive DriveHub landing page with navigation, service/process/contact sections, and live service catalog data from MySQL.
 - An explicit empty state when the database has no active services; no sample services or garage contact details are substituted.
 - Garage phone/address/hours can be configured with `GARAGE_PHONE`, `GARAGE_ADDRESS`, and `GARAGE_HOURS` in `.env`.
 - Customers can list, add, update, and remove their own vehicles. Removal is blocked when the vehicle has any appointment/history reference.
@@ -77,4 +77,4 @@ From the project root, lint the PHP source with the PHP executable selected in L
 Get-ChildItem -Recurse -Filter *.php | ForEach-Object { & 'D:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe' -l $_.FullName }
 ```
 
-Open the public URL and confirm the AutoCare Hub page loads. Verify registration creates only a customer and login/logout enforce CSRF. Unknown paths should return 404, unsupported methods on a known route should return 405, unauthenticated protected routes should redirect to login, and a customer requesting `/admin` should receive 403.
+Open the public URL and confirm the DriveHub page loads. Verify registration creates only a customer and login/logout enforce CSRF. Unknown paths should return 404, unsupported methods on a known route should return 405, unauthenticated protected routes should redirect to login, and a customer requesting `/admin` should receive 403.

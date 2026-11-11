@@ -166,4 +166,23 @@ final class Vehicle
 
         return $statement->fetchAll();
     }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function latestForAdmin(int $limit = 5): array
+    {
+        $limit = max(1, min($limit, 20));
+        $statement = $this->pdo->query(
+            "SELECT v.id, v.model, v.license_plate, v.manufacture_year, v.current_mileage,
+                    b.name AS brand_name, u.full_name AS owner_name, u.email AS owner_email
+             FROM vehicles AS v
+             INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             INNER JOIN users AS u ON u.id = v.user_id
+             ORDER BY v.created_at DESC, v.id DESC
+             LIMIT {$limit}"
+        );
+
+        return $statement->fetchAll();
+    }
 }

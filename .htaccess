@@ -4,6 +4,7 @@ Options -Indexes
     RewriteEngine On
     RewriteRule (^|/)\. - [F,L]
     RewriteRule ^assets/images/(.+)$ public/assets/images/$1 [L]
+    RewriteRule ^assets/admin\.css$ public/assets/admin.css [L]
     RewriteRule ^(app|config|configs|controllers|models|routes|storage|views)(/|$) - [F,L,NC]
     RewriteRule ^assets/uploads(/|$) - [F,L,NC]
     RewriteCond %{REQUEST_URI} !/public/

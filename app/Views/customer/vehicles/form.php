@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $editing ? 'Cập nhật xe' : 'Thêm xe' ?> | AutoCare Hub</title>
+    <title><?= $editing ? 'Cập nhật xe' : 'Thêm xe' ?> | DriveHub</title>
     <style>
         :root { font-family: Inter, Arial, sans-serif; color:#172b3b; background:#f4f7fb; }
         * { box-sizing:border-box; } body { margin:0; min-height:100vh; display:grid; place-items:center; padding:20px; }

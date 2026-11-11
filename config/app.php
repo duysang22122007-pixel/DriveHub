@@ -17,7 +17,7 @@ if ($url === '') {
 }
 
 return [
-    'name' => Environment::get('APP_NAME', 'AutoCare Hub'),
+    'name' => Environment::get('APP_NAME', 'DriveHub'),
     'environment' => Environment::get('APP_ENV', 'production'),
     'debug' => filter_var(Environment::get('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOL),
     'url' => rtrim($url, '/'),

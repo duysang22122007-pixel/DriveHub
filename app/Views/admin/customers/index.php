@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Khách hàng | AutoCare Hub</title>
+    <title>Khách hàng | DriveHub</title>
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}
         header{background:#123b5d;color:#fff}.top,main{width:min(1160px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}
@@ -31,18 +31,10 @@
         .empty{padding:36px;text-align:center;color:#6b7b8b}
         @media(max-width:640px){.top{align-items:flex-start;flex-direction:column;padding:13px 0}.top nav{flex-wrap:wrap;gap:12px}.toolbar{align-items:flex-start;flex-direction:column}.filter-bar{flex-direction:column;align-items:stretch}}
     </style>
+    <link rel="stylesheet" href="<?= e(url('assets/admin.css')) ?>">
 </head>
 <body>
-<header><div class="top">
-    <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
-    <nav>
-        <a href="<?= e(url('admin/customers')) ?>" class="active">Khách hàng</a>
-        <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
-        <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
-        <a href="<?= e(url()) ?>">Trang chủ</a>
-        <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
-    </nav>
-</div></header>
+<?php $activeAdminPage = 'customers'; require __DIR__ . '/../partials/navigation.php'; ?>
 
 <main>
     <div class="toolbar">
@@ -147,5 +139,7 @@
         <?php endif; ?>
     </div>
 </main>
+</div>
+</div>
 </body>
 </html>
