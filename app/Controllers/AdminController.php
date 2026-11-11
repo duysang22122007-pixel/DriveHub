@@ -23,15 +23,62 @@ final class AdminController extends Controller
     {
     }
 
-    public function customers(): Response
+    public function customers(Request $request): Response
     {
+        $keyword = trim((string) $request->input('q', ''));
+        $status  = (string) $request->input('status', '');
+
         $customers = new Customer(Database::connection($this->databaseConfig));
 
+        $list = ($keyword !== '' || in_array($status, ['active', 'inactive', 'locked'], true))
+            ? $customers->search($keyword, $status)
+            : $customers->list();
+
+        // Xuất CSV nếu được yêu cầu
+        if ($request->input('export') === 'csv') {
+            return $this->exportCsv($list);
+        }
+
         return $this->view('admin/customers/index', [
-            'customers' => $customers->list(),
-            'success' => flash('success'),
-            'error' => flash('error'),
+            'customers' => $list,
+            'q'         => $keyword,
+            'status'    => $status,
+            'success'   => flash('success'),
+            'error'     => flash('error'),
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function exportCsv(array $rows): Response
+    {
+        $filename = 'customers_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+
+        // BOM để Excel mở đúng UTF-8
+        echo "\xEF\xBB\xBF";
+
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['ID', 'Họ tên', 'Email', 'Điện thoại', 'Số xe', 'Trạng thái', 'Ngày tạo']);
+
+        foreach ($rows as $row) {
+            fputcsv($out, [
+                $row['id'],
+                $row['full_name'],
+                $row['email'],
+                $row['phone'] ?? '',
+                (int) $row['vehicle_count'],
+                $row['status'] === 'active' ? 'Đang hoạt động' : ($row['status'] === 'locked' ? 'Đã khóa' : 'Không hoạt động'),
+                $row['created_at'],
+            ]);
+        }
+
+        fclose($out);
+        exit;
     }
 
     public function vehicles(): Response
@@ -44,9 +91,9 @@ final class AdminController extends Controller
     public function brands(): Response
     {
         return $this->view('admin/brands/index', [
-            'brands' => (new VehicleBrand(Database::connection($this->databaseConfig)))->all(),
+            'brands'  => (new VehicleBrand(Database::connection($this->databaseConfig)))->all(),
             'success' => flash('success'),
-            'error' => flash('error'),
+            'error'   => flash('error'),
         ]);
     }
 
