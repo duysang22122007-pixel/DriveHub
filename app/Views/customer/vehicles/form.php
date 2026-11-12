@@ -37,8 +37,16 @@
             </div>
             <div>
                 <label for="model">Dòng xe</label>
-                <input id="model" name="model" maxlength="100" required value="<?= e($old['model'] ?? '') ?>">
-                <?php if (isset($errors['model'])): ?><p class="field-error"><?= e($errors['model']) ?></p><?php endif; ?>
+                <?php if (!$editing): ?>
+                    <select id="model" name="model_id" required disabled>
+                        <option value="">-- Chọn hãng xe trước --</option>
+                    </select>
+                    <p id="model-load-error" class="field-error" role="status" hidden></p>
+                    <?php if (isset($errors['model_id'])): ?><p class="field-error"><?= e($errors['model_id']) ?></p><?php endif; ?>
+                <?php else: ?>
+                    <input id="model" name="model" maxlength="100" required value="<?= e($old['model'] ?? '') ?>">
+                    <?php if (isset($errors['model'])): ?><p class="field-error"><?= e($errors['model']) ?></p><?php endif; ?>
+                <?php endif; ?>
             </div>
             <div>
                 <label for="license_plate">Biển số</label>
@@ -64,5 +72,51 @@
         <div class="actions"><button class="button" type="submit"><?= $editing ? 'Lưu thay đổi' : 'Thêm xe' ?></button><a class="button secondary" href="<?= e(url('vehicles')) ?>">Quay lại</a></div>
     </form>
 </main>
+<?php if (!$editing): ?>
+<script>
+    const brandSelect = document.getElementById('brand_id');
+    const modelSelect = document.getElementById('model');
+    const modelError = document.getElementById('model-load-error');
+    const modelsUrl = <?= json_encode(url('vehicle-models'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const selectedModelId = <?= json_encode((string) ($old['model_id'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    async function loadModels(brandId, selectedId = '') {
+        modelSelect.replaceChildren(new Option('-- Đang tải dòng xe --', ''));
+        modelSelect.disabled = true;
+        modelError.hidden = true;
+        if (!brandId) {
+            modelSelect.replaceChildren(new Option('-- Chọn hãng xe trước --', ''));
+            return;
+        }
+
+        try {
+            const response = await fetch(`${modelsUrl}?brand_id=${encodeURIComponent(brandId)}`, {
+                headers: { Accept: 'application/json' }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || 'Không thể tải danh sách dòng xe.');
+            }
+
+            modelSelect.replaceChildren(new Option('-- Chọn dòng xe --', ''));
+            for (const model of payload) {
+                modelSelect.add(new Option(model.name, String(model.id)));
+            }
+            if (payload.length === 0) {
+                modelSelect.replaceChildren(new Option('-- Hãng xe chưa có dòng xe hoạt động --', ''));
+            }
+            modelSelect.value = selectedId;
+            modelSelect.disabled = payload.length === 0;
+        } catch (error) {
+            modelSelect.replaceChildren(new Option('-- Không tải được dòng xe --', ''));
+            modelError.textContent = error instanceof Error ? error.message : 'Không thể tải danh sách dòng xe.';
+            modelError.hidden = false;
+        }
+    }
+
+    brandSelect.addEventListener('change', () => loadModels(brandSelect.value));
+    loadModels(brandSelect.value, selectedModelId);
+</script>
+<?php endif; ?>
 </body>
 </html>

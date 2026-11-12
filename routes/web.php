@@ -37,6 +37,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
 
     $router->get('/vehicles', [$vehicleController, 'index'], [$authenticated, $customer]);
     $router->get('/vehicles/create', [$vehicleController, 'create'], [$authenticated, $customer]);
+    $router->get('/vehicle-models', [$vehicleController, 'models'], [$authenticated, $customer]);
     $router->post('/vehicles', [$vehicleController, 'store'], [$authenticated, $customer, $verifyCsrf]);
     $router->get('/vehicles/{id}/edit', [$vehicleController, 'edit'], [$authenticated, $customer]);
     $router->post('/vehicles/{id}/update', [$vehicleController, 'update'], [$authenticated, $customer, $verifyCsrf]);
@@ -47,7 +48,14 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/admin/vehicles', [$adminController, 'vehicles'], [$authenticated, $admin]);
     $router->get('/admin/brands', [$adminController, 'brands'], [$authenticated, $admin]);
     $router->post('/admin/brands', [$adminController, 'storeBrand'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/brands/{id}/update', [$adminController, 'updateBrand'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/brands/{id}/status', [$adminController, 'updateBrandStatus'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/brands/{id}/delete', [$adminController, 'deleteBrand'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/models', [$adminController, 'models'], [$authenticated, $admin]);
+    $router->post('/admin/models', [$adminController, 'storeModel'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/models/{id}/update', [$adminController, 'updateModel'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/models/{id}/status', [$adminController, 'updateModelStatus'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/models/{id}/delete', [$adminController, 'deleteModel'], [$authenticated, $admin, $verifyCsrf]);
 
     $router->get('/profile', [$profileController, 'showProfile'], [$authenticated]);
     $router->post('/profile', [$profileController, 'updateProfile'], [$authenticated, $verifyCsrf]);

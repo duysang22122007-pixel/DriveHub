@@ -12,6 +12,8 @@ use App\Core\Validator;
 use App\Models\Customer;
 use App\Models\VehicleBrand;
 use App\Models\Vehicle;
+use App\Models\VehicleModel;
+use InvalidArgumentException;
 use PDOException;
 
 final class AdminController extends Controller
@@ -88,10 +90,14 @@ final class AdminController extends Controller
         ]);
     }
 
-    public function brands(): Response
+    public function brands(Request $request): Response
     {
+        $input = $request->input('q', '');
+        $keyword = is_string($input) ? trim($input) : '';
+
         return $this->view('admin/brands/index', [
-            'brands'  => (new VehicleBrand(Database::connection($this->databaseConfig)))->all(),
+            'brands'  => (new VehicleBrand(Database::connection($this->databaseConfig)))->search($keyword),
+            'q'       => $keyword,
             'success' => flash('success'),
             'error'   => flash('error'),
         ]);
@@ -107,7 +113,12 @@ final class AdminController extends Controller
         }
 
         try {
-            (new VehicleBrand(Database::connection($this->databaseConfig)))->create(trim($name));
+            $logo = $this->catalogImage($request, 'logo', null);
+            (new VehicleBrand(Database::connection($this->databaseConfig)))->create(trim($name), $logo);
+        } catch (InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+
+            return Response::redirect(url('admin/brands'));
         } catch (PDOException $exception) {
             if ($exception->getCode() === '23000') {
                 flash('error', 'Hãng xe này đã tồn tại.');
@@ -121,6 +132,326 @@ final class AdminController extends Controller
         flash('success', 'Đã thêm hãng xe.');
 
         return Response::redirect(url('admin/brands'));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function updateBrand(Request $request, array $parameters): Response
+    {
+        $brandId = $this->positiveId($parameters['id'] ?? null);
+        $name = $request->input('name');
+        $status = $request->input('status');
+        $brands = new VehicleBrand(Database::connection($this->databaseConfig));
+        $brand = $brandId === null ? null : $brands->find($brandId);
+
+        if (
+            $brand === null
+            || !is_string($name)
+            || !Validator::stringLength(trim($name), 1, 100)
+            || !is_string($status)
+            || !in_array($status, ['0', '1'], true)
+        ) {
+            flash('error', 'Thông tin hãng xe không hợp lệ.');
+
+            return Response::redirect(url('admin/brands'));
+        }
+
+        try {
+            $logo = $this->catalogImage($request, 'logo', $brand['logo']);
+            $brands->update($brandId, trim($name), $logo, (int) $status);
+        } catch (InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+
+            return Response::redirect(url('admin/brands'));
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === '23000') {
+                flash('error', 'Tên hãng xe này đã được sử dụng.');
+
+                return Response::redirect(url('admin/brands'));
+            }
+
+            throw $exception;
+        }
+
+        flash('success', 'Đã cập nhật hãng xe.');
+
+        return Response::redirect(url('admin/brands'));
+    }
+
+    public function models(Request $request): Response
+    {
+        $keywordInput = $request->input('q', '');
+        $keyword = is_string($keywordInput) ? trim($keywordInput) : '';
+        $brandIdValue = $request->input('brand_id', '');
+        $brandId = $brandIdValue === '' ? null : $this->positiveId($brandIdValue);
+        if ($brandIdValue !== '' && $brandId === null) {
+            $brandId = 0;
+        }
+
+        $pdo = Database::connection($this->databaseConfig);
+
+        return $this->view('admin/models/index', [
+            'models' => (new VehicleModel($pdo))->search($keyword, $brandId),
+            'brands' => (new VehicleBrand($pdo))->search(),
+            'q' => $keyword,
+            'brandId' => $brandId,
+            'success' => flash('success'),
+            'error' => flash('error'),
+        ]);
+    }
+
+    public function storeModel(Request $request): Response
+    {
+        $data = $this->validatedCatalogModel($request);
+        if ($data === null) {
+            return Response::redirect(url('admin/models'));
+        }
+
+        try {
+            $image = $this->catalogImage($request, 'image', null);
+            (new VehicleModel(Database::connection($this->databaseConfig)))->create(
+                $data['brand_id'],
+                $data['name'],
+                $data['year_from'],
+                $data['year_to'],
+                $image
+            );
+        } catch (InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+
+            return Response::redirect(url('admin/models'));
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === '23000') {
+                flash('error', 'Dòng xe này đã tồn tại cho hãng đã chọn.');
+
+                return Response::redirect(url('admin/models'));
+            }
+
+            throw $exception;
+        }
+
+        flash('success', 'Đã thêm dòng xe.');
+
+        return Response::redirect(url('admin/models'));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function updateModel(Request $request, array $parameters): Response
+    {
+        $modelId = $this->positiveId($parameters['id'] ?? null);
+        $input = $this->validatedCatalogModel($request);
+        $status = $request->input('status');
+        if ($modelId === null || $input === null || !is_string($status) || !in_array($status, ['0', '1'], true)) {
+            flash('error', 'Thông tin dòng xe không hợp lệ.');
+
+            return Response::redirect(url('admin/models'));
+        }
+
+        $catalog = new VehicleModel(Database::connection($this->databaseConfig));
+        $existing = $catalog->find($modelId);
+        if ($existing === null) {
+            flash('error', 'Không tìm thấy dòng xe cần cập nhật.');
+
+            return Response::redirect(url('admin/models'));
+        }
+
+        try {
+            $image = $this->catalogImage($request, 'image', $existing['image']);
+            $updated = $catalog->update(
+                $modelId,
+                $input['brand_id'],
+                $input['name'],
+                $input['year_from'],
+                $input['year_to'],
+                $image,
+                (int) $status
+            );
+        } catch (InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+
+            return Response::redirect(url('admin/models'));
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === '23000') {
+                flash('error', 'Dòng xe này đã tồn tại cho hãng đã chọn.');
+
+                return Response::redirect(url('admin/models'));
+            }
+
+            throw $exception;
+        }
+
+        flash($updated ? 'success' : 'error', $updated ? 'Đã cập nhật dòng xe.' : 'Không tìm thấy dòng xe cần cập nhật.');
+
+        return Response::redirect(url('admin/models'));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function updateModelStatus(Request $request, array $parameters): Response
+    {
+        $modelId = $this->positiveId($parameters['id'] ?? null);
+        $status = $request->input('status');
+        if ($modelId === null || !is_string($status) || !in_array($status, ['0', '1'], true)) {
+            flash('error', 'Yêu cầu cập nhật dòng xe không hợp lệ.');
+
+            return Response::redirect(url('admin/models'));
+        }
+
+        $updated = (new VehicleModel(Database::connection($this->databaseConfig)))->updateStatus(
+            $modelId,
+            (int) $status
+        );
+        flash($updated ? 'success' : 'error', $updated ? 'Đã cập nhật trạng thái dòng xe.' : 'Không tìm thấy dòng xe cần cập nhật.');
+
+        return Response::redirect(url('admin/models'));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function deleteModel(Request $request, array $parameters): Response
+    {
+        $modelId = $this->positiveId($parameters['id'] ?? null);
+        if ($modelId === null) {
+            flash('error', 'Yêu cầu xóa dòng xe không hợp lệ.');
+
+            return Response::redirect(url('admin/models'));
+        }
+
+        try {
+            $deleted = (new VehicleModel(Database::connection($this->databaseConfig)))->deleteIfUnused($modelId);
+        } catch (PDOException $exception) {
+            if ($exception->getCode() !== '23000') {
+                throw $exception;
+            }
+
+            flash('error', 'Dòng xe đang được phương tiện sử dụng. Hãy ngừng hoạt động thay thế.');
+
+            return Response::redirect(url('admin/models'));
+        }
+        if ($deleted === null) {
+            flash('error', 'Không tìm thấy dòng xe cần xóa.');
+        } elseif (!$deleted) {
+            flash('error', 'Dòng xe đã được khách hàng sử dụng và không thể xóa. Hãy ngừng hoạt động thay thế.');
+        } else {
+            flash('success', 'Đã xóa dòng xe.');
+        }
+
+        return Response::redirect(url('admin/models'));
+    }
+
+    /**
+     * @return array{brand_id: int, name: string, year_from: ?int, year_to: ?int}|null
+     */
+    /**
+     * @return array{brand_id: int, name: string, year_from: ?int, year_to: ?int}|null
+     */
+    private function validatedCatalogModel(Request $request): ?array
+    {
+        $brandId = $this->positiveId($request->input('brand_id'));
+        $name = $request->input('name');
+        $yearFromInput = $request->input('year_from', '');
+        $yearToInput = $request->input('year_to', '');
+        $yearFrom = $yearFromInput === '' ? null : filter_var($yearFromInput, FILTER_VALIDATE_INT);
+        $yearTo = $yearToInput === '' ? null : filter_var($yearToInput, FILTER_VALIDATE_INT);
+
+        if (
+            $brandId === null
+            || !(new VehicleBrand(Database::connection($this->databaseConfig)))->exists($brandId)
+            || !is_string($name)
+            || !Validator::stringLength(trim($name), 1, 100)
+        ) {
+            flash('error', 'Vui lòng chọn hãng xe hợp lệ và nhập tên dòng xe từ 1 đến 100 ký tự.');
+
+            return null;
+        }
+
+        $maximumYear = (int) date('Y') + 1;
+        foreach ([$yearFrom, $yearTo] as $year) {
+            if ($year !== null && ($year === false || $year < 1901 || $year > $maximumYear)) {
+                flash('error', 'Khoảng năm sản xuất không hợp lệ.');
+
+                return null;
+            }
+        }
+        if ($yearFrom !== null && $yearTo !== null && $yearFrom > $yearTo) {
+            flash('error', 'Năm bắt đầu không được lớn hơn năm kết thúc.');
+
+            return null;
+        }
+
+        return [
+            'brand_id' => $brandId,
+            'name' => trim($name),
+            'year_from' => $yearFrom === false ? null : $yearFrom,
+            'year_to' => $yearTo === false ? null : $yearTo,
+        ];
+    }
+
+    private function positiveId(mixed $value): ?int
+    {
+        $id = filter_var($value, FILTER_VALIDATE_INT);
+
+        return $id !== false && $id > 0 ? $id : null;
+    }
+
+    private function catalogImage(Request $request, string $field, ?string $current): ?string
+    {
+        $file = $request->file($field);
+        if ($file === null) {
+            return $current;
+        }
+        if (!is_array($file)) {
+            throw new InvalidArgumentException('Tệp hình ảnh không hợp lệ.');
+        }
+
+        $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            return $current;
+        }
+        if (
+            $error !== UPLOAD_ERR_OK
+            || !is_string($file['tmp_name'] ?? null)
+            || !is_uploaded_file($file['tmp_name'])
+            || !is_int($file['size'] ?? null)
+            || $file['size'] < 1
+            || $file['size'] > 3 * 1024 * 1024
+        ) {
+            throw new InvalidArgumentException('Hình ảnh phải có dung lượng tối đa 3 MB.');
+        }
+
+        $mimeTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+        $image = getimagesize($file['tmp_name']);
+        if (
+            !is_string($mime)
+            || !isset($mimeTypes[$mime])
+            || $image === false
+            || ($image['mime'] ?? null) !== $mime
+            || $image[0] * $image[1] > 20000000
+        ) {
+            throw new InvalidArgumentException('Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP hợp lệ.');
+        }
+
+        $directory = dirname(__DIR__, 2) . '/public/assets/images/vehicle-catalog';
+        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new InvalidArgumentException('Không thể tạo thư mục lưu ảnh.');
+        }
+
+        $filename = bin2hex(random_bytes(16)) . '.' . $mimeTypes[$mime];
+        if (!move_uploaded_file($file['tmp_name'], $directory . '/' . $filename)) {
+            throw new InvalidArgumentException('Không thể lưu hình ảnh đã tải lên.');
+        }
+
+        return 'assets/images/vehicle-catalog/' . $filename;
     }
 
     /**
@@ -152,6 +483,40 @@ final class AdminController extends Controller
         }
 
         flash('success', 'Đã cập nhật trạng thái hãng xe.');
+
+        return Response::redirect(url('admin/brands'));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function deleteBrand(Request $request, array $parameters): Response
+    {
+        $brandId = $this->positiveId($parameters['id'] ?? null);
+        if ($brandId === null) {
+            flash('error', 'Yêu cầu xóa hãng xe không hợp lệ.');
+
+            return Response::redirect(url('admin/brands'));
+        }
+
+        try {
+            $deleted = (new VehicleBrand(Database::connection($this->databaseConfig)))->deleteIfUnused($brandId);
+        } catch (PDOException $exception) {
+            if ($exception->getCode() !== '23000') {
+                throw $exception;
+            }
+
+            flash('error', 'Hãng xe đang được dòng xe hoặc phương tiện sử dụng.');
+
+            return Response::redirect(url('admin/brands'));
+        }
+        if ($deleted === null) {
+            flash('error', 'Không tìm thấy hãng xe cần xóa.');
+        } elseif (!$deleted) {
+            flash('error', 'Hãng xe đang có dòng xe hoặc phương tiện liên quan. Hãy ngừng hoạt động thay thế.');
+        } else {
+            flash('success', 'Đã xóa hãng xe.');
+        }
 
         return Response::redirect(url('admin/brands'));
     }

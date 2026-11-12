@@ -28,6 +28,11 @@ final class Response
         return new self($content, $status);
     }
 
+    public static function json(string $content, int $status = 200): self
+    {
+        return new self($content, $status, ['Content-Type' => 'application/json; charset=UTF-8']);
+    }
+
     public static function notFound(): self
     {
         return self::html('<h1>404 - Not Found</h1>', 404);

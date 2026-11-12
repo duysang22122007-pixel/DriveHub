@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Validator;
 use App\Models\Vehicle;
+use App\Models\VehicleModel;
 use PDOException;
 
 final class VehicleController extends Controller
@@ -37,9 +38,33 @@ final class VehicleController extends Controller
         return $this->form();
     }
 
+    public function models(Request $request): Response
+    {
+        $brandId = filter_var($request->input('brand_id'), FILTER_VALIDATE_INT);
+        if ($brandId === false || $brandId < 1) {
+            return Response::json(
+                json_encode(['error' => 'Vui lòng chọn hãng xe hợp lệ.'], JSON_THROW_ON_ERROR),
+                422
+            );
+        }
+
+        $pdo = Database::connection($this->databaseConfig);
+        if (!(new Vehicle($pdo))->hasActiveBrand($brandId)) {
+            return Response::json(
+                json_encode(['error' => 'Hãng xe không tồn tại hoặc đang ngừng hoạt động.'], JSON_THROW_ON_ERROR),
+                404
+            );
+        }
+
+        return Response::json(json_encode(
+            (new VehicleModel($pdo))->activeForBrand($brandId),
+            JSON_THROW_ON_ERROR
+        ));
+    }
+
     public function store(Request $request): Response
     {
-        $data = $this->validatedVehicle($request);
+        $data = $this->validatedVehicle($request, true);
         if (isset($data['errors'])) {
             return $this->form($data['errors'], $data['old'], 422);
         }
@@ -167,9 +192,9 @@ final class VehicleController extends Controller
     }
 
     /**
-     * @return array{vehicle?: array{brand_id:int,model:string,license_plate:string,manufacture_year:?int,color:?string,current_mileage:int}, errors?:array<string,string>,old:array<string,mixed>}
+     * @return array{vehicle?: array{brand_id:int,model_id:?int,model:string,license_plate:string,manufacture_year:?int,color:?string,current_mileage:int}, errors?:array<string,string>,old:array<string,mixed>}
      */
-    private function validatedVehicle(Request $request): array
+    private function validatedVehicle(Request $request, bool $requireCatalogModel = false): array
     {
         $input = $request->body();
         $model = is_string($input['model'] ?? null) ? trim($input['model']) : '';
@@ -178,6 +203,7 @@ final class VehicleController extends Controller
             : '';
         $color = is_string($input['color'] ?? null) ? trim($input['color']) : '';
         $brandId = filter_var($input['brand_id'] ?? null, FILTER_VALIDATE_INT);
+        $modelId = filter_var($input['model_id'] ?? null, FILTER_VALIDATE_INT);
         $mileage = filter_var($input['current_mileage'] ?? null, FILTER_VALIDATE_INT);
         $yearInput = $input['manufacture_year'] ?? '';
         $year = $yearInput === '' ? null : filter_var($yearInput, FILTER_VALIDATE_INT);
@@ -186,8 +212,11 @@ final class VehicleController extends Controller
         if ($brandId === false || $brandId < 1) {
             $errors['brand_id'] = 'Vui lòng chọn hãng xe.';
         }
-        if (!Validator::stringLength($model, 1, 100)) {
+        if (!$requireCatalogModel && !Validator::stringLength($model, 1, 100)) {
             $errors['model'] = 'Tên dòng xe không được vượt quá 100 ký tự.';
+        }
+        if ($requireCatalogModel && ($modelId === false || $modelId < 1)) {
+            $errors['model_id'] = 'Vui lòng chọn dòng xe.';
         }
         if (!preg_match('/\A[A-Z0-9][A-Z0-9 .-]{2,19}\z/', $plate)) {
             $errors['license_plate'] = 'Biển số xe không hợp lệ.';
@@ -208,6 +237,7 @@ final class VehicleController extends Controller
 
         $old = [
             'brand_id' => $input['brand_id'] ?? '',
+            'model_id' => $input['model_id'] ?? '',
             'model' => $model,
             'license_plate' => $plate,
             'manufacture_year' => $yearInput,
@@ -218,24 +248,32 @@ final class VehicleController extends Controller
             return ['errors' => $errors, 'old' => $old];
         }
 
-        $brandExists = false;
-        foreach ((new Vehicle(Database::connection($this->databaseConfig)))->activeBrands() as $brand) {
-            if ((int) $brand['id'] === $brandId) {
-                $brandExists = true;
-                break;
-            }
-        }
-        if (!$brandExists) {
+        $pdo = Database::connection($this->databaseConfig);
+        if (!(new Vehicle($pdo))->hasActiveBrand($brandId)) {
             return [
                 'errors' => ['brand_id' => 'Hãng xe không tồn tại hoặc đang ngừng hoạt động.'],
                 'old' => $old,
             ];
         }
 
+        $catalogModel = null;
+        if ($requireCatalogModel) {
+            $catalogModel = (new VehicleModel($pdo))->findActiveForBrand($modelId, $brandId);
+            if ($catalogModel === null) {
+                return [
+                    'errors' => ['model_id' => 'Dòng xe không tồn tại hoặc đang ngừng hoạt động.'],
+                    'old' => $old,
+                ];
+            }
+            $model = $catalogModel['name'];
+            $old['model'] = $model;
+        }
+
         return [
             'old' => $old,
             'vehicle' => [
                 'brand_id' => $brandId,
+                'model_id' => $catalogModel === null ? null : (int) $catalogModel['id'],
                 'model' => $model,
                 'license_plate' => $plate,
                 'manufacture_year' => $year === false ? null : $year,

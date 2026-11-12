@@ -55,8 +55,10 @@ Implemented against the existing database schema:
 - An explicit empty state when the database has no active services; no sample services or garage contact details are substituted.
 - Garage phone/address/hours can be configured with `GARAGE_PHONE`, `GARAGE_ADDRESS`, and `GARAGE_HOURS` in `.env`.
 - Customers can list, add, update, and remove their own vehicles. Removal is blocked when the vehicle has any appointment/history reference.
-- Admins can manage the active vehicle-brand list, view customers and registered vehicles, and lock/unlock customer accounts.
+- Admins can manage vehicle brands and model catalog entries, view customers and registered vehicles, and lock/unlock customer accounts.
 - Customer vehicle reads and writes are scoped to the signed-in account; customer/admin pages require their respective roles and POST forms require CSRF.
+- Admins can maintain vehicle brands and model catalog entries. New vehicle registrations load active models from the database, and vehicle-model records are protected from deletion once referenced by a customer vehicle.
+- The additive catalog migration is `database/create_vehicle_catalog.sql`. Apply it once to the existing `autocare_hub` database before deploying this feature; it creates `vehicle_models` and adds a nullable `vehicles.vehicle_model_id` foreign key without replacing existing vehicle records. Do not import `database/schema.sql`.
 
 Online booking, service catalog administration, appointments, and repair-ticket workflows have not been implemented yet. Those will be delivered in subsequent phases; the homepage does not show a non-functional booking action.
 
@@ -66,9 +68,10 @@ Online booking, service catalog administration, appointments, and repair-ticket 
 2. The existing `autocare_hub` database is retained. Do not import `database/schema.sql` into it; it documents a different proposed schema.
 3. Copy `.env.example` to `.env`, set `DB_NAME=autocare_hub`, and configure local MySQL credentials and the URL.
 4. Run `database/create_password_resets.sql` against `autocare_hub` to add the password-reset token table. This is separate from the proposed `database/schema.sql`.
-5. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. `APP_ENV=local` displays reset links on the forgot-password page for development only.
-6. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
-7. Ensure PHP can write to `storage/logs`.
+5. Apply `database/create_vehicle_catalog.sql` once to add the model catalog and nullable vehicle-model reference; it does not recreate or delete existing data.
+6. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. `APP_ENV=local` displays reset links on the forgot-password page for development only.
+7. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
+8. Ensure PHP can write to `storage/logs` and `public/assets/images/vehicle-catalog`.
 
 The root `index.php` and root `.htaccess` support Laragon's folder-based local URL. For deployment, use `public/` as the document root; the root rules also deny direct requests to application source and configuration paths.
 

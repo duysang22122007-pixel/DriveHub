@@ -6,3 +6,5 @@
 /storage/cache/*
 /assets/uploads/*
 !/assets/uploads/.gitignore
+/public/assets/images/vehicle-catalog/*
+!/public/assets/images/vehicle-catalog/.gitkeep
