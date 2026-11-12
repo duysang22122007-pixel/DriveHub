@@ -11,6 +11,8 @@ $primaryActionLabel = $userRole === 'admin'
     : ($isCustomer ? 'Quản lý xe của tôi' : 'Tạo tài khoản khách hàng');
 $accountAction = $userRole === 'admin' ? url('admin') : url('login');
 $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 'Quản trị' : 'Tài khoản');
+$bookingAction = $isCustomer ? url('appointments/create') : ($userRole === 'admin' ? url('admin') : url('login'));
+$bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'admin' ? 'Mở quản trị' : 'Đăng nhập để đặt lịch');
 
 ?>
 <!doctype html>
@@ -190,6 +192,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
             <a href="#process">Quy trình</a>
             <a href="#contact">Liên hệ</a>
             <?php if ($userRole === 'customer'): ?><a href="<?= e(url('vehicles')) ?>">Xe của tôi</a><?php endif; ?>
+            <?php if ($userRole === 'customer'): ?><a href="<?= e(url('appointments')) ?>">Lịch hẹn</a><?php endif; ?>
         </nav>
         <div class="nav-actions">
             <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
@@ -216,7 +219,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
                         Khám phá dịch vụ
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
-                    <a class="btn btn-outline" href="<?= e($primaryAction) ?>"><?= e($isCustomer ? 'Quản lý xe của tôi' : 'Bắt đầu sử dụng') ?></a>
+                    <a class="btn btn-outline" href="<?= e($bookingAction) ?>"><?= e($bookingLabel) ?></a>
                 </div>
                 <div class="hero-proof"><span class="proof-mark">✓</span><span>Hồ sơ xe và dịch vụ được quản lý tập trung</span></div>
             </div>
@@ -282,10 +285,10 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
             <div class="booking-band">
                 <div>
                     <h2>Sẵn sàng chăm sóc chiếc xe của bạn?</h2>
-                    <p><?= $isCustomer ? 'Cập nhật xe trong tài khoản để chuẩn bị cho lịch dịch vụ.' : 'Tạo tài khoản để lưu hồ sơ xe và sử dụng các tiện ích chăm sóc.' ?></p>
+                    <p><?= $isCustomer ? 'Đặt lịch tại gara hoặc gửi yêu cầu tư vấn trực tuyến từ tài khoản của bạn.' : 'Đăng nhập để gửi yêu cầu đặt lịch và quản lý phương tiện của bạn.' ?></p>
                 </div>
-                <a class="btn" href="<?= e($primaryAction) ?>">
-                    <?= e($primaryActionLabel) ?>
+                <a class="btn" href="<?= e($bookingAction) ?>">
+                    <?= e($bookingLabel) ?>
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </a>
             </div>
@@ -307,7 +310,7 @@ $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 
             <aside class="contact-card">
                 <h3>Quản lý dịch vụ ngay trên tài khoản</h3>
                 <p>Theo dõi phương tiện, lịch hẹn và thông tin chăm sóc xe tại một nơi.</p>
-                <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
+                <a class="btn btn-primary" href="<?= e($bookingAction) ?>"><?= e($bookingLabel) ?></a>
             </aside>
         </div>
     </section>

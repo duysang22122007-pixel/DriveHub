@@ -18,10 +18,13 @@
 <header><div class="top">
     <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
     <nav>
+        <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
         <a href="<?= e(url('admin/customers')) ?>">Khách hàng</a>
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
         <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>
+        <a href="<?= e(url('admin/vehicle-import')) ?>">Nhập dữ liệu xe</a>
+        <a href="<?= e(url('admin/vehicle-import/review')) ?>">Duyệt dòng xe</a>
         <a href="<?= e(url()) ?>">Trang chủ</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
     </nav>
