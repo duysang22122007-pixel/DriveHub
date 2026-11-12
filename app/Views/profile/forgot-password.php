@@ -22,9 +22,6 @@ declare(strict_types=1);
         a { color: #2563eb; }
         .error-msg { color: #b42318; font-size: .85rem; margin: 4px 0 0; }
         .notice { padding: 12px 15px; margin: 16px 0; border-radius: 8px; background: #ecfdf3; color: #067647; }
-        .dev-box { padding: 14px 16px; margin: 16px 0; border-radius: 8px; background: #fffaeb; border: 1px solid #fedf89; color: #93370d; word-break: break-all; }
-        .dev-box strong { display: block; margin-bottom: 6px; }
-        .dev-box a { color: #15803d; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -33,13 +30,6 @@ declare(strict_types=1);
     <p>Nhập email tài khoản để nhận liên kết đặt lại mật khẩu.</p>
     <?php if (is_string($success) && $success !== ''): ?>
         <p class="notice" role="status"><?= e($success) ?></p>
-    <?php endif; ?>
-
-    <?php if (is_string($resetLink) && $resetLink !== ''): ?>
-    <div class="dev-box" role="status">
-        <strong>Chế độ local: liên kết đặt lại mật khẩu để thử nghiệm</strong>
-        <a href="<?= e($resetLink) ?>"><?= e($resetLink) ?></a>
-    </div>
     <?php endif; ?>
 
     <form method="post" action="<?= e(url('forgot-password')) ?>">

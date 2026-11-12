@@ -69,7 +69,7 @@ Online booking, service catalog administration, appointments, and repair-ticket 
 3. Copy `.env.example` to `.env`, set `DB_NAME=autocare_hub`, and configure local MySQL credentials and the URL.
 4. Run `database/create_password_resets.sql` against `autocare_hub` to add the password-reset token table. This is separate from the proposed `database/schema.sql`.
 5. Apply `database/create_vehicle_catalog.sql` once to add the model catalog and nullable vehicle-model reference; it does not recreate or delete existing data.
-6. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. `APP_ENV=local` displays reset links on the forgot-password page for development only.
+6. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. In `APP_ENV=local`, submitting an active account email redirects directly to the password reset form for development only.
 7. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
 8. Ensure PHP can write to `storage/logs` and `public/assets/images/vehicle-catalog`.
 
