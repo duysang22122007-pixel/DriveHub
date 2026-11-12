@@ -39,6 +39,7 @@
         <a href="<?= e(url('admin/customers')) ?>" class="active">Khách hàng</a>
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
+        <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>
         <a href="<?= e(url()) ?>">Trang chủ</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
     </nav>

@@ -42,6 +42,16 @@ final class Vehicle
         return $statement->fetchAll();
     }
 
+    public function hasActiveBrand(int $brandId): bool
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM vehicle_brands WHERE id = :id AND status = 1'
+        );
+        $statement->execute(['id' => $brandId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
     /**
      * @return array<string, mixed>|null
      */
@@ -58,19 +68,20 @@ final class Vehicle
     }
 
     /**
-     * @param array{brand_id: int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
+     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
      */
     public function create(int $customerId, array $data): int
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO vehicles
-                (user_id, brand_id, model, license_plate, manufacture_year, color, current_mileage)
+                (user_id, brand_id, vehicle_model_id, model, license_plate, manufacture_year, color, current_mileage)
              VALUES
-                (:user_id, :brand_id, :model, :license_plate, :manufacture_year, :color, :current_mileage)'
+                (:user_id, :brand_id, :vehicle_model_id, :model, :license_plate, :manufacture_year, :color, :current_mileage)'
         );
         $statement->execute([
             'user_id' => $customerId,
             'brand_id' => $data['brand_id'],
+            'vehicle_model_id' => $data['model_id'],
             'model' => $data['model'],
             'license_plate' => $data['license_plate'],
             'manufacture_year' => $data['manufacture_year'],
@@ -82,13 +93,13 @@ final class Vehicle
     }
 
     /**
-     * @param array{brand_id: int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
+     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
      */
     public function updateForCustomer(int $vehicleId, int $customerId, array $data): bool
     {
         $statement = $this->pdo->prepare(
             'UPDATE vehicles
-             SET brand_id = :brand_id, model = :model, license_plate = :license_plate,
+             SET brand_id = :brand_id, vehicle_model_id = NULL, model = :model, license_plate = :license_plate,
                  manufacture_year = :manufacture_year, color = :color, current_mileage = :current_mileage
              WHERE id = :id AND user_id = :user_id'
         );

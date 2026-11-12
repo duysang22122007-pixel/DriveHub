@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Validator;
+use App\Models\AdminDashboard;
 use App\Models\User;
 use PDOException;
 
@@ -170,6 +171,7 @@ final class AuthController extends Controller
             'roleLabel' => 'Admin',
             'userName' => (string) ($_SESSION['user_name'] ?? ''),
             'role' => 'admin',
+            'stats' => (new AdminDashboard(Database::connection($this->databaseConfig)))->overview(),
         ]);
     }
 

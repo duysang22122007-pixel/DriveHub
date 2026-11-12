@@ -13,13 +13,15 @@ final class Request
      * @param array<string, mixed> $query
      * @param array<string, mixed> $body
      * @param array<string, string> $server
+     * @param array<string, mixed> $files
      */
     public function __construct(
         string $method,
         string $path,
         private array $query = [],
         private array $body = [],
-        private array $server = []
+        private array $server = [],
+        private array $files = []
     ) {
         $this->method = $method;
         $this->path = $path;
@@ -47,7 +49,7 @@ final class Request
             $path = '/';
         }
 
-        return new self($method, $path, $_GET, $_POST, $_SERVER);
+        return new self($method, $path, $_GET, $_POST, $_SERVER, $_FILES);
     }
 
     public function method(): string
@@ -71,6 +73,11 @@ final class Request
     public function body(): array
     {
         return $this->body;
+    }
+
+    public function file(string $key): mixed
+    {
+        return $this->files[$key] ?? null;
     }
 
     public function server(string $key, ?string $default = null): ?string
