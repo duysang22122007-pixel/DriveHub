@@ -76,7 +76,7 @@ Service-catalog administration and repair-ticket workflows have not been impleme
 4. Run `database/create_password_resets.sql` against `autocare_hub` to add the password-reset token table. This is separate from the proposed `database/schema.sql`.
 5. Apply `database/create_vehicle_catalog.sql` once to add the model catalog and nullable vehicle-model reference; it does not recreate or delete existing data.
 6. Before enabling customer appointment requests, back up the live database and apply `database/migrations/20261112_appointment_booking_type.sql`; it adds only the booking-type field to the existing appointments table.
-7. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. `APP_ENV=local` displays reset links on the forgot-password page for development only.
+7. For deployed environments, set `APP_ENV=production`, configure a valid `MAIL_FROM`, and configure PHP's `mail()` transport. In `APP_ENV=local`, submitting an active account email redirects directly to the password reset form for development only.
 8. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
 9. Ensure PHP can write to `storage/logs` and `public/assets/images/vehicle-catalog`.
 

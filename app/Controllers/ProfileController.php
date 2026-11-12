@@ -146,7 +146,8 @@ final class ProfileController extends Controller
     {
         return $this->view('profile/forgot-password', [
             'errors'    => [],
-            'resetLink' => null,
+            'success'   => flash('success'),
+            'error'     => flash('error'),
             'old'       => [],
         ]);
     }
@@ -164,21 +165,19 @@ final class ProfileController extends Controller
         if ($errors !== []) {
             return $this->view('profile/forgot-password', [
                 'errors'    => $errors,
-                'resetLink' => null,
                 'old'       => ['email' => $email],
             ], 422);
         }
 
         $users = new User(Database::connection($this->databaseConfig));
         $user  = $users->findByEmail($email);
-        $resetLink = null;
         if ($user !== null && $user['status'] === 'active') {
             $token = bin2hex(random_bytes(32));
             $users->createPasswordResetToken((int) $user['id'], $token);
             $resetUrl = url('reset-password/' . $token);
 
             if (Environment::get('APP_ENV', 'production') === 'local') {
-                $resetLink = $resetUrl;
+                return Response::redirect($resetUrl);
             } else {
                 $mailFrom = Environment::get('MAIL_FROM', '');
                 if (!Validator::email($mailFrom)) {
@@ -202,7 +201,6 @@ final class ProfileController extends Controller
 
         return $this->view('profile/forgot-password', [
             'errors'    => [],
-            'resetLink' => $resetLink,
             'old'       => [],
             'success'   => 'Nếu email thuộc tài khoản đang hoạt động, hướng dẫn đặt lại mật khẩu sẽ được gửi đến bạn.',
         ]);
