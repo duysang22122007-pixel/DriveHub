@@ -38,6 +38,7 @@
             <div>
                 <label for="model">Dòng xe</label>
                 <?php if (!$editing): ?>
+                    <input id="model-search" type="search" maxlength="100" placeholder="Tìm dòng xe" aria-label="Tìm dòng xe" disabled>
                     <select id="model" name="model_id" required disabled>
                         <option value="">-- Chọn hãng xe trước --</option>
                     </select>
@@ -76,23 +77,31 @@
 <script>
     const brandSelect = document.getElementById('brand_id');
     const modelSelect = document.getElementById('model');
+    const modelSearch = document.getElementById('model-search');
     const modelError = document.getElementById('model-load-error');
     const modelsUrl = <?= json_encode(url('vehicle-models'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const selectedModelId = <?= json_encode((string) ($old['model_id'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    let modelRequestId = 0;
 
-    async function loadModels(brandId, selectedId = '') {
+    async function loadModels(brandId, selectedId = '', keyword = '') {
+        const requestId = ++modelRequestId;
         modelSelect.replaceChildren(new Option('-- Đang tải dòng xe --', ''));
         modelSelect.disabled = true;
         modelError.hidden = true;
+        modelSearch.disabled = !brandId;
         if (!brandId) {
             modelSelect.replaceChildren(new Option('-- Chọn hãng xe trước --', ''));
             return;
         }
 
         try {
-            const response = await fetch(`${modelsUrl}?brand_id=${encodeURIComponent(brandId)}`, {
+            const query = new URLSearchParams({ brand_id: brandId, q: keyword });
+            const response = await fetch(`${modelsUrl}?${query.toString()}`, {
                 headers: { Accept: 'application/json' }
             });
+            if (requestId !== modelRequestId) {
+                return;
+            }
             const payload = await response.json();
             if (!response.ok) {
                 throw new Error(payload.error || 'Không thể tải danh sách dòng xe.');
@@ -103,18 +112,32 @@
                 modelSelect.add(new Option(model.name, String(model.id)));
             }
             if (payload.length === 0) {
-                modelSelect.replaceChildren(new Option('-- Hãng xe chưa có dòng xe hoạt động --', ''));
+                modelSelect.replaceChildren(new Option(
+                    keyword ? '-- Không tìm thấy dòng xe --' : '-- Hãng xe chưa có dòng xe hoạt động --',
+                    ''
+                ));
             }
             modelSelect.value = selectedId;
             modelSelect.disabled = payload.length === 0;
         } catch (error) {
+            if (requestId !== modelRequestId) {
+                return;
+            }
             modelSelect.replaceChildren(new Option('-- Không tải được dòng xe --', ''));
             modelError.textContent = error instanceof Error ? error.message : 'Không thể tải danh sách dòng xe.';
             modelError.hidden = false;
         }
     }
 
-    brandSelect.addEventListener('change', () => loadModels(brandSelect.value));
+    brandSelect.addEventListener('change', () => {
+        modelSearch.value = '';
+        loadModels(brandSelect.value);
+    });
+    let searchTimeout;
+    modelSearch.addEventListener('input', () => {
+        window.clearTimeout(searchTimeout);
+        searchTimeout = window.setTimeout(() => loadModels(brandSelect.value, '', modelSearch.value.trim()), 250);
+    });
     loadModels(brandSelect.value, selectedModelId);
 </script>
 <?php endif; ?>

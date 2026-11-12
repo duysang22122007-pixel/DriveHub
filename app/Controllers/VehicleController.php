@@ -56,8 +56,17 @@ final class VehicleController extends Controller
             );
         }
 
+        $keywordInput = $request->input('q', '');
+        $keyword = is_string($keywordInput) ? trim($keywordInput) : '';
+        if (mb_strlen($keyword, 'UTF-8') > 100) {
+            return Response::json(
+                json_encode(['error' => 'Từ khóa tìm kiếm quá dài.'], JSON_THROW_ON_ERROR),
+                422
+            );
+        }
+
         return Response::json(json_encode(
-            (new VehicleModel($pdo))->activeForBrand($brandId),
+            (new VehicleModel($pdo))->activeForBrand($brandId, $keyword),
             JSON_THROW_ON_ERROR
         ));
     }

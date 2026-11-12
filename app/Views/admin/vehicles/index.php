@@ -13,7 +13,7 @@
     </style>
 </head>
 <body>
-<header><div class="top"><a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a><nav><a href="<?= e(url('admin/customers')) ?>">Khách hàng</a><a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a><a href="<?= e(url('admin/brands')) ?>">Hãng xe</a><a href="<?= e(url('admin/models')) ?>">Dòng xe</a><a href="<?= e(url()) ?>">Trang chủ</a><form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button" type="submit">Đăng xuất</button></form></nav></div></header>
+<header><div class="top"><a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a><nav><a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a><a href="<?= e(url('admin/customers')) ?>">Khách hàng</a><a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a><a href="<?= e(url('admin/brands')) ?>">Hãng xe</a><a href="<?= e(url('admin/models')) ?>">Dòng xe</a><a href="<?= e(url()) ?>">Trang chủ</a><form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button" type="submit">Đăng xuất</button></form></nav></div></header>
 <main>
     <h1>Phương tiện</h1><p class="sub">Danh sách xe đã đăng ký và chủ sở hữu theo dữ liệu hệ thống.</p>
     <div class="table-wrap"><?php if ($vehicles === []): ?><div class="empty">Chưa có phương tiện nào được đăng ký.</div><?php else: ?>

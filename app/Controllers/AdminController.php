@@ -13,8 +13,13 @@ use App\Models\Customer;
 use App\Models\VehicleBrand;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
+use App\Services\NhtsaClient;
+use App\Services\VehicleCatalogImporter;
+use App\Services\VehicleDataNormalizer;
+use App\Services\VehicleImportManager;
 use InvalidArgumentException;
 use PDOException;
+use RuntimeException;
 
 final class AdminController extends Controller
 {
@@ -88,6 +93,200 @@ final class AdminController extends Controller
         return $this->view('admin/vehicles/index', [
             'vehicles' => (new Vehicle(Database::connection($this->databaseConfig)))->allForAdmin(),
         ]);
+    }
+
+    public function vehicleImport(): Response
+    {
+        $pdo = Database::connection($this->databaseConfig);
+
+        return $this->view('admin/vehicle-import/index', [
+            'sessions' => $this->vehicleImportManager($pdo)->history(),
+            'success' => flash('success'),
+            'error' => flash('error'),
+        ]);
+    }
+
+    public function vehicleModelsReview(Request $request): Response
+    {
+        $keywordInput = $request->input('q', '');
+        $keyword = is_string($keywordInput) ? trim($keywordInput) : '';
+        if (mb_strlen($keyword, 'UTF-8') > 100) {
+            $keyword = mb_substr($keyword, 0, 100, 'UTF-8');
+        }
+
+        $brandValue = $request->input('brand_id', '');
+        $brandId = $brandValue === '' ? null : $this->positiveId($brandValue);
+        if ($brandValue !== '' && $brandId === null) {
+            $brandId = 0;
+        }
+
+        $statusInput = $request->input('status', 'unverified');
+        $status = is_string($statusInput) && in_array(
+            $statusInput,
+            ['all', 'unverified', 'verified', 'not_suitable'],
+            true
+        ) ? $statusInput : 'unverified';
+        $verificationStatus = $status === 'all' ? null : $status;
+        $pageInput = filter_var($request->input('page', 1), FILTER_VALIDATE_INT);
+        $page = $pageInput === false || $pageInput < 1 ? 1 : $pageInput;
+        $catalog = new VehicleModel(Database::connection($this->databaseConfig));
+        $pageData = $catalog->reviewPage($keyword, $brandId, $verificationStatus, $page);
+        $pageCount = max(1, (int) ceil($pageData['total'] / 25));
+        if ($page > $pageCount) {
+            $page = $pageCount;
+            $pageData = $catalog->reviewPage($keyword, $brandId, $verificationStatus, $page);
+        }
+
+        return $this->view('admin/vehicle-import/review', [
+            'models' => $pageData['items'],
+            'total' => $pageData['total'],
+            'page' => $page,
+            'pageCount' => $pageCount,
+            'brands' => (new VehicleBrand(Database::connection($this->databaseConfig)))->search(),
+            'q' => $keyword,
+            'brandId' => $brandId,
+            'status' => $status,
+            'success' => flash('success'),
+            'error' => flash('error'),
+        ]);
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function updateVehicleModelVerification(Request $request, array $parameters): Response
+    {
+        $modelId = $this->positiveId($parameters['id'] ?? null);
+        $status = $request->input('status');
+        if (
+            $modelId === null
+            || !is_string($status)
+            || !in_array($status, ['verified', 'not_suitable'], true)
+        ) {
+            flash('error', 'Yêu cầu duyệt dòng xe không hợp lệ.');
+
+            return Response::redirect(url('admin/vehicle-import/review'));
+        }
+
+        $updated = (new VehicleModel(Database::connection($this->databaseConfig)))->setVerificationStatus(
+            $modelId,
+            $status,
+            (int) ($_SESSION['user_id'] ?? 0)
+        );
+        flash(
+            $updated ? 'success' : 'error',
+            $updated
+                ? ($status === 'verified' ? 'Đã duyệt dòng xe phù hợp.' : 'Đã đánh dấu dòng xe không phù hợp.')
+                : 'Không tìm thấy dòng xe NHTSA cần duyệt.'
+        );
+
+        return Response::redirect(url('admin/vehicle-import/review'));
+    }
+
+    public function bulkReviewVehicleModels(Request $request): Response
+    {
+        $rawIds = $request->input('model_ids', []);
+        $status = $request->input('status');
+        if (
+            !is_array($rawIds)
+            || $rawIds === []
+            || count($rawIds) > 100
+            || !is_string($status)
+            || !in_array($status, ['verified', 'not_suitable'], true)
+        ) {
+            flash('error', 'Chọn từ 1 đến 100 dòng xe và trạng thái duyệt hợp lệ.');
+
+            return Response::redirect(url('admin/vehicle-import/review'));
+        }
+
+        $modelIds = [];
+        foreach ($rawIds as $value) {
+            $modelId = $this->positiveId($value);
+            if ($modelId === null) {
+                flash('error', 'Danh sách dòng xe được chọn không hợp lệ.');
+
+                return Response::redirect(url('admin/vehicle-import/review'));
+            }
+            $modelIds[] = $modelId;
+        }
+        $modelIds = array_values(array_unique($modelIds));
+
+        $updated = (new VehicleModel(Database::connection($this->databaseConfig)))
+            ->setVerificationStatusForMany($modelIds, $status, (int) ($_SESSION['user_id'] ?? 0));
+        flash(
+            $updated > 0 ? 'success' : 'error',
+            $updated > 0
+                ? 'Đã cập nhật trạng thái cho ' . $updated . ' dòng xe.'
+                : 'Không tìm thấy dòng xe NHTSA phù hợp trong lựa chọn.'
+        );
+
+        return Response::redirect(url('admin/vehicle-import/review'));
+    }
+
+    public function startVehicleImport(Request $request): Response
+    {
+        $mode = $request->input('mode');
+        if (!is_string($mode)) {
+            flash('error', 'Vui lòng chọn loại dữ liệu cần đồng bộ.');
+
+            return Response::redirect(url('admin/vehicle-import'));
+        }
+
+        try {
+            $session = $this->vehicleImportManager(Database::connection($this->databaseConfig))->start(
+                $mode,
+                (int) ($_SESSION['user_id'] ?? 0),
+                $request->input('include_trucks') === '1'
+            );
+            flash('success', 'Đã xử lý một đợt đồng bộ. Tiến trình được lưu và có thể tiếp tục.');
+            if (is_string($session['last_error'] ?? null) && $session['last_error'] !== '') {
+                flash('error', 'Tạm dừng do lỗi API: ' . $session['last_error']);
+            }
+        } catch (RuntimeException $exception) {
+            flash('error', $exception->getMessage());
+        }
+
+        return Response::redirect(url('admin/vehicle-import'));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function continueVehicleImport(Request $request, array $parameters): Response
+    {
+        $sessionId = $this->positiveId($parameters['id'] ?? null);
+        if ($sessionId === null) {
+            flash('error', 'Phiên đồng bộ không hợp lệ.');
+
+            return Response::redirect(url('admin/vehicle-import'));
+        }
+
+        try {
+            $session = $this->vehicleImportManager(Database::connection($this->databaseConfig))
+                ->resume($sessionId);
+            flash(
+                is_string($session['last_error'] ?? null) && $session['last_error'] !== '' ? 'error' : 'success',
+                is_string($session['last_error'] ?? null) && $session['last_error'] !== ''
+                    ? 'Tạm dừng do lỗi API: ' . $session['last_error']
+                    : 'Đã tiếp tục xử lý một đợt đồng bộ.'
+            );
+        } catch (RuntimeException $exception) {
+            flash('error', $exception->getMessage());
+        }
+
+        return Response::redirect(url('admin/vehicle-import'));
+    }
+
+    private function vehicleImportManager(\PDO $pdo): VehicleImportManager
+    {
+        $normalizer = new VehicleDataNormalizer();
+
+        return new VehicleImportManager(
+            $pdo,
+            new NhtsaClient(),
+            $normalizer,
+            new VehicleCatalogImporter($pdo, $normalizer)
+        );
     }
 
     public function brands(Request $request): Response
@@ -215,7 +414,8 @@ final class AdminController extends Controller
                 $data['name'],
                 $data['year_from'],
                 $data['year_to'],
-                $image
+                $image,
+                (int) ($_SESSION['user_id'] ?? 0)
             );
         } catch (InvalidArgumentException $exception) {
             flash('error', $exception->getMessage());
