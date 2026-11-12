@@ -16,6 +16,7 @@
         h1 { margin:0; color:#123b5d; font-size:clamp(1.8rem,4vw,2.4rem); } .sub { margin:8px 0 0; color:#667788; }
         .button { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border:0; border-radius:8px; background:#2563eb; color:#fff; font:inherit; font-weight:700; cursor:pointer; }
         .button.secondary { background:#e9eff6; color:#123b5d; } .button.danger { background:#fff0ef; color:#b42318; min-height:36px; }
+        .heading-actions { display:flex; flex-wrap:wrap; gap:8px; }
         .notice { margin:14px 0; padding:12px 15px; border-radius:9px; background:#ecfdf3; color:#067647; } .notice.error { background:#fff1f0; color:#b42318; }
         .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
         .card, .empty { background:#fff; border:1px solid #e3eaf1; border-radius:14px; padding:22px; box-shadow:0 7px 22px #123b5d07; }
@@ -25,7 +26,7 @@
         .actions { display:flex; align-items:center; gap:10px; padding-top:14px; border-top:1px solid #edf1f5; }
         .actions form { margin-left:auto; } .empty { grid-column:1/-1; text-align:center; padding:44px 20px; } .empty p { color:#667788; }
         footer { padding:18px 0 26px; border-top:1px solid #e3eaf1; color:#748395; font-size:.85rem; }
-        @media(max-width:680px) { .top { align-items:flex-start; flex-direction:column; padding:14px 0; } .top nav { flex-wrap:wrap; gap:12px; } .heading { align-items:flex-start; flex-direction:column; } .grid { grid-template-columns:1fr; } }
+        @media(max-width:680px) { .top { align-items:flex-start; flex-direction:column; padding:14px 0; } .top nav { flex-wrap:wrap; gap:12px; } .heading { align-items:flex-start; flex-direction:column; } .heading-actions { width:100%; flex-direction:column; } .heading-actions .button { width:100%; } .grid { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
@@ -38,7 +39,11 @@
 <main>
     <div class="heading">
         <div><h1>Xe của tôi</h1><p class="sub">Quản lý các phương tiện thuộc tài khoản của bạn.</p></div>
-        <a class="button" href="<?= e(url('vehicles/create')) ?>">+ Thêm xe</a>
+        <div class="heading-actions">
+            <a class="button secondary" href="<?= e(url('appointments')) ?>">Lịch hẹn</a>
+            <a class="button" href="<?= e(url('appointments/create')) ?>">Đặt lịch sửa chữa</a>
+            <a class="button secondary" href="<?= e(url('vehicles/create')) ?>">+ Thêm xe</a>
+        </div>
     </div>
     <?php if (is_string($success) && $success !== ''): ?><div class="notice" role="status"><?= e($success) ?></div><?php endif; ?>
     <?php if (is_string($error) && $error !== ''): ?><div class="notice error" role="alert"><?= e($error) ?></div><?php endif; ?>

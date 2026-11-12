@@ -45,17 +45,82 @@ final class VehicleModel
     }
 
     /**
+     * @return array{items: list<array<string, mixed>>, total: int}
+     */
+    public function reviewPage(
+        string $keyword,
+        ?int $brandId,
+        ?string $verificationStatus,
+        int $page,
+        int $pageSize = 25
+    ): array {
+        $conditions = ["m.data_source = 'nhtsa'"];
+        $parameters = [];
+        if ($keyword !== '') {
+            $conditions[] = 'm.name LIKE :keyword';
+            $parameters['keyword'] = '%' . $keyword . '%';
+        }
+        if ($brandId !== null) {
+            $conditions[] = 'm.brand_id = :brand_id';
+            $parameters['brand_id'] = $brandId;
+        }
+        if ($verificationStatus !== null) {
+            $conditions[] = 'm.verification_status = :verification_status';
+            $parameters['verification_status'] = $verificationStatus;
+        }
+        $where = implode(' AND ', $conditions);
+
+        $count = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM vehicle_models AS m WHERE ' . $where
+        );
+        $count->execute($parameters);
+        $total = (int) $count->fetchColumn();
+
+        $statement = $this->pdo->prepare(
+            'SELECT m.id, m.brand_id, b.name AS brand_name, m.name, m.year_from, m.year_to,
+                    m.image, m.status, m.data_source, m.source_make_id, m.source_model_id,
+                    m.verification_status, m.reviewed_by, m.reviewed_at,
+                    reviewer.full_name AS reviewer_name
+             FROM vehicle_models AS m
+             INNER JOIN vehicle_brands AS b ON b.id = m.brand_id
+             LEFT JOIN users AS reviewer ON reviewer.id = m.reviewed_by
+             WHERE ' . $where . '
+             ORDER BY CASE m.verification_status
+                          WHEN \'unverified\' THEN 0
+                          WHEN \'verified\' THEN 1
+                          ELSE 2
+                      END,
+                      b.name, m.name, m.id
+             LIMIT :limit OFFSET :offset'
+        );
+        foreach ($parameters as $name => $value) {
+            $statement->bindValue($name, $value);
+        }
+        $statement->bindValue('limit', max(1, min($pageSize, 100)), PDO::PARAM_INT);
+        $statement->bindValue('offset', max(0, ($page - 1) * $pageSize), PDO::PARAM_INT);
+        $statement->execute();
+
+        return ['items' => $statement->fetchAll(), 'total' => $total];
+    }
+
+    /**
      * @return list<array{id: int, name: string, year_from: ?int, year_to: ?int}>
      */
-    public function activeForBrand(int $brandId): array
+    public function activeForBrand(int $brandId, string $keyword = ''): array
     {
-        $statement = $this->pdo->prepare(
-            'SELECT id, name, year_from, year_to
-             FROM vehicle_models
-             WHERE brand_id = :brand_id AND status = 1
-             ORDER BY name'
-        );
-        $statement->execute(['brand_id' => $brandId]);
+        $sql = 'SELECT id, name, year_from, year_to
+                FROM vehicle_models
+                WHERE brand_id = :brand_id AND status = 1 AND verification_status = \'verified\'';
+        $parameters = ['brand_id' => $brandId];
+        if ($keyword !== '') {
+            $sql .= " AND name LIKE :keyword ESCAPE '='";
+            $escapedKeyword = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $keyword);
+            $parameters['keyword'] = '%' . $escapedKeyword . '%';
+        }
+        $sql .= ' ORDER BY name LIMIT 100';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute($parameters);
 
         return $statement->fetchAll();
     }
@@ -81,11 +146,12 @@ final class VehicleModel
     public function findActiveForBrand(int $modelId, int $brandId): ?array
     {
         $statement = $this->pdo->prepare(
-            'SELECT m.id, m.brand_id, m.name
+            "SELECT m.id, m.brand_id, m.name
              FROM vehicle_models AS m
              INNER JOIN vehicle_brands AS b ON b.id = m.brand_id AND b.status = 1
              WHERE m.id = :id AND m.brand_id = :brand_id AND m.status = 1
-             LIMIT 1'
+               AND m.verification_status = 'verified'
+             LIMIT 1"
         );
         $statement->execute(['id' => $modelId, 'brand_id' => $brandId]);
         $model = $statement->fetch();
@@ -93,11 +159,20 @@ final class VehicleModel
         return $model === false ? null : $model;
     }
 
-    public function create(int $brandId, string $name, ?int $yearFrom, ?int $yearTo, ?string $image): void
-    {
+    public function create(
+        int $brandId,
+        string $name,
+        ?int $yearFrom,
+        ?int $yearTo,
+        ?string $image,
+        int $reviewedBy
+    ): void {
         $statement = $this->pdo->prepare(
-            'INSERT INTO vehicle_models (brand_id, name, year_from, year_to, image, status)
-             VALUES (:brand_id, :name, :year_from, :year_to, :image, 1)'
+            "INSERT INTO vehicle_models
+                (brand_id, name, year_from, year_to, image, status, data_source,
+                 verification_status, reviewed_by, reviewed_at)
+             VALUES (:brand_id, :name, :year_from, :year_to, :image, 1, 'admin',
+                     'verified', :reviewed_by, CURRENT_TIMESTAMP)"
         );
         $statement->execute([
             'brand_id' => $brandId,
@@ -105,7 +180,89 @@ final class VehicleModel
             'year_from' => $yearFrom,
             'year_to' => $yearTo,
             'image' => $image,
+            'reviewed_by' => $reviewedBy,
         ]);
+    }
+
+    public function setVerificationStatus(int $modelId, string $status, int $reviewedBy): bool
+    {
+        if (!in_array($status, ['verified', 'not_suitable'], true)) {
+            throw new \InvalidArgumentException('Unsupported vehicle-model review status.');
+        }
+
+        $statement = $this->pdo->prepare(
+            "UPDATE vehicle_models
+             SET verification_status = :status, reviewed_by = :reviewed_by,
+                 reviewed_at = CURRENT_TIMESTAMP
+             WHERE id = :id AND data_source = 'nhtsa'"
+        );
+        $statement->execute([
+            'status' => $status,
+            'reviewed_by' => $reviewedBy,
+            'id' => $modelId,
+        ]);
+        if ($statement->rowCount() > 0) {
+            return true;
+        }
+
+        $check = $this->pdo->prepare(
+            "SELECT 1 FROM vehicle_models WHERE id = :id AND data_source = 'nhtsa'"
+        );
+        $check->execute(['id' => $modelId]);
+
+        return $check->fetchColumn() !== false;
+    }
+
+    /**
+     * @param list<int> $modelIds
+     */
+    public function setVerificationStatusForMany(array $modelIds, string $status, int $reviewedBy): int
+    {
+        if ($modelIds === [] || !in_array($status, ['verified', 'not_suitable'], true)) {
+            throw new \InvalidArgumentException('Invalid vehicle-model review selection.');
+        }
+
+        $placeholders = [];
+        $parameters = [
+            'status' => $status,
+            'reviewed_by' => $reviewedBy,
+        ];
+        foreach (array_values(array_unique($modelIds)) as $index => $modelId) {
+            $placeholder = 'model_id_' . $index;
+            $placeholders[] = ':' . $placeholder;
+            $parameters[$placeholder] = $modelId;
+        }
+
+        $ownsTransaction = !$this->pdo->inTransaction();
+        try {
+            if ($ownsTransaction) {
+                $this->pdo->beginTransaction();
+            }
+            $matching = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM vehicle_models
+                 WHERE data_source = 'nhtsa' AND id IN (" . implode(', ', $placeholders) . ')'
+            );
+            $matching->execute(array_diff_key($parameters, ['status' => true, 'reviewed_by' => true]));
+            $matchedCount = (int) $matching->fetchColumn();
+
+            $statement = $this->pdo->prepare(
+                "UPDATE vehicle_models
+                 SET verification_status = :status, reviewed_by = :reviewed_by,
+                     reviewed_at = CURRENT_TIMESTAMP
+                 WHERE data_source = 'nhtsa' AND id IN (" . implode(', ', $placeholders) . ')'
+            );
+            $statement->execute($parameters);
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            return $matchedCount;
+        } catch (\Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function update(
