@@ -18,6 +18,7 @@
 <header><div class="top">
     <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
     <nav>
+        <a href="<?= e(url('admin')) ?>">Tổng quan</a>
         <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
         <a href="<?= e(url('admin/customers')) ?>">Khách hàng</a>
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
