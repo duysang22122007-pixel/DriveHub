@@ -32,9 +32,16 @@ final class AppointmentController extends Controller
     ) {
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return $this->form();
+        $serviceId = filter_var($request->input('service_id'), FILTER_VALIDATE_INT);
+        $old = [];
+
+        if ($serviceId !== false && $serviceId > 0) {
+            $old['service_ids'] = [$serviceId];
+        }
+
+        return $this->form([], $old);
     }
 
     public function store(Request $request): Response
