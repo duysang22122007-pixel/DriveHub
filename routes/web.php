@@ -9,6 +9,7 @@ use App\Controllers\AdminAppointmentController;
 use App\Controllers\AppointmentController;
 use App\Controllers\VehicleController;
 use App\Controllers\ProfileController;
+use App\Controllers\ServiceController;
 use App\Core\Router;
 use App\Middleware\Authenticated;
 use App\Middleware\GuestOnly;
@@ -23,6 +24,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $adminController = new AdminController($databaseConfig);
     $adminAppointmentController = new AdminAppointmentController($databaseConfig);
     $profileController = new ProfileController($databaseConfig);
+    $serviceController = new ServiceController($databaseConfig, $garageConfig);
     $guestOnly = new GuestOnly($databaseConfig);
     $authenticated = new Authenticated($databaseConfig);
     $verifyCsrf = new VerifyCsrfToken();
@@ -41,6 +43,9 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/admin/appointments/{id}', [$adminAppointmentController, 'show'], [$authenticated, $admin]);
     $router->post('/admin/appointments/{id}/status', [$adminAppointmentController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/customer', [$homeController, 'index'], [$authenticated, $customer]);
+
+    $router->get('/services', [$serviceController, 'index']);
+    $router->get('/services/{id}', [$serviceController, 'show']);
 
     $router->get('/appointments/create', [$appointmentController, 'create'], [$authenticated, $customer]);
     $router->post('/appointments', [$appointmentController, 'store'], [$authenticated, $customer, $verifyCsrf]);
