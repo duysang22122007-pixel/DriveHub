@@ -18,6 +18,48 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('asset_url')) {
+    function asset_url(?string $path): ?string
+    {
+        if ($path === null || trim($path) === '') {
+            return null;
+        }
+
+        $path = trim($path);
+        if (preg_match('#^(?:https?:)?//#i', $path) === 1) {
+            return $path;
+        }
+
+        return url($path);
+    }
+}
+
+if (!function_exists('service_image_url')) {
+    function service_image_url(?string $path): ?string
+    {
+        if ($path === null || trim($path) === '') {
+            return null;
+        }
+
+        $path = trim($path);
+        if (preg_match('#^(?:https?:)?//#i', $path) === 1) {
+            return $path;
+        }
+
+        $relative = ltrim($path, '/');
+        if (str_contains($relative, '..') || !str_starts_with($relative, 'assets/images/')) {
+            return null;
+        }
+
+        $publicRoot = dirname(__DIR__, 2) . '/public/';
+        if (!is_file($publicRoot . $relative)) {
+            return null;
+        }
+
+        return url($relative);
+    }
+}
+
 if (!function_exists('csrf_token')) {
     function csrf_token(): string
     {
