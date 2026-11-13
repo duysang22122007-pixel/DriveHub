@@ -6,7 +6,7 @@
     <title>Quản lý dòng xe | AutoCare Hub</title>
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b5d;color:#fff}
-        .top,main{width:min(1240px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}
+        .top,main{width:min(1240px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}.top a.active{text-decoration:underline;text-underline-offset:3px}
         main{padding:34px 0 60px}h1{margin:0;color:#123b5d}.sub{color:#6b7b8b}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}.button.secondary{background:#e8eef5;color:#123b5d}.button.danger{background:#fff0ef;color:#b42318}
         .notice{padding:11px 14px;margin:12px 0;border-radius:8px;background:#ecfdf3;color:#067647}.notice.error{background:#fff0ef;color:#b42318}.panel{padding:20px;margin-top:20px;border:1px solid #e3eaf1;border-radius:13px;background:#fff}.panel h2{margin:0 0 14px;color:#123b5d;font-size:1.1rem}
         .filter,.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:end;gap:12px}.filter{margin-bottom:16px}.field{display:grid;gap:5px}.field label{font-size:.78rem;color:#526678;font-weight:700}.field input,.field select,.filter input,.filter select{width:100%;min-height:39px;padding:8px 10px;border:1px solid #cad6e2;border-radius:8px;background:#fff;font:inherit}.filter .actions{display:flex;gap:8px}
@@ -23,7 +23,7 @@
         <a href="<?= e(url('admin/customers')) ?>">Khách hàng</a>
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
-        <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>
+        <a href="<?= e(url('admin/models')) ?>" class="active" aria-current="page">Dòng xe</a>
         <a href="<?= e(url('admin/vehicle-import')) ?>">Nhập dữ liệu xe</a>
         <a href="<?= e(url('admin/vehicle-import/review')) ?>">Duyệt dòng xe</a>
         <a href="<?= e(url()) ?>">Trang chủ</a>

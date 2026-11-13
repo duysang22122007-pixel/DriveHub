@@ -32,7 +32,7 @@ $updatedAt = $appointment['updated_at'] === null ? '—' : date('d/m/Y H:i', str
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}
         header{background:#123b5d;color:#fff}.top,main{width:min(1160px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}
-        .brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}
+        .brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}.top a.active{text-decoration:underline;text-underline-offset:3px}
         main{padding:34px 0 60px}h1,h2{color:#123b5d}h1{margin:0}h2{font-size:1.05rem;margin:0 0 14px}.sub{color:#6b7b8b}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px}
         .button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
         .button.secondary{background:#e8eef5;color:#123b5d}.notice{padding:12px 15px;margin:12px 0;border-radius:8px;background:#ecfdf3;color:#067647}.notice.error{background:#fff0ef;color:#b42318}
@@ -50,7 +50,7 @@ $updatedAt = $appointment['updated_at'] === null ? '—' : date('d/m/Y H:i', str
     <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
     <nav aria-label="Điều hướng Admin">
         <a href="<?= e(url('admin')) ?>">Tổng quan</a>
-        <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
+        <a href="<?= e(url('admin/appointments')) ?>" class="active" aria-current="page">Lịch hẹn</a>
         <a href="<?= e(url('admin/customers')) ?>">Khách hàng</a>
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>

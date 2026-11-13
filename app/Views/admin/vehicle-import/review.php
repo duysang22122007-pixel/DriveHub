@@ -6,7 +6,7 @@
     <title>Duyệt dòng xe | AutoCare Hub</title>
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b5d}
-        .top,main{width:min(1320px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:16px}.top a{color:#fff;text-decoration:none}
+        .top,main{width:min(1320px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:16px}.top a{color:#fff;text-decoration:none}.top a.active{text-decoration:underline;text-underline-offset:3px}
         main{padding:34px 0 60px}h1{margin:0;color:#123b5d}.sub{color:#6b7b8b;line-height:1.55}.toolbar{display:flex;justify-content:space-between;gap:18px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}.button.secondary{background:#e8eef5;color:#123b5d}.button.reject{background:#fff0ef;color:#b42318}
         .notice{padding:11px 14px;margin:12px 0;border-radius:8px;background:#ecfdf3;color:#067647}.notice.error{background:#fff0ef;color:#b42318}.panel{padding:20px;margin-top:20px;border:1px solid #e3eaf1;border-radius:13px;background:#fff}.panel h2{margin:0 0 14px;color:#123b5d;font-size:1.1rem}
         .filters{display:grid;grid-template-columns:2fr 1.3fr 1.3fr auto;align-items:end;gap:11px}.field{display:grid;gap:5px}.field label{font-size:.78rem;color:#526678;font-weight:700}.field input,.field select{width:100%;min-height:39px;padding:8px 10px;border:1px solid #cad6e2;border-radius:8px;background:#fff;font:inherit}
@@ -25,7 +25,7 @@
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
         <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>
         <a href="<?= e(url('admin/vehicle-import')) ?>">Nhập dữ liệu xe</a>
-        <a href="<?= e(url('admin/vehicle-import/review')) ?>">Duyệt dòng xe</a>
+        <a href="<?= e(url('admin/vehicle-import/review')) ?>" class="active" aria-current="page">Duyệt dòng xe</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
     </nav>
 </div></header>
