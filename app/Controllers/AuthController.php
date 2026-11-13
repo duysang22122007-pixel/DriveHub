@@ -46,7 +46,12 @@ final class AuthController extends Controller
         if (!Validator::email($email) || strlen($email) > 150) {
             $errors['email'] = 'Vui lòng nhập email hợp lệ (tối đa 150 ký tự).';
         }
-        if (!preg_match('/\A\+?[0-9][0-9\s().-]{6,19}\z/', $phone)) {
+        $phoneDigits = preg_match_all('/[0-9]/', $phone);
+        if (
+            !preg_match('/\A\+?[0-9][0-9\s().-]{6,19}\z/', $phone)
+            || $phoneDigits < 7
+            || $phoneDigits > 15
+        ) {
             $errors['phone'] = 'Vui lòng nhập số điện thoại hợp lệ (tối đa 20 ký tự).';
         }
         if (!is_string($password) || strlen($password) < 8 || strlen($password) > 72) {
@@ -138,21 +143,24 @@ final class AuthController extends Controller
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_name'] = $user['full_name'];
 
-        return Response::redirect(url('dashboard'));
+        return Response::redirect(url($user['role'] === 'admin' ? 'admin' : 'customer'));
     }
 
     public function logout(): Response
     {
-        unset(
-            $_SESSION['user_id'],
-            $_SESSION['user_role'],
-            $_SESSION['user_name'],
-            $_SESSION['_csrf_token'],
-            $_SESSION['_flash']
-        );
-        session_regenerate_id(true);
-
-        flash('success', 'Bạn đã đăng xuất.');
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $cookie = session_get_cookie_params();
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $cookie['path'],
+                'domain' => $cookie['domain'],
+                'secure' => $cookie['secure'],
+                'httponly' => $cookie['httponly'],
+                'samesite' => $cookie['samesite'] ?? 'Lax',
+            ]);
+        }
+        session_destroy();
 
         return Response::redirect(url('login'));
     }
@@ -161,7 +169,7 @@ final class AuthController extends Controller
     {
         $role = $_SESSION['user_role'] ?? null;
 
-        return Response::redirect(url($role === 'admin' ? 'admin' : ''));
+        return Response::redirect(url($role === 'admin' ? 'admin' : 'customer'));
     }
 
     public function adminHome(): Response
@@ -175,8 +183,4 @@ final class AuthController extends Controller
         ]);
     }
 
-    public function customerHome(): Response
-    {
-        return Response::redirect(url());
-    }
 }
