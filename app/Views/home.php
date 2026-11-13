@@ -96,14 +96,25 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         h2 { margin: 12px 0; color: var(--navy); font-size: clamp(2rem, 3.2vw, 2.8rem); line-height: 1.15; letter-spacing: -.04em; }
         .section-heading p { margin: 0; color: var(--muted); line-height: 1.75; }
         .service-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-        .service-card { display: flex; flex-direction: column; min-height: 255px; padding: 24px; border: 1px solid var(--line); border-radius: 15px; background: #fff; box-shadow: 0 8px 24px #123b5d08; }
+        .service-card { display: flex; flex-direction: column; min-height: 255px; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: #fff; box-shadow: 0 8px 24px #123b5d08; transition: transform .18s ease, box-shadow .18s ease; }
+        .service-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px #123b5d14; }
+        .service-thumb { height: 150px; display: grid; place-items: center; overflow: hidden; background: linear-gradient(135deg, #eaf1ff, #dbe8fb); }
+        .service-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+        .service-card:hover .service-thumb img { transform: scale(1.04); }
+        .service-thumb-icon { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 17px; background: #ffffffb8; color: var(--blue); box-shadow: 0 8px 18px #123b5d12; }
+        .service-thumb-icon svg { width: 33px; height: 33px; }
+        .service-body { display: flex; flex: 1; flex-direction: column; padding: 24px; }
         .service-icon { width: 47px; height: 47px; display: grid; place-items: center; color: var(--blue); border-radius: 13px; background: var(--blue-light); }
         .service-icon svg { width: 24px; height: 24px; }
-        .service-category { margin-top: 19px; color: var(--blue); font-size: .75rem; font-weight: 700; }
-        .service-card h3 { margin: 7px 0 8px; color: var(--navy); font-size: 1.08rem; }
-        .service-card p { margin: 0 0 18px; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+        .service-category { color: var(--blue); font-size: .75rem; font-weight: 700; }
+        .service-card h3 { margin: 7px 0 8px; color: var(--navy); font-size: 1.08rem; line-height: 1.35; }
+        .service-card h3 a:hover { color: var(--blue); }
+        .service-card p { margin: 0 0 16px; color: var(--muted); font-size: .88rem; line-height: 1.6; }
         .service-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); color: #506174; font-size: .82rem; }
         .service-meta strong { color: var(--navy); font-size: .95rem; }
+        .service-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 15px; }
+        .service-actions .btn { min-height: 38px; padding: 0 14px; font-size: .84rem; }
+        .explore-all { display: flex; justify-content: center; margin-top: 26px; }
         .empty-state { padding: 34px; border: 1px dashed #b9c9d8; border-radius: 15px; background: #fff; text-align: center; }
         .empty-state strong { color: var(--navy); }
         .empty-state p { margin: 8px 0 0; color: var(--muted); }
@@ -241,6 +252,20 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
 
     <section class="section" id="services">
         <div class="container">
+            <?php
+            $serviceIcon = static function (string $name): string {
+                $icons = [
+                    'Bảo dưỡng định kỳ' => '<path d="m14.7 6.3 3-3a5 5 0 0 1-6.6 6.6l-7 7a2.1 2.1 0 0 0 3 3l7-7a5 5 0 0 1 6.6-6.6l-3 3-3-3Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+                    'Sửa chữa chung và khắc phục sự cố' => '<path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" stroke="currentColor" stroke-width="1.7"/><path d="m19 12 2 1-2 1v2l-2 .5-1 1.5-1.7-.7-1.3 1.2-1.5-1-1.5 1-1.3-1.2-1.7.7-1-1.5-2-.5v-2l-2-1 2-1v-2l2-.5 1-1.5 1.7.7L9.3 5l1.5 1 1.5-1 1.3 1.2 1.7-.7 1 1.5 2 .5v2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>',
+                    'Đồng sơn và phục hồi thân vỏ' => '<path d="M4 5h10v6H4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 7h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3M8 11v8m4-8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+                    'Chăm sóc và làm đẹp xe' => '<path d="m12 3 1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m18 14 .9 2.1L21 17l-2.1.9L18 20l-.9-2.1L15 17l2.1-.9L18 14Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>',
+                    'Lắp đặt phụ kiện và nâng cấp xe' => '<rect x="3" y="7" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="m17 10 4-2v8l-4-2" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+                    'Dịch vụ khẩn cấp và tiện ích' => '<path d="M6 3h3l2 5-2 1a12 12 0 0 0 6 6l1-2 5 2v3a2 2 0 0 1-2 2A17 17 0 0 1 4 5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+                ];
+
+                return $icons[$name] ?? '<path d="M5 13.5h14l-1.3-4a2 2 0 0 0-1.9-1.4H8.2a2 2 0 0 0-1.9 1.4L5 13.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6 13.5v4h2m10-4v4h-2M6 15h2m8 0h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>';
+            };
+            ?>
             <div class="section-heading">
                 <span class="section-kicker">Dịch vụ của chúng tôi</span>
                 <h2>Chăm sóc toàn diện cho chiếc xe của bạn</h2>
@@ -254,19 +279,45 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
             <?php else: ?>
                 <div class="service-grid">
                     <?php foreach ($services as $service): ?>
+                        <?php
+                        $serviceImage = service_image_url($service['image'] ?? null);
+                        $serviceBookingUrl = $isCustomer
+                            ? url('appointments/create?service_id=' . (int) $service['id'])
+                            : ($userRole === 'admin' ? url('admin') : url('login'));
+                        $servicePrice = (float) ($service['price'] ?? 0);
+                        $serviceDuration = (int) ($service['duration'] ?? 0);
+                        ?>
                         <article class="service-card">
-                            <span class="service-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none"><path d="m14.7 6.3 3-3a5 5 0 0 1-6.6 6.6l-7 7a2.1 2.1 0 0 0 3 3l7-7a5 5 0 0 1 6.6-6.6l-3 3-3-3Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </span>
-                            <span class="service-category"><?= e($service['category_name']) ?></span>
-                            <h3><?= e($service['name']) ?></h3>
-                            <p><?= e($service['description'] ?: 'Dịch vụ chăm sóc và sửa chữa xe tại gara.') ?></p>
-                            <div class="service-meta">
-                                <strong><?= e(number_format((float) $service['price'], 0, ',', '.')) ?> ₫</strong>
-                                <span>Dự kiến <?= e((int) $service['duration']) ?> phút</span>
+                            <div class="service-thumb">
+                                <?php if ($serviceImage !== null): ?>
+                                    <img src="<?= e($serviceImage) ?>" alt="<?= e($service['name']) ?>" width="1200" height="800" loading="lazy" decoding="async">
+                                <?php else: ?>
+                                    <span class="service-thumb-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none"><?= $serviceIcon((string) $service['category_name']) ?></svg>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="service-body">
+                                <span class="service-category"><?= e($service['category_name']) ?></span>
+                                <h3><a href="<?= e(url('services/' . (int) $service['id'])) ?>"><?= e($service['name']) ?></a></h3>
+                                <p><?= e($service['description'] ?: 'Dịch vụ chăm sóc và sửa chữa xe tại gara.') ?></p>
+                                <div class="service-meta">
+                                    <strong><?= e($servicePrice > 0 ? number_format($servicePrice, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá') ?></strong>
+                                    <span><?= e($serviceDuration > 0 ? 'Khoảng ' . $serviceDuration . ' phút' : 'Liên hệ để biết thời gian') ?></span>
+                                </div>
+                                <div class="service-actions">
+                                    <a class="btn btn-outline" href="<?= e(url('services/' . (int) $service['id'])) ?>">Xem chi tiết</a>
+                                    <a class="btn btn-primary" href="<?= e($serviceBookingUrl) ?>"><?= e($isCustomer ? 'Đặt lịch' : ($userRole === 'admin' ? 'Mở quản trị' : 'Đăng nhập')) ?></a>
+                                </div>
                             </div>
                         </article>
                     <?php endforeach; ?>
+                </div>
+                <div class="explore-all">
+                    <a class="btn btn-outline" href="<?= e(url('services')) ?>">
+                        KHÁM PHÁ TẤT CẢ DỊCH VỤ
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </a>
                 </div>
             <?php endif; ?>
         </div>
