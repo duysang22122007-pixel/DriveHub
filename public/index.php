@@ -56,8 +56,17 @@ try {
     http_response_code(500);
     header('Content-Type: text/html; charset=UTF-8');
 
+    $isDatabaseError = $exception instanceof PDOException
+        || str_contains($exception->getMessage(), 'SQLSTATE')
+        || str_contains($exception->getMessage(), 'Unknown database')
+        || str_contains($exception->getMessage(), 'Access denied');
+
     if (($appConfig['debug'] ?? false) === true) {
         echo '<h1>Application error</h1><pre>' . e($exception->getMessage()) . '</pre>';
+    } elseif ($isDatabaseError) {
+        echo '<h1>Không thể kết nối cơ sở dữ liệu</h1>'
+            . '<p>Vui lòng kiểm tra lại <strong>DB_HOST</strong>, <strong>DB_NAME</strong>, <strong>DB_USERNAME</strong>, <strong>DB_PASSWORD</strong> trong <code>.env</code> và đảm bảo MySQL/Laragon đang chạy.</p>'
+            . '<p>Chi tiết kỹ thuật: ' . e($exception->getMessage()) . '</p>';
     } else {
         echo '<h1>Đã xảy ra lỗi hệ thống</h1><p>Vui lòng thử lại sau.</p>';
     }
