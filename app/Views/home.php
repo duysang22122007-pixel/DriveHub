@@ -9,7 +9,9 @@ $primaryAction = $userRole === 'admin'
 $primaryActionLabel = $userRole === 'admin'
     ? 'Mở quản trị'
     : ($isCustomer ? 'Quản lý xe của tôi' : 'Tạo tài khoản khách hàng');
-$accountAction = $userRole === 'admin' ? url('admin') : url('login');
+$accountAction = $userRole === 'admin'
+    ? url('admin')
+    : ($isCustomer ? url('profile') : url('login'));
 $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 'Quản trị' : 'Tài khoản');
 $bookingAction = $isCustomer ? url('appointments/create') : ($userRole === 'admin' ? url('admin') : url('login'));
 $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'admin' ? 'Mở quản trị' : 'Đăng nhập để đặt lịch');
@@ -196,7 +198,13 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         </nav>
         <div class="nav-actions">
             <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
-            <?php if (!$isCustomer): ?><a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a><?php endif; ?>
+            <a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
+            <?php if ($isCustomer): ?>
+                <form method="post" action="<?= e(url('logout')) ?>" style="margin:0">
+                    <?= csrf_field() ?>
+                    <button class="btn btn-outline" type="submit">Đăng xuất</button>
+                </form>
+            <?php endif; ?>
             <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
         </div>
     </div>

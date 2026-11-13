@@ -29,7 +29,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $customer = new RequireRole('customer');
     $admin = new RequireRole('admin');
 
-    $router->get('/', [$homeController, 'index']);
+    $router->get('/', [$authController, 'dashboard'], [$authenticated]);
     $router->get('/register', [$authController, 'showRegister'], [$guestOnly]);
     $router->post('/register', [$authController, 'register'], [$guestOnly, $verifyCsrf]);
     $router->get('/login', [$authController, 'showLogin'], [$guestOnly]);
@@ -40,7 +40,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/admin/appointments', [$adminAppointmentController, 'index'], [$authenticated, $admin]);
     $router->get('/admin/appointments/{id}', [$adminAppointmentController, 'show'], [$authenticated, $admin]);
     $router->post('/admin/appointments/{id}/status', [$adminAppointmentController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
-    $router->get('/customer', [$authController, 'customerHome'], [$authenticated, new RequireRole('customer')]);
+    $router->get('/customer', [$homeController, 'index'], [$authenticated, $customer]);
 
     $router->get('/appointments/create', [$appointmentController, 'create'], [$authenticated, $customer]);
     $router->post('/appointments', [$appointmentController, 'store'], [$authenticated, $customer, $verifyCsrf]);
