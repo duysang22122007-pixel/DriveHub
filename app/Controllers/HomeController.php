@@ -23,7 +23,7 @@ final class HomeController extends Controller
 
     public function index(): Response
     {
-        $services = (new Service(Database::connection($this->databaseConfig)))->listActive();
+        $services = (new Service(Database::connection($this->databaseConfig)))->listFeatured(6);
 
         return $this->view('home', [
             'services' => $services,
