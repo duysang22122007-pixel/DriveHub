@@ -102,9 +102,10 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
                     <?php else: ?>
                         <div class="service-grid">
                             <?php foreach ($services as $service): ?>
+                                <?php $serviceImage = service_image_url($service['image'] ?? null); ?>
                                 <label class="service-card <?= in_array((int) $service['id'], $selectedServices, true) ? 'is-selected' : '' ?>">
-                                    <?php if (is_string($service['image']) && $service['image'] !== ''): ?>
-                                        <img class="service-image" src="<?= e($service['image']) ?>" alt="" loading="lazy">
+                                    <?php if ($serviceImage !== null): ?>
+                                        <img class="service-image" src="<?= e($serviceImage) ?>" alt="<?= e($service['name']) ?>" width="1200" height="800" loading="lazy" decoding="async">
                                     <?php else: ?>
                                         <span class="service-image service-placeholder" aria-hidden="true">✦</span>
                                     <?php endif; ?>
