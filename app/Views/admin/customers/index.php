@@ -38,7 +38,7 @@
     <nav>
         <a href="<?= e(url('admin')) ?>">Tổng quan</a>
         <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
-        <a href="<?= e(url('admin/customers')) ?>" class="active">Khách hàng</a>
+        <a href="<?= e(url('admin/customers')) ?>" class="active" aria-current="page">Khách hàng</a>
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
         <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>

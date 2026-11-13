@@ -6,7 +6,7 @@
     <title>Đồng bộ danh mục xe | AutoCare Hub</title>
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b5d}
-        .top,main{width:min(1240px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}
+        .top,main{width:min(1240px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}.top a.active{text-decoration:underline;text-underline-offset:3px}
         main{padding:34px 0 60px}h1{margin:0;color:#123b5d}.sub{color:#6b7b8b;line-height:1.6}.toolbar{display:flex;justify-content:space-between;gap:18px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}.button.secondary{background:#e8eef5;color:#123b5d}
         .notice{padding:11px 14px;margin:12px 0;border-radius:8px;background:#ecfdf3;color:#067647;overflow-wrap:anywhere}.notice.error{background:#fff0ef;color:#b42318}.panel{padding:20px;margin-top:20px;border:1px solid #e3eaf1;border-radius:13px;background:#fff}.panel h2{margin:0 0 14px;color:#123b5d;font-size:1.1rem}
         .choices{display:flex;flex-wrap:wrap;gap:12px}.choice{display:grid;grid-template-columns:20px 1fr;align-items:start;gap:8px;min-width:220px;padding:14px;border:1px solid #dce5ed;border-radius:9px}.choice input{margin-top:4px}.choice strong{display:block}.choice small{display:block;margin-top:5px;color:#6b7b8b}.hint{margin:14px 0 0;color:#6b7b8b;font-size:.88rem}.table-wrap{overflow:auto;border:1px solid #e3eaf1;border-radius:10px}table{width:100%;min-width:1000px;border-collapse:collapse;text-align:left}th,td{padding:11px;border-bottom:1px solid #edf1f5;vertical-align:middle}th{background:#f8fafc;color:#5a6c7d;font-size:.8rem}td{font-size:.87rem}.progress{min-width:110px}.track{height:8px;margin-top:5px;border-radius:5px;background:#e8eef5;overflow:hidden}.track span{display:block;height:100%;background:#2563eb}.empty{padding:25px;text-align:center;color:#6b7b8b}.resume{margin:0}
@@ -23,7 +23,7 @@
         <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
         <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
         <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>
-        <a href="<?= e(url('admin/vehicle-import')) ?>">Nhập dữ liệu xe</a>
+        <a href="<?= e(url('admin/vehicle-import')) ?>" class="active" aria-current="page">Nhập dữ liệu xe</a>
         <a href="<?= e(url('admin/vehicle-import/review')) ?>">Duyệt dòng xe</a>
         <a href="<?= e(url()) ?>">Trang chủ</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
