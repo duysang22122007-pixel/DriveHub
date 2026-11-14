@@ -128,16 +128,139 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         .booking-band h2 { margin: 0 0 9px; color: #fff; font-size: clamp(1.6rem, 3vw, 2.1rem); }
         .booking-band p { margin: 0; color: #d4e4f0; line-height: 1.65; }
         .booking-band .btn { flex: 0 0 auto; background: #fff; color: var(--navy); }
-        .contact-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 42px; align-items: center; }
-        .contact-copy p { color: var(--muted); line-height: 1.75; }
-        .contact-list { display: grid; gap: 14px; margin-top: 25px; }
-        .contact-item { display: flex; align-items: flex-start; gap: 13px; color: var(--muted); }
-        .contact-item strong { display: block; color: var(--navy); font-size: .92rem; }
-        .contact-item span { display: block; margin-top: 3px; font-size: .88rem; }
-        .contact-symbol { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; background: var(--blue-light); color: var(--blue); font-weight: 800; }
-        .contact-card { padding: 28px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
-        .contact-card h3 { margin: 0 0 9px; color: var(--navy); }
-        .contact-card p { margin: 0 0 19px; color: var(--muted); line-height: 1.65; }
+
+/* CONTACT SECTION */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 42px;
+    align-items: center;
+}
+
+.contact-copy h2 {
+    margin: 12px 0;
+}
+
+.contact-copy > p {
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 550px;
+}
+
+.contact-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 28px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    transition: .25s ease;
+}
+
+.contact-item:hover {
+    transform: translateY(-4px);
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 25px #123b5d12;
+}
+
+.contact-symbol {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--blue-light);
+    color: var(--blue);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.contact-item strong {
+    display: block;
+    color: var(--navy);
+    font-size: .92rem;
+}
+
+.contact-item span {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: .85rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.contact-card {
+    position: relative;
+    overflow: hidden;
+    padding: 38px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #123b5d, #1d5b85);
+    box-shadow: 0 15px 35px #123b5d20;
+}
+
+.contact-card::before {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    top: -80px;
+    right: -60px;
+    border: 30px solid #ffffff12;
+    border-radius: 50%;
+}
+
+.contact-card h3 {
+    position: relative; 
+    margin: 0 0 14px;
+    color: #fff;
+    font-size: 1.4rem;
+    line-height: 1.4;
+}
+
+.contact-card p {
+    position: relative;
+    margin: 0 0 24px;
+    color: #d4e4f0;
+    line-height: 1.75;
+}
+
+.contact-card .btn {
+    position: relative;
+    background: #fff;
+    color: var(--navy);
+    min-height: 48px;
+}
+
+.contact-card .btn:hover {
+    background: #eaf1ff;
+}
+
+@media (max-width: 680px) {
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .contact-list {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-card {
+        padding: 28px;
+    }
+}
+
         .site-footer { padding: 38px 0 22px; background: #0b2740; color: #d4e2ed; }
         .footer-main { display: flex; justify-content: space-between; gap: 32px; padding-bottom: 28px; }
         .footer-brand { color: #fff; }
@@ -354,25 +477,83 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         </div>
     </section>
 
-    <section class="section section-soft" id="contact">
-        <div class="container contact-grid">
-            <div class="contact-copy">
-                <span class="section-kicker">Liên hệ</span>
-                <h2>Gara luôn sẵn sàng hỗ trợ</h2>
-                <p>Thông tin liên hệ hiển thị theo cấu hình của gara để khách hàng chủ động kết nối và được tư vấn.</p>
-                <div class="contact-list">
-                    <div class="contact-item"><span class="contact-symbol">☎</span><div><strong>Điện thoại</strong><span><?= e(($garage['phone'] ?? '') !== '' ? $garage['phone'] : 'Chưa cập nhật thông tin') ?></span></div></div>
-                    <div class="contact-item"><span class="contact-symbol">⌖</span><div><strong>Địa chỉ gara</strong><span><?= e(($garage['address'] ?? '') !== '' ? $garage['address'] : 'Chưa cập nhật thông tin') ?></span></div></div>
-                    <div class="contact-item"><span class="contact-symbol">◷</span><div><strong>Giờ hoạt động</strong><span><?= e(($garage['hours'] ?? '') !== '' ? $garage['hours'] : 'Vui lòng liên hệ gara') ?></span></div></div>
+
+<section class="section section-soft" id="contact">
+    <div class="container contact-grid">
+
+        <div class="contact-copy">
+
+            <span class="section-kicker">LIÊN HỆ VỚI CHÚNG TÔI</span>
+
+            <h2>Kết nối với AutoCare Hub</h2>
+
+            <p>
+                Chúng tôi luôn sẵn sàng đồng hành cùng bạn
+                trong quá trình chăm sóc, bảo dưỡng và sửa chữa ô tô.
+                Hãy liên hệ với gara để được hỗ trợ nhanh chóng.
+            </p>
+
+            <div class="contact-list">
+
+                <div class="contact-item">
+                    <span class="contact-symbol">☎</span>
+                    <div>
+                        <strong>Điện thoại</strong>
+                        <span>
+                            <?= e(($garage['phone'] ?? '') !== '' ? $garage['phone'] : 'Chưa cập nhật thông tin') ?>
+                        </span>
+                    </div>
                 </div>
+
+                <div class="contact-item">
+                    <span class="contact-symbol">⌖</span>
+                    <div>
+                        <strong>Địa chỉ gara</strong>
+                        <span>
+                            <?= e(($garage['address'] ?? '') !== '' ? $garage['address'] : 'Chưa cập nhật thông tin') ?>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <span class="contact-symbol">◷</span>
+                    <div>
+                        <strong>Giờ hoạt động</strong>
+                        <span>
+                            <?= e(($garage['hours'] ?? '') !== '' ? $garage['hours'] : 'Vui lòng liên hệ gara') ?>
+                        </span>
+                    </div>
+                </div>
+
             </div>
-            <aside class="contact-card">
-                <h3>Quản lý dịch vụ ngay trên tài khoản</h3>
-                <p>Theo dõi phương tiện, lịch hẹn và thông tin chăm sóc xe tại một nơi.</p>
-                <a class="btn btn-primary" href="<?= e($bookingAction) ?>"><?= e($bookingLabel) ?></a>
-            </aside>
         </div>
-    </section>
+
+        <aside class="contact-card">
+
+            <h3>Chăm sóc xe dễ dàng hơn mỗi ngày</h3>
+
+            <p>
+                Theo dõi phương tiện, quản lý lịch hẹn
+                và cập nhật thông tin chăm sóc xe
+                ngay trên tài khoản AutoCare Hub.
+            </p>
+
+            <a class="btn" href="<?= e($bookingAction) ?>">
+                <?= e($bookingLabel) ?>
+                <svg viewBox="0 0 24 24" fill="none"
+                    aria-hidden="true">
+                    <path d="M5 12h14m-6-6 6 6-6 6"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"/>
+                </svg>
+            </a>
+
+        </aside>
+    </div>
+</section>
+
 </main>
 
 <footer class="site-footer">
