@@ -1,89 +1,145 @@
-<!doctype html>
-<html lang="vi">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= e($dashboardTitle) ?> | AutoCare Hub</title>
-    <style>
-        :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b5d;color:#fff}
-        .top,main{width:min(1440px,calc(100% - 48px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}
-        .brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:14px;white-space:nowrap}.top nav a{white-space:nowrap;transition:color .15s ease}.top a{color:#fff;text-decoration:none}.top a.active{text-decoration:underline;text-underline-offset:3px}.top nav a:hover,.top nav a:focus-visible{color:#bfdbfe;text-decoration:underline;text-underline-offset:4px}
-        main{padding:34px 0 60px}h1{margin:0;color:#123b5d}.sub{color:#6b7b8b}.button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}.button.secondary{background:#e8eef5;color:#123b5d}
-        .toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px}.toolbar p{margin:8px 0 0}.stats{display:grid;grid-template-columns:repeat( auto-fit,minmax(205px,1fr));gap:16px}
-        .card{padding:21px;border:1px solid #e3eaf1;border-radius:13px;background:#fff;box-shadow:0 7px 22px #123b5d07}.card-label{margin:0;color:#667788;font-size:.9rem;font-weight:700}.card-value{margin:13px 0 0;color:#123b5d;font-size:2rem;font-weight:800;letter-spacing:-.04em}.card-note{margin:7px 0 0;color:#718096;font-size:.82rem}
-        .pending-card{display:block;color:inherit;text-decoration:none;transition:border-color .15s,transform .15s}.pending-card:hover{border-color:#9bb8d1;transform:translateY(-2px)}.pending-card:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
-        .section-title{margin:34px 0 14px;color:#123b5d;font-size:1.15rem}.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.action{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border:1px solid #e3eaf1;border-radius:11px;background:#fff;color:#123b5d;text-decoration:none;font-weight:700;transition:border-color .15s,transform .15s}.action:hover{border-color:#9bb8d1;transform:translateY(-1px)}.arrow{color:#2563eb;font-size:1.1rem}
-        @media(max-width:640px){.top{align-items:flex-start;flex-direction:column;padding:13px 0}.top nav{flex-wrap:wrap;gap:12px}.toolbar{align-items:flex-start;flex-direction:column}.stats{grid-template-columns:1fr 1fr}.card{padding:16px}.card-value{font-size:1.65rem}}
-        @media(max-width:420px){.stats{grid-template-columns:1fr}}
-    </style>
-</head>
-<body>
-<header>
-    <div class="top">
-        <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
-        <nav aria-label="Điều hướng Admin">
-            <a class="active" href="<?= e(url('admin')) ?>" aria-current="page">Tổng quan</a>
-            <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
-            <a href="<?= e(url('admin/customers')) ?>">Khách hàng</a>
-            <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
-            <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
-            <a href="<?= e(url('admin/models')) ?>">Dòng xe</a>
-            <a href="<?= e(url('admin/vehicle-import')) ?>">Nhập dữ liệu xe</a>
-            <a href="<?= e(url('admin/vehicle-import/review')) ?>">Duyệt dòng xe</a>
-            <a href="<?= e(url()) ?>">Trang chủ</a>
-            <form method="post" action="<?= e(url('logout')) ?>">
-                <?= csrf_field() ?>
-                <button class="button secondary" type="submit">Đăng xuất</button>
-            </form>
-        </nav>
-    </div>
-</header>
-<main>
-    <div class="toolbar">
-        <div>
-            <h1><?= e($dashboardTitle) ?></h1>
-            <p class="sub">Xin chào <?= e($userName) ?> · <?= e($roleLabel) ?></p>
-        </div>
-    </div>
+<?php
 
-    <section class="stats" aria-label="Tổng quan hệ thống">
-        <article class="card">
-            <p class="card-label">Khách hàng</p>
-            <p class="card-value"><?= e($stats['customers']) ?></p>
-            <p class="card-note">Tổng số tài khoản khách hàng</p>
-        </article>
-        <article class="card">
-            <p class="card-label">Phương tiện</p>
-            <p class="card-value"><?= e($stats['vehicles']) ?></p>
-            <p class="card-note">Tổng số xe đã đăng ký</p>
-        </article>
-        <a class="card pending-card" href="<?= e(url('admin/appointments') . '?' . http_build_query(['status' => 'pending'])) ?>" aria-label="Xem <?= e($stats['pendingAppointments']) ?> lịch hẹn chờ xử lý">
-            <p class="card-label">Lịch hẹn chờ xử lý</p>
-            <p class="card-value"><?= e($stats['pendingAppointments']) ?></p>
-            <p class="card-note">Lịch hẹn đang có trạng thái chờ</p>
-        </a>
-        <article class="card">
-            <p class="card-label">Phiếu sửa chữa đang xử lý</p>
-            <p class="card-value"><?= e($stats['activeTickets']) ?></p>
-            <p class="card-note">Chưa hoàn thành hoặc hủy</p>
-        </article>
-        <article class="card">
-            <p class="card-label">Doanh thu đã thanh toán</p>
-            <p class="card-value"><?= e(number_format($stats['revenue'], 0, ',', '.')) ?> ₫</p>
-            <p class="card-note">Tổng giao dịch thanh toán thành công</p>
-        </article>
+declare(strict_types=1);
+
+$pageTitle = $dashboardTitle ?? 'Khu vực quản trị';
+$activeNav = 'dashboard';
+$pageEyebrow = 'Tổng quan';
+$pageDescription = 'Xin chào ' . ($userName !== '' ? $userName : 'Quản trị viên') . '. Theo dõi tình hình vận hành gara và lịch hẹn mới nhất.';
+$pendingUrl = url('admin/appointments') . '?' . http_build_query(['status' => 'pending']);
+$pageActions = '<a class="button secondary" href="' . e($pendingUrl) . '">Xem lịch chờ xử lý</a>';
+
+$metricIcon = static function (string $name): string {
+    $icons = [
+        'customers' => '<path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M10 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7 9v-1a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74"/>',
+        'vehicle' => '<path d="M5 16h14M6 16l1-5 2-3h6l2 3 1 5M7 16v2M17 16v2M9 11h6M8 13h.01M16 13h.01"/>',
+        'calendar' => '<path d="M7 3v2M17 3v2M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h3v3H8v-3Z"/>',
+        'ticket' => '<path d="M6 4h12v16H6V4Zm3 4h6M9 12h6M9 16h4"/>',
+        'revenue' => '<path d="M12 3v18M16 7.5c-.8-1-2-1.5-4-1.5-2.2 0-4 1.1-4 3s1.8 2.5 4 3 4 1.1 4 3-1.8 3-4 3c-2 0-3.2-.5-4-1.5"/>',
+    ];
+
+    return '<svg viewBox="0 0 24 24" aria-hidden="true">' . ($icons[$name] ?? $icons['ticket']) . '</svg>';
+};
+
+$appointmentStatusLabels = [
+    'pending' => 'Chờ xác nhận',
+    'confirmed' => 'Đã xác nhận',
+    'checked_in' => 'Đã tiếp nhận',
+    'completed' => 'Hoàn thành',
+    'rejected' => 'Đã từ chối',
+    'cancelled' => 'Đã hủy',
+];
+$appointmentStatusClasses = [
+    'pending' => 'pending',
+    'confirmed' => 'confirmed',
+    'checked_in' => 'checked-in',
+    'completed' => 'completed',
+    'rejected' => 'rejected',
+    'cancelled' => 'cancelled',
+];
+$maxStatusCount = 0;
+foreach ($stats['appointmentStatuses'] as $appointmentStatus):
+    $maxStatusCount = max($maxStatusCount, (int) $appointmentStatus['total']);
+endforeach;
+
+ob_start();
+?>
+<section class="metrics-grid" aria-label="Chỉ số tổng quan">
+    <a class="metric metric-link" href="<?= e(url('admin/customers')) ?>">
+        <div class="metric-top"><p class="metric-label">Khách hàng</p><span class="metric-icon"><?= $metricIcon('customers') ?></span></div>
+        <p class="metric-value"><?= e($stats['customers']) ?></p>
+        <p class="metric-note">Tài khoản khách hàng trong hệ thống</p>
+    </a>
+    <a class="metric metric-link" href="<?= e(url('admin/vehicles')) ?>">
+        <div class="metric-top"><p class="metric-label">Phương tiện</p><span class="metric-icon"><?= $metricIcon('vehicle') ?></span></div>
+        <p class="metric-value"><?= e($stats['vehicles']) ?></p>
+        <p class="metric-note">Xe đã đăng ký</p>
+    </a>
+    <a class="metric metric-link pending" href="<?= e($pendingUrl) ?>">
+        <div class="metric-top"><p class="metric-label">Lịch chờ xử lý</p><span class="metric-icon"><?= $metricIcon('calendar') ?></span></div>
+        <p class="metric-value"><?= e($stats['pendingAppointments']) ?></p>
+        <p class="metric-note">Cần được xác nhận</p>
+    </a>
+    <article class="metric">
+        <div class="metric-top"><p class="metric-label">Phiếu sửa chữa</p><span class="metric-icon"><?= $metricIcon('ticket') ?></span></div>
+        <p class="metric-value"><?= e($stats['activeTickets']) ?></p>
+        <p class="metric-note">Đang ở các công đoạn xử lý</p>
+    </article>
+    <article class="metric revenue">
+        <div class="metric-top"><p class="metric-label">Đã thanh toán</p><span class="metric-icon"><?= $metricIcon('revenue') ?></span></div>
+        <p class="metric-value"><?= e(number_format($stats['revenue'], 0, ',', '.')) ?> ₫</p>
+        <p class="metric-note">Tổng giao dịch thành công</p>
+    </article>
+</section>
+
+<div class="dashboard-lower">
+    <section class="panel dashboard-panel" aria-labelledby="appointment-status-title">
+        <div class="panel-head">
+            <div>
+                <h2 class="panel-title" id="appointment-status-title">Phân bổ lịch hẹn</h2>
+                <p class="panel-description">Số lượng theo trạng thái hiện tại</p>
+            </div>
+            <a class="dashboard-panel-link" href="<?= e(url('admin/appointments')) ?>">Tất cả lịch hẹn →</a>
+        </div>
+        <div class="panel-body">
+            <?php if ($stats['appointmentStatuses'] === []): ?>
+                <div class="empty-state">Chưa có dữ liệu lịch hẹn.</div>
+            <?php else: ?>
+                <div class="chart-list" role="list" aria-label="Số lịch hẹn theo trạng thái">
+                    <?php foreach ($stats['appointmentStatuses'] as $appointmentStatus): ?>
+                        <?php
+                            $statusKey = (string) $appointmentStatus['status'];
+                            $statusCount = (int) $appointmentStatus['total'];
+                            $barWidth = $maxStatusCount > 0 ? (int) round($statusCount * 100 / $maxStatusCount) : 0;
+                        ?>
+                        <div class="chart-row <?= e($appointmentStatusClasses[$statusKey] ?? '') ?>" role="listitem">
+                            <span class="chart-label"><?= e($appointmentStatusLabels[$statusKey] ?? $statusKey) ?></span>
+                            <span class="chart-track" role="img" aria-label="<?= e($statusCount . ' lịch hẹn') ?>"><span style="width:<?= $barWidth ?>%"></span></span>
+                            <span class="chart-count"><?= e($statusCount) ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </section>
 
-    <h2 class="section-title">Quản lý chính</h2>
-    <nav class="actions" aria-label="Thao tác quản lý">
-        <a class="action" href="<?= e(url('admin/customers')) ?>">Quản lý khách hàng <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="action" href="<?= e(url('admin/appointments')) ?>">Quản lý lịch hẹn <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="action" href="<?= e(url('admin/vehicles')) ?>">Xem phương tiện <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="action" href="<?= e(url('admin/brands')) ?>">Quản lý hãng xe <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="action" href="<?= e(url('admin/models')) ?>">Quản lý dòng xe <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="action" href="<?= e(url('admin/vehicle-import')) ?>">Đồng bộ thư viện xe <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="action" href="<?= e(url('admin/vehicle-import/review')) ?>">Duyệt dòng xe NHTSA <span class="arrow" aria-hidden="true">→</span></a>
-    </nav>
-</main>
-</body>
-</html>
+    <section class="panel dashboard-panel" aria-labelledby="recent-appointments-title">
+        <div class="panel-head">
+            <div>
+                <h2 class="panel-title" id="recent-appointments-title">Lịch hẹn gần đây</h2>
+                <p class="panel-description">Các yêu cầu được tạo gần nhất</p>
+            </div>
+            <a class="dashboard-panel-link" href="<?= e(url('admin/appointments')) ?>">Mở danh sách →</a>
+        </div>
+        <div class="panel-body">
+            <?php if ($stats['recentAppointments'] === []): ?>
+                <div class="empty-state">Chưa có lịch hẹn nào.</div>
+            <?php else: ?>
+                <div class="activity-list">
+                    <?php foreach ($stats['recentAppointments'] as $appointment): ?>
+                        <?php
+                            $statusKey = (string) $appointment['status'];
+                            $appointmentDate = date('d/m/Y', strtotime((string) $appointment['appointment_date']));
+                            $appointmentTime = substr((string) $appointment['appointment_time'], 0, 5);
+                        ?>
+                        <article class="activity-item">
+                            <div class="activity-main">
+                                <a class="activity-title" href="<?= e(url('admin/appointments/' . (int) $appointment['id'])) ?>">
+                                    <?= e($appointment['appointment_code']) ?> · <?= e($appointment['full_name']) ?>
+                                </a>
+                                <span class="activity-meta"><?= e($appointment['brand_name'] . ' ' . $appointment['model']) ?> · <?= e($appointment['license_plate']) ?></span>
+                            </div>
+                            <div class="activity-side">
+                                <span class="status <?= e($appointmentStatusClasses[$statusKey] ?? '') ?>"><?= e($appointmentStatusLabels[$statusKey] ?? $statusKey) ?></span>
+                                <time class="activity-date" datetime="<?= e($appointment['appointment_date'] . 'T' . $appointmentTime) ?>"><?= e($appointmentDate . ' · ' . $appointmentTime) ?></time>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+</div>
+<?php
+$content = ob_get_clean();
+require BASE_PATH . '/app/Views/admin/_layout.php';
