@@ -42,9 +42,9 @@ final class Environment
                 $value = substr($value, 1, -1);
             }
 
-            if (getenv($name) === false) {
-                putenv($name . '=' . $value);
-                $_ENV[$name] = $value;
+           if (getenv($name) === false || getenv($name) === '') {
+              putenv($name . '=' . $value);
+              $_ENV[$name] = $value;
             }
         }
     }
