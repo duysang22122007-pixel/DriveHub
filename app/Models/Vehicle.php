@@ -52,6 +52,16 @@ final class Vehicle
         return $statement->fetchColumn() !== false;
     }
 
+    public function hasBrand(int $brandId): bool
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM vehicle_brands WHERE id = :id'
+        );
+        $statement->execute(['id' => $brandId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
     /**
      * @return array<string, mixed>|null
      */
@@ -176,5 +186,62 @@ final class Vehicle
         );
 
         return $statement->fetchAll();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findForAdmin(int $vehicleId, int $customerId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT v.id, v.user_id, v.brand_id, v.vehicle_model_id, v.model,
+                    v.license_plate, v.manufacture_year, v.color, v.current_mileage,
+                    b.name AS brand_name, u.full_name AS owner_name,
+                    u.email AS owner_email, u.phone AS owner_phone
+             FROM vehicles AS v
+             INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             INNER JOIN users AS u ON u.id = v.user_id AND u.role = \'customer\'
+             WHERE v.id = :vehicle_id AND v.user_id = :customer_id
+             LIMIT 1'
+        );
+        $statement->execute(['vehicle_id' => $vehicleId, 'customer_id' => $customerId]);
+        $vehicle = $statement->fetch();
+
+        return $vehicle === false ? null : $vehicle;
+    }
+
+    /**
+     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
+     */
+    public function updateForAdmin(int $vehicleId, int $customerId, array $data): bool
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE vehicles
+             SET vehicle_model_id = CASE
+                     WHEN brand_id = :catalog_brand_id AND model = :catalog_model THEN vehicle_model_id
+                     ELSE NULL
+                 END,
+                 brand_id = :brand_id,
+                 model = :model,
+                 license_plate = :license_plate,
+                 manufacture_year = :manufacture_year,
+                 color = :color,
+                 current_mileage = :current_mileage
+             WHERE id = :id AND user_id = :user_id'
+        );
+        $statement->execute([
+            'catalog_brand_id' => $data['brand_id'],
+            'catalog_model' => $data['model'],
+            'brand_id' => $data['brand_id'],
+            'model' => $data['model'],
+            'license_plate' => $data['license_plate'],
+            'manufacture_year' => $data['manufacture_year'],
+            'color' => $data['color'],
+            'current_mileage' => $data['current_mileage'],
+            'id' => $vehicleId,
+            'user_id' => $customerId,
+        ]);
+
+        return $statement->rowCount() > 0;
     }
 }

@@ -142,16 +142,26 @@ final class AppointmentController extends Controller
         return Response::redirect(url('appointments/' . $appointmentId));
     }
 
-    public function history(): Response
+    public function history(Request $request): Response
     {
+        $statusInput = $request->input('status', '');
+        $status = is_string($statusInput) ? $statusInput : '';
+        $errors = [];
+        if (!is_string($statusInput) || ($status !== '' && !array_key_exists($status, $this->statuses()))) {
+            $errors[] = 'Bộ lọc trạng thái không hợp lệ.';
+            $status = '';
+        }
+
         $appointments = (new Appointment(Database::connection($this->databaseConfig)))
-            ->historyForCustomer((int) $_SESSION['user_id']);
+            ->historyForCustomer((int) $_SESSION['user_id'], $status === '' ? null : $status);
 
         return $this->view('customer/appointments/index', [
             'appointments' => $appointments,
             'bookingTypes' => $this->bookingTypes(),
             'statuses' => $this->statuses(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
+            'statusFilter' => $status,
+            'errors' => $errors,
         ]);
     }
 

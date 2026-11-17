@@ -168,28 +168,18 @@ final class Appointment
                 }
             }
 
-            if ($status === 'rejected') {
-                $update = $this->pdo->prepare(
-                    'UPDATE appointments SET status = :status, admin_note = :admin_note
-                     WHERE id = :id AND status = :current_status'
-                );
-                $update->execute([
-                    'status' => $status,
-                    'admin_note' => trim((string) $reason),
-                    'id' => $appointmentId,
-                    'current_status' => $currentStatus,
-                ]);
-            } else {
-                $update = $this->pdo->prepare(
-                    'UPDATE appointments SET status = :status
-                     WHERE id = :id AND status = :current_status'
-                );
-                $update->execute([
-                    'status' => $status,
-                    'id' => $appointmentId,
-                    'current_status' => $currentStatus,
-                ]);
-            }
+            $update = $this->pdo->prepare(
+                'UPDATE appointments
+                 SET status = :status,
+                     admin_note = :admin_note
+                 WHERE id = :id AND status = :current_status'
+            );
+            $update->execute([
+                'status' => $status,
+                'admin_note' => $status === 'rejected' ? trim((string) $reason) : null,
+                'id' => $appointmentId,
+                'current_status' => $currentStatus,
+            ]);
             $this->pdo->commit();
 
             return $update->rowCount() === 1;
@@ -325,11 +315,19 @@ final class Appointment
     /**
      * @return list<array<string, mixed>>
      */
-    public function historyForCustomer(int $customerId, int $limit = 50): array
+    public function historyForCustomer(int $customerId, ?string $status = null): array
     {
+        $conditions = ['a.user_id = :user_id'];
+        $parameters = ['user_id' => $customerId];
+        if ($status !== null) {
+            $conditions[] = 'a.status = :status';
+            $parameters['status'] = $status;
+        }
+
         $statement = $this->pdo->prepare(
-            '                        SELECT a.id, a.appointment_code, a.appointment_type, a.appointment_date,
+            'SELECT a.id, a.appointment_code, a.appointment_type, a.appointment_date,
                    a.appointment_time, a.status, a.created_at,
+                   CASE WHEN a.status = \'rejected\' THEN a.admin_note ELSE NULL END AS rejection_reason,
                     v.model, v.license_plate, b.name AS brand_name,
                    t.status AS maintenance_ticket_status,
                     COALESCE(details.service_count, 0) AS service_count,
@@ -344,15 +342,33 @@ final class Appointment
                  FROM appointment_details
                  GROUP BY appointment_id
              ) AS details ON details.appointment_id = a.id
-             WHERE a.user_id = :user_id
-             ORDER BY a.created_at DESC, a.id DESC
-             LIMIT :limit'
+             WHERE ' . implode(' AND ', $conditions) . '
+             ORDER BY a.created_at DESC, a.id DESC'
         );
-        $statement->bindValue('user_id', $customerId, PDO::PARAM_INT);
-        $statement->bindValue('limit', max(1, min($limit, 100)), PDO::PARAM_INT);
-        $statement->execute();
+        $statement->execute($parameters);
+        $appointments = $statement->fetchAll();
+        if ($appointments === []) {
+            return [];
+        }
 
-        return $statement->fetchAll();
+        $serviceStatement = $this->pdo->prepare(
+            'SELECT d.appointment_id, d.service_name
+             FROM appointment_details AS d
+             INNER JOIN appointments AS a ON a.id = d.appointment_id
+             WHERE ' . implode(' AND ', $conditions) . '
+             ORDER BY d.appointment_id, d.id'
+        );
+        $serviceStatement->execute($parameters);
+        $serviceNames = [];
+        foreach ($serviceStatement->fetchAll() as $service) {
+            $serviceNames[(int) $service['appointment_id']][] = $service['service_name'];
+        }
+        foreach ($appointments as &$appointment) {
+            $appointment['service_names'] = implode(', ', $serviceNames[(int) $appointment['id']] ?? []);
+        }
+        unset($appointment);
+
+        return $appointments;
     }
 
     /**

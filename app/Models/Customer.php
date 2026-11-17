@@ -33,6 +33,23 @@ final class Customer
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function findCustomer(int $customerId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id, full_name, email, phone, status
+             FROM users
+             WHERE id = :id AND role = 'customer'
+             LIMIT 1"
+        );
+        $statement->execute(['id' => $customerId]);
+        $customer = $statement->fetch();
+
+        return $customer === false ? null : $customer;
+    }
+
+    /**
      * Tìm kiếm khách hàng theo tên, email, hoặc số điện thoại.
      * Lọc thêm theo trạng thái nếu được cung cấp.
      *

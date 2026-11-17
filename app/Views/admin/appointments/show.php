@@ -28,7 +28,7 @@ $updatedAt = $appointment['updated_at'] === null ? '—' : date('d/m/Y H:i', str
 
 $pageDescription = $typeLabel . ' · Tạo lúc ' . $createdAt;
 $pageActions = '<a class="button secondary" href="' . e(url('admin/appointments')) . '">← Danh sách lịch hẹn</a>';
-$pageStyles = '.service-line{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px dashed #e7edf3}.service-line:last-of-type{border-bottom:0}.service-total{margin-top:8px;padding-top:9px;border-top:1px solid #e7edf3;color:#123b5d}';
+$pageStyles = '.service-line{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px dashed #e7edf3}.service-line:last-of-type{border-bottom:0}.service-total{margin-top:8px;padding-top:9px;border-top:1px solid #e7edf3;color:#123b5d}.field[hidden]{display:none}';
 
 ob_start();
 ?>

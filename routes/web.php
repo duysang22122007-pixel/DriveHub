@@ -6,6 +6,7 @@ use App\Controllers\HomeController;
 use App\Controllers\AuthController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminAppointmentController;
+use App\Controllers\AdminVehicleController;
 use App\Controllers\AppointmentController;
 use App\Controllers\VehicleController;
 use App\Controllers\ProfileController;
@@ -23,6 +24,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $vehicleController = new VehicleController($databaseConfig);
     $adminController = new AdminController($databaseConfig);
     $adminAppointmentController = new AdminAppointmentController($databaseConfig);
+    $adminVehicleController = new AdminVehicleController($databaseConfig);
     $profileController = new ProfileController($databaseConfig);
     $serviceController = new ServiceController($databaseConfig, $garageConfig);
     $guestOnly = new GuestOnly($databaseConfig);
@@ -62,7 +64,12 @@ return static function (Router $router, array $databaseConfig, array $garageConf
 
     $router->get('/admin/customers', [$adminController, 'customers'], [$authenticated, $admin]);
     $router->post('/admin/customers/{id}/status', [$adminController, 'updateCustomerStatus'], [$authenticated, $admin, $verifyCsrf]);
-    $router->get('/admin/vehicles', [$adminController, 'vehicles'], [$authenticated, $admin]);
+    $router->get('/admin/vehicles', [$adminVehicleController, 'index'], [$authenticated, $admin]);
+    $router->get('/admin/vehicles/{customerId}/create', [$adminVehicleController, 'create'], [$authenticated, $admin]);
+    $router->post('/admin/vehicles/{customerId}', [$adminVehicleController, 'store'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/vehicles/{customerId}/{vehicleId}/edit', [$adminVehicleController, 'edit'], [$authenticated, $admin]);
+    $router->post('/admin/vehicles/{customerId}/{vehicleId}/update', [$adminVehicleController, 'update'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/vehicles/{customerId}/{vehicleId}', [$adminVehicleController, 'show'], [$authenticated, $admin]);
     $router->get('/admin/brands', [$adminController, 'brands'], [$authenticated, $admin]);
     $router->post('/admin/brands', [$adminController, 'storeBrand'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/brands/{id}/update', [$adminController, 'updateBrand'], [$authenticated, $admin, $verifyCsrf]);
