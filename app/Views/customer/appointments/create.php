@@ -203,8 +203,12 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
     const dateMessage = document.getElementById('availability-message');
     const slotMessage = document.getElementById('slot-capacity-message');
     const availabilityUrl = <?= json_encode(url('appointments/availability'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
-    let preferredTime = <?= json_encode($old['appointment_time'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
-    const initialStep = <?= (int) $activeStep ?>;
+    let preferredTime = window.DriveHubFormDrafts.value(
+        form,
+        'appointment_time',
+        <?= json_encode($old['appointment_time'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>
+    );
+    const initialStep = Number(window.DriveHubFormDrafts.meta(form, 'step', <?= (int) $activeStep ?>));
     let activeStep = initialStep;
     let submitting = false;
     let availabilityRequest = 0;
@@ -212,6 +216,7 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
 
     const setStep = (number, scrollToHeading = true) => {
         activeStep = Math.max(1, Math.min(steps.length, number));
+        window.DriveHubFormDrafts.setMeta(form, 'step', activeStep);
         steps.forEach((step) => {
             step.hidden = Number(step.dataset.step) !== activeStep;
         });
@@ -394,6 +399,11 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
         updateSummary();
     });
     form.addEventListener('input', updateSummary);
+    form.addEventListener('drivehub:form-draft-restored', (event) => {
+        const restoredStep = Number(event.detail.meta.step || initialStep);
+        setStep(Number.isFinite(restoredStep) ? restoredStep : initialStep, false);
+        updateSummary();
+    });
     form.addEventListener('submit', (event) => {
         if (submitting) {
             event.preventDefault();

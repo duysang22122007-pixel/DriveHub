@@ -104,6 +104,55 @@ if (!function_exists('flash')) {
         $value = $_SESSION['_flash'][$key] ?? null;
         unset($_SESSION['_flash'][$key]);
 
+        if ($key === 'success' && is_string($value) && $value !== '') {
+            $_SESSION['_clear_form_draft'] = true;
+        }
+
         return is_string($value) ? $value : null;
+    }
+}
+
+/**
+ * Lưu errors và old input vào session để dùng sau redirect (PRG pattern).
+ *
+ * @param array<string, string> $errors
+ * @param array<string, mixed>  $old
+ */
+if (!function_exists('flash_input')) {
+    function flash_input(array $errors, array $old = []): void
+    {
+        $_SESSION['_flash_errors'] = $errors;
+        $_SESSION['_flash_old']    = $old;
+    }
+}
+
+/**
+ * Lấy errors đã lưu từ session rồi xóa đi.
+ *
+ * @return array<string, string>
+ */
+if (!function_exists('errors')) {
+    function errors(): array
+    {
+        $value = $_SESSION['_flash_errors'] ?? [];
+        unset($_SESSION['_flash_errors']);
+
+        return is_array($value) ? $value : [];
+    }
+}
+
+/**
+ * Lấy old input đã lưu từ session rồi xóa đi, hoặc trả về giá trị mặc định.
+ *
+ * @param array<string, mixed> $defaults
+ * @return array<string, mixed>
+ */
+if (!function_exists('old')) {
+    function old(array $defaults = []): array
+    {
+        $value = $_SESSION['_flash_old'] ?? null;
+        unset($_SESSION['_flash_old']);
+
+        return is_array($value) ? $value : $defaults;
     }
 }

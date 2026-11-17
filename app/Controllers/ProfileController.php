@@ -199,11 +199,9 @@ final class ProfileController extends Controller
             }
         }
 
-        return $this->view('profile/forgot-password', [
-            'errors'    => [],
-            'old'       => [],
-            'success'   => 'Nếu email thuộc tài khoản đang hoạt động, hướng dẫn đặt lại mật khẩu sẽ được gửi đến bạn.',
-        ]);
+        flash('success', 'Nếu email thuộc tài khoản đang hoạt động, hướng dẫn đặt lại mật khẩu sẽ được gửi đến bạn.');
+
+        return Response::redirect(url('forgot-password'));
     }
 
     public function showResetPassword(Request $request, array $parameters): Response
