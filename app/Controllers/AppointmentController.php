@@ -71,9 +71,17 @@ final class AppointmentController extends Controller
         if ($time === '') {
             $errors['appointment_time'] = 'Vui lòng chọn giờ mong muốn.';
         }
-        if ($date !== '' && $time !== '' && !$this->isFutureDateTime($date, $time)) {
-            $errors['appointment_date'] = 'Ngày hoặc giờ không hợp lệ hoặc đã qua.';
-            $errors['appointment_time'] = 'Ngày hoặc giờ không hợp lệ hoặc đã qua.';
+        if ($time !== '' && !Appointment::isValidBookingTime($time)) {
+            $errors['appointment_time'] = 'Vui lòng chọn giờ từ 07:30 đến 22:00, cách nhau 30 phút.';
+        }
+        if (
+            $date !== ''
+            && $time !== ''
+            && Appointment::isValidBookingTime($time)
+            && !$this->isFutureDateTime($date, $time)
+        ) {
+            $errors['appointment_date'] = 'Ngày không hợp lệ hoặc đã qua; vui lòng kiểm tra lại ngày và giờ.';
+            $errors['appointment_time'] = 'Ngày không hợp lệ hoặc đã qua; vui lòng kiểm tra lại ngày và giờ.';
         }
         if ($condition !== '' && !Validator::stringLength($condition, 1, 2000)) {
             $errors['condition'] = 'Mô tả tình trạng xe không được vượt quá 2.000 ký tự.';
@@ -271,7 +279,7 @@ final class AppointmentController extends Controller
     {
         if (
             !preg_match('/\A\d{4}-\d{2}-\d{2}\z/', $date)
-            || !preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)
+            || !Appointment::isValidBookingTime($time)
         ) {
             return false;
         }

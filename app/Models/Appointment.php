@@ -32,6 +32,22 @@ final class Appointment
         return self::ADMIN_TRANSITIONS[$status] ?? [];
     }
 
+    public static function isValidBookingTime(string $time): bool
+    {
+        if (!preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)) {
+            return false;
+        }
+
+        [$hours, $minutes] = array_map('intval', explode(':', $time));
+        $minutesOfDay = $hours * 60 + $minutes;
+        $openingMinutes = 7 * 60 + 30;
+        $closingMinutes = 22 * 60;
+
+        return $minutesOfDay >= $openingMinutes
+            && $minutesOfDay <= $closingMinutes
+            && ($minutesOfDay - $openingMinutes) % 30 === 0;
+    }
+
     /**
      * @return array{items: list<array<string, mixed>>, total: int}
      */
@@ -462,7 +478,7 @@ final class Appointment
     {
         if (
             !preg_match('/\A\d{4}-\d{2}-\d{2}\z/', $date)
-            || !preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)
+            || !self::isValidBookingTime($time)
         ) {
             return false;
         }
