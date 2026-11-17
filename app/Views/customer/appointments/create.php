@@ -5,6 +5,10 @@ declare(strict_types=1);
 $selectedServices = array_map('intval', is_array($old['service_ids'] ?? null) ? $old['service_ids'] : []);
 $bookingType = 'onsite';
 $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : '';
+$timeSlots = [];
+for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
+    $timeSlots[] = sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+}
 
 ?>
 <!doctype html>
@@ -127,7 +131,7 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
 
                 <fieldset class="wizard-step" data-step="4">
                     <legend>4. Chọn ngày và giờ mong muốn</legend>
-                    <p class="panel-intro">Hệ thống chưa có cấu hình khung giờ hoặc lịch trống. Đây là thời gian bạn đề xuất, không phải xác nhận còn chỗ.</p>
+                    <p class="panel-intro">Gara nhận lịch hằng ngày từ 07:30 đến 22:00, theo khoảng 30 phút. Đây là thời gian bạn đề xuất, không phải xác nhận còn chỗ.</p>
                     <div class="field-grid">
                         <div class="field">
                             <label for="appointment-date">Ngày mong muốn</label>
@@ -136,7 +140,12 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
                         </div>
                         <div class="field">
                             <label for="appointment-time">Giờ mong muốn</label>
-                            <input id="appointment-time" type="time" name="appointment_time" value="<?= e($old['appointment_time'] ?? '') ?>" required>
+                            <select id="appointment-time" name="appointment_time" required>
+                                <option value="">Chọn giờ</option>
+                                <?php foreach ($timeSlots as $timeSlot): ?>
+                                    <option value="<?= e($timeSlot) ?>" <?= ($old['appointment_time'] ?? '') === $timeSlot ? 'selected' : '' ?>><?= e($timeSlot) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                             <?php if (isset($errors['appointment_time'])): ?><p class="field-error" role="alert"><?= e($errors['appointment_time']) ?></p><?php endif; ?>
                         </div>
                     </div>
@@ -192,7 +201,7 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
         <aside class="aside">
             <section class="panel">
                 <h2>Hỗ trợ đặt lịch</h2>
-                <p class="panel-intro">Yêu cầu sẽ ở trạng thái chờ xác nhận. Không có khung giờ trống nào được giả định trước.</p>
+                <p class="panel-intro">Yêu cầu sẽ ở trạng thái chờ xác nhận cho đến khi Admin duyệt. Giờ đã chọn cần gara xác nhận.</p>
                 <?php if (is_string($garage['phone'] ?? null) && $garage['phone'] !== ''): ?>
                     <p><strong>Hotline gara</strong><br><a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $garage['phone'])) ?>"><?= e($garage['phone']) ?></a></p>
                 <?php else: ?>
@@ -236,7 +245,9 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
         if (element) {
             element.setCustomValidity(message);
             element.reportValidity();
-            element.addEventListener('input', () => element.setCustomValidity(''), { once: true });
+            const clearValidity = () => element.setCustomValidity('');
+            element.addEventListener('input', clearValidity, { once: true });
+            element.addEventListener('change', clearValidity, { once: true });
         } else {
             const alert = document.createElement('p');
             alert.className = 'field-error';
@@ -270,6 +281,18 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
             }
             if (!time.value) {
                 clientError(4, 'appointment-time', 'Vui lòng chọn giờ mong muốn.');
+                return false;
+            }
+            const [hours, minutes] = time.value.split(':').map(Number);
+            const minutesOfDay = hours * 60 + minutes;
+            if (
+                !Number.isInteger(hours)
+                || !Number.isInteger(minutes)
+                || minutesOfDay < 7 * 60 + 30
+                || minutesOfDay > 22 * 60
+                || (minutesOfDay - (7 * 60 + 30)) % 30 !== 0
+            ) {
+                clientError(4, 'appointment-time', 'Vui lòng chọn giờ từ 07:30 đến 22:00, cách nhau 30 phút.');
                 return false;
             }
         }
