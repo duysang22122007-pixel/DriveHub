@@ -27,6 +27,7 @@ Implemented:
 - PDO MySQL connection configuration for `utf8mb4`, exception reporting, and native prepared statements.
 - A transaction helper, validation primitives, environment loading, session cookie hardening, and a shared HTML-escaping helper.
 - A public document root with Apache rewrite rules and a root-entry compatibility wrapper.
+- POST form drafts are kept per browser tab in `sessionStorage` (excluding passwords, CSRF tokens, and files) and cleared after the server confirms a successful save. Business records continue to load from MySQL.
 - `.env.example` and root `.gitignore`.
 
 ## Phase 3 — Registration, login, and authorization
@@ -81,7 +82,7 @@ Service-catalog administration and repair-ticket workflows have not been impleme
 9. Configure the web server document root to `DriveHub/public`. Alternatively, visit `http://localhost/DriveHub/public/` when using Laragon's default document root.
 10. Ensure PHP can write to `storage/logs` and `public/assets/images/vehicle-catalog`.
 
-The root `index.php` and root `.htaccess` support Laragon's folder-based local URL. For deployment, use `public/` as the document root; the root rules also deny direct requests to application source and configuration paths.
+The root `index.php` and root `.htaccess` support Laragon's folder-based local URL, including mapping `/assets/...` requests to `public/assets/`. For deployment, use `public/` as the document root; the root rules also deny direct requests to application source and configuration paths.
 
 ## Checks
 
@@ -92,3 +93,5 @@ Get-ChildItem -Recurse -Filter *.php | ForEach-Object { & 'D:\laragon\bin\php\ph
 ```
 
 Open the public URL and confirm the AutoCare Hub page loads. Verify registration creates only a customer and login/logout enforce CSRF. Unknown paths should return 404, unsupported methods on a known route should return 405, unauthenticated protected routes should redirect to login, and a customer requesting `/admin` should receive 403.
+
+On a form with unsaved values, reload the page and confirm the values return in the same tab. Submit successfully, follow the redirect, and confirm the saved record is loaded from MySQL and an old draft is not restored. Passwords, CSRF tokens, and file selections are intentionally never restored.

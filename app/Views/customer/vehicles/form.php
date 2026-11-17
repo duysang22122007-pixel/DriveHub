@@ -80,7 +80,11 @@
     const modelSearch = document.getElementById('model-search');
     const modelError = document.getElementById('model-load-error');
     const modelsUrl = <?= json_encode(url('vehicle-models'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    const selectedModelId = <?= json_encode((string) ($old['model_id'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const selectedModelId = window.DriveHubFormDrafts.value(
+        document.querySelector('form'),
+        'model_id',
+        <?= json_encode((string) ($old['model_id'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+    );
     let modelRequestId = 0;
 
     async function loadModels(brandId, selectedId = '', keyword = '') {
