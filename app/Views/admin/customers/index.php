@@ -72,7 +72,7 @@ ob_start();
                     $stLabel = $st === 'active' ? 'Đang hoạt động' : ($st === 'locked' ? 'Đã khóa' : 'Không hoạt động');
                 ?>
                 <tr>
-                    <td><span class="cell-main"><?= e($customer['full_name']) ?></span></td>
+                    <td><a class="link cell-main" href="<?= e(url('admin/customers/' . (int) $customer['id'])) ?>"><?= e($customer['full_name']) ?></a></td>
                     <td><?= e($customer['email']) ?></td>
                     <td><?= e($customer['phone'] ?? '—') ?></td>
                     <td><?= e((int) $customer['vehicle_count']) ?></td>

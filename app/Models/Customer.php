@@ -101,4 +101,72 @@ final class Customer
 
         return $statement->rowCount() > 0;
     }
+
+    /**
+     * Lấy thông tin chi tiết khách hàng kèm danh sách xe.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findDetail(int $customerId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT u.id, u.full_name, u.email, u.phone, u.status, u.created_at, u.updated_at,
+                    COUNT(DISTINCT v.id) AS vehicle_count,
+                    COUNT(DISTINCT a.id) AS appointment_count
+             FROM users AS u
+             LEFT JOIN vehicles AS v ON v.user_id = u.id
+             LEFT JOIN appointments AS a ON a.user_id = u.id
+             WHERE u.id = :id AND u.role = 'customer'
+             GROUP BY u.id, u.full_name, u.email, u.phone, u.status, u.created_at, u.updated_at
+             LIMIT 1"
+        );
+        $statement->execute(['id' => $customerId]);
+        $customer = $statement->fetch();
+
+        return $customer === false ? null : $customer;
+    }
+
+    /**
+     * Lấy danh sách xe của khách hàng.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function vehiclesOf(int $customerId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT v.id, v.user_id, v.license_plate, v.model, v.manufacture_year, v.color,
+                    v.current_mileage, v.status, v.created_at,
+                    b.name AS brand_name
+             FROM vehicles AS v
+             INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             WHERE v.user_id = :user_id
+             ORDER BY v.created_at DESC"
+        );
+        $statement->execute(['user_id' => $customerId]);
+
+        return $statement->fetchAll();
+    }
+
+    /**
+     * Lấy lịch sử lịch hẹn gần nhất của khách hàng (tối đa 10).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentAppointmentsOf(int $customerId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT a.id, a.appointment_code, a.appointment_type,
+                    a.appointment_date, a.appointment_time, a.status, a.created_at,
+                    b.name AS brand_name, v.model, v.license_plate
+             FROM appointments AS a
+             INNER JOIN vehicles AS v ON v.id = a.vehicle_id
+             INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             WHERE a.user_id = :user_id
+             ORDER BY a.created_at DESC
+             LIMIT 10"
+        );
+        $statement->execute(['user_id' => $customerId]);
+
+        return $statement->fetchAll();
+    }
 }

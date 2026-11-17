@@ -211,6 +211,41 @@ final class AppointmentController extends Controller
     }
 
     /**
+     * @param array<string, string> $parameters
+     */
+    public function cancel(Request $request, array $parameters): Response
+    {
+        $appointmentId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($appointmentId === false || $appointmentId < 1) {
+            return Response::notFound();
+        }
+
+        $customerId = (int) $_SESSION['user_id'];
+        $input      = $request->body();
+        $reason     = is_string($input['cancellation_reason'] ?? null) ? trim($input['cancellation_reason']) : null;
+        if ($reason === '') {
+            $reason = null;
+        }
+
+        try {
+            $cancelled = (new Appointment(Database::connection($this->databaseConfig)))
+                ->cancelByCustomer($appointmentId, $customerId, $reason);
+        } catch (\InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+
+            return Response::redirect(url('appointments/' . $appointmentId));
+        }
+
+        if (!$cancelled) {
+            return Response::notFound();
+        }
+
+        flash('success', 'Lịch hẹn đã được hủy thành công.');
+
+        return Response::redirect(url('appointments/' . $appointmentId));
+    }
+
+    /**
      * @param array<string, string> $errors
      * @param array<string, mixed> $old
      */
