@@ -218,7 +218,7 @@ final class Appointment
         if (
             $customerId < 1
             || $vehicleId < 1
-            || !in_array($bookingType, ['onsite', 'online'], true)
+            || $bookingType !== 'onsite'
             || !preg_match('/\AAC[0-9A-F]{24}\z/', $appointmentCode)
             || !$this->isFutureDateTime($date, $time)
         ) {
