@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Models\Appointment;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use PDOException;
 
 final class AdminAppointmentController extends Controller
 {
@@ -154,6 +155,9 @@ final class AdminAppointmentController extends Controller
             flash('success', 'Trạng thái lịch hẹn đã được cập nhật.');
         } catch (InvalidArgumentException $exception) {
             flash('error', $exception->getMessage());
+        } catch (PDOException $exception) {
+            error_log('Appointment status update failed: ' . $exception->getMessage());
+            flash('error', 'Không thể cập nhật lịch hẹn do lỗi cơ sở dữ liệu. Vui lòng thử lại.');
         }
 
         return Response::redirect(url('admin/appointments/' . $appointmentId));
