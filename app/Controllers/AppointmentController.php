@@ -59,8 +59,8 @@ final class AppointmentController extends Controller
             : '';
         $errors = [];
 
-        if (!Validator::oneOf($bookingType, ['onsite', 'online'])) {
-            $errors['booking_type'] = 'Vui lòng chọn hình thức đặt lịch.';
+        if (!Validator::oneOf($bookingType, ['onsite'])) {
+            $errors['booking_type'] = 'Vui lòng chọn đặt lịch trực tiếp tại gara.';
         }
         if ($vehicleId === false || $vehicleId < 1) {
             $errors['vehicle_id'] = 'Vui lòng chọn xe thuộc tài khoản của bạn.';

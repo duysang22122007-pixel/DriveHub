@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $selectedServices = array_map('intval', is_array($old['service_ids'] ?? null) ? $old['service_ids'] : []);
-$bookingType = is_string($old['booking_type'] ?? null) ? $old['booking_type'] : '';
+$bookingType = 'onsite';
 $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : '';
 
 ?>
@@ -54,16 +54,12 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
 
                 <fieldset class="wizard-step" data-step="1">
                     <legend>1. Chọn hình thức đặt lịch</legend>
-                    <p class="panel-intro">Chọn cách bạn muốn gara hỗ trợ. Cả hai lựa chọn đều cần thời gian mong muốn để gara liên hệ xác nhận.</p>
+                    <p class="panel-intro">Mang xe đến gara vào thời gian mong muốn để kiểm tra hoặc sử dụng dịch vụ. Gara sẽ liên hệ xác nhận lịch hẹn.</p>
                     <?php if (isset($errors['booking_type'])): ?><p class="field-error" role="alert"><?= e($errors['booking_type']) ?></p><?php endif; ?>
                     <div class="choice-grid">
                         <label class="choice-card <?= $bookingType === 'onsite' ? 'is-selected' : '' ?>">
                             <input type="radio" name="booking_type" value="onsite" required <?= $bookingType === 'onsite' ? 'checked' : '' ?>>
                             <span><strong>Đặt lịch trực tiếp tại gara</strong><small>Mang xe đến gara vào thời gian mong muốn để kiểm tra hoặc sử dụng dịch vụ.</small></span>
-                        </label>
-                        <label class="choice-card <?= $bookingType === 'online' ? 'is-selected' : '' ?>">
-                            <input type="radio" name="booking_type" value="online" required <?= $bookingType === 'online' ? 'checked' : '' ?>>
-                            <span><strong>Tư vấn hoặc hỗ trợ trực tuyến</strong><small>Gửi mô tả và thời gian phù hợp để gara liên hệ tư vấn từ xa.</small></span>
                         </label>
                     </div>
                     <div class="form-actions form-actions-end"><button class="button" type="button" data-next>Tiếp tục</button></div>
@@ -284,7 +280,7 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
         const selectedType = form.querySelector('input[name="booking_type"]:checked');
         const selectedVehicle = form.querySelector('input[name="vehicle_id"]:checked');
         const vehicleLabel = selectedVehicle ? selectedVehicle.closest('.vehicle-choice').querySelector('.vehicle-copy strong').textContent : 'Chưa chọn xe';
-        const labels = { onsite: 'Đặt lịch trực tiếp tại gara', online: 'Tư vấn hoặc hỗ trợ trực tuyến' };
+        const labels = { onsite: 'Đặt lịch trực tiếp tại gara' };
         document.getElementById('summary-type').textContent = selectedType ? labels[selectedType.value] : 'Chưa chọn';
         document.getElementById('summary-vehicle').textContent = vehicleLabel;
 

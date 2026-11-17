@@ -467,7 +467,7 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
             <div class="booking-band">
                 <div>
                     <h2>Sẵn sàng chăm sóc chiếc xe của bạn?</h2>
-                    <p><?= $isCustomer ? 'Đặt lịch tại gara hoặc gửi yêu cầu tư vấn trực tuyến từ tài khoản của bạn.' : 'Đăng nhập để gửi yêu cầu đặt lịch và quản lý phương tiện của bạn.' ?></p>
+                    <p><?= $isCustomer ? 'Đặt lịch tại gara từ tài khoản của bạn để gara xác nhận thời gian phù hợp.' : 'Đăng nhập để gửi yêu cầu đặt lịch và quản lý phương tiện của bạn.' ?></p>
                 </div>
                 <a class="btn" href="<?= e($bookingAction) ?>">
                     <?= e($bookingLabel) ?>
