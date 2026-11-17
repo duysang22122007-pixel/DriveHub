@@ -412,6 +412,72 @@ final class Appointment
     }
 
     /**
+     * Khách hàng hủy lịch hẹn của chính mình.
+     * Chỉ cho phép hủy khi trạng thái là 'pending' hoặc 'confirmed'.
+     *
+     * @throws \InvalidArgumentException khi không thể hủy ở trạng thái hiện tại
+     */
+    public function cancelByCustomer(int $appointmentId, int $customerId, ?string $reason): bool
+    {
+        if ($appointmentId < 1 || $customerId < 1) {
+            throw new \InvalidArgumentException('Thông tin lịch hẹn không hợp lệ.');
+        }
+
+        if ($reason !== null && trim($reason) !== '' && preg_match('/\A.{1,500}\z/us', $reason) !== 1) {
+            throw new \InvalidArgumentException('Lý do hủy không được vượt quá 500 ký tự.');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $select = $this->pdo->prepare(
+                'SELECT status, user_id FROM appointments WHERE id = :id LIMIT 1 FOR UPDATE'
+            );
+            $select->execute(['id' => $appointmentId]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+
+            if ($row === false || (int) $row['user_id'] !== $customerId) {
+                $this->pdo->rollBack();
+
+                return false;
+            }
+
+            if (!in_array($row['status'], ['pending', 'confirmed'], true)) {
+                $this->pdo->rollBack();
+                throw new \InvalidArgumentException('Chỉ có thể hủy lịch hẹn đang chờ xác nhận hoặc đã xác nhận.');
+            }
+
+            $update = $this->pdo->prepare(
+                "UPDATE appointments
+                 SET status = 'cancelled',
+                     cancellation_reason = :reason
+                 WHERE id = :id AND user_id = :user_id
+                   AND (status = 'pending' OR status = 'confirmed')"
+            );
+            $update->execute([
+                'reason'  => ($reason !== null && trim($reason) !== '') ? trim($reason) : null,
+                'id'      => $appointmentId,
+                'user_id' => $customerId,
+            ]);
+
+            if ($update->rowCount() !== 1) {
+                $this->pdo->rollBack();
+
+                return false;
+            }
+
+            $this->pdo->commit();
+
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findForCustomer(int $appointmentId, int $customerId): ?array

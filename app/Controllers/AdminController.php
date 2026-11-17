@@ -56,6 +56,31 @@ final class AdminController extends Controller
     }
 
     /**
+     * @param array<string, string> $parameters
+     */
+    public function showCustomer(Request $request, array $parameters): Response
+    {
+        $customerId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($customerId === false || $customerId < 1) {
+            return Response::notFound();
+        }
+
+        $customers = new Customer(Database::connection($this->databaseConfig));
+        $customer = $customers->findDetail($customerId);
+        if ($customer === null) {
+            return Response::notFound();
+        }
+
+        return $this->view('admin/customers/show', [
+            'customer'     => $customer,
+            'vehicles'     => $customers->vehiclesOf($customerId),
+            'appointments' => $customers->recentAppointmentsOf($customerId),
+            'success'      => flash('success'),
+            'error'        => flash('error'),
+        ]);
+    }
+
+    /**
      * @param list<array<string, mixed>> $rows
      */
     private function exportCsv(array $rows): Response

@@ -70,6 +70,20 @@ $referenceTotal = array_sum(array_map(
             <p class="summary-note">Đây là giá tham khảo đã lưu tại thời điểm gửi; không thay thế báo giá cuối cùng của gara.</p>
         </section>
         <aside class="aside">
+            <?php if (in_array($appointment['status'], ['pending', 'confirmed'], true)): ?>
+            <section class="panel">
+                <h2>Hủy lịch hẹn</h2>
+                <p class="muted" style="margin:0 0 12px">Chỉ hủy khi lịch đang <strong>chờ xác nhận</strong> hoặc <strong>đã xác nhận</strong>. Sau khi hủy không thể hoàn tác.</p>
+                <form method="post" action="<?= e(url('appointments/' . (int) $appointment['id'] . '/cancel')) ?>" onsubmit="return confirm('Bạn có chắc muốn hủy lịch hẹn này không?');">
+                    <?= csrf_field() ?>
+                    <div style="margin-bottom:10px">
+                        <label style="display:block;margin-bottom:4px;font-size:.8rem;font-weight:700;color:#526678">Lý do hủy (không bắt buộc)</label>
+                        <textarea name="cancellation_reason" maxlength="500" placeholder="Nhập lý do hủy nếu có…" style="width:100%;min-height:80px;padding:8px 10px;border:1px solid #d1dbe5;border-radius:8px;font:inherit;font-size:.86rem;resize:vertical;box-sizing:border-box"></textarea>
+                    </div>
+                    <button class="button" type="submit" style="width:100%;background:#b42318;border-color:#b42318">Hủy lịch hẹn này</button>
+                </form>
+            </section>
+            <?php endif; ?>
             <section class="panel">
                 <h2>Bạn cần hỗ trợ?</h2>
                 <?php if (is_string($garage['phone'] ?? null) && $garage['phone'] !== ''): ?>
