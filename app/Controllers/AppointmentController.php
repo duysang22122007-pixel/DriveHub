@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Validator;
 use App\Models\Appointment;
+use App\Models\GarageSchedule;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -44,14 +45,30 @@ final class AppointmentController extends Controller
         return $this->form([], $old);
     }
 
+    public function availability(Request $request): Response
+    {
+        $dateInput = $request->input('date');
+        if (!is_string($dateInput) || trim($dateInput) === '') {
+            return Response::json(
+                json_encode(['error' => 'Vui lòng chọn ngày cần kiểm tra.'], JSON_THROW_ON_ERROR),
+                422
+            );
+        }
+
+        $schedule = new GarageSchedule(Database::connection($this->databaseConfig));
+
+        return Response::json(json_encode(
+            $schedule->availability(trim($dateInput)),
+            JSON_THROW_ON_ERROR
+        ));
+    }
+
     public function store(Request $request): Response
     {
         $input = $request->body();
-        $bookingType = is_string($input['booking_type'] ?? null) ? $input['booking_type'] : '';
         $vehicleId = filter_var($input['vehicle_id'] ?? null, FILTER_VALIDATE_INT);
         $date = is_string($input['appointment_date'] ?? null) ? trim($input['appointment_date']) : '';
         $time = is_string($input['appointment_time'] ?? null) ? trim($input['appointment_time']) : '';
-        $condition = is_string($input['condition'] ?? null) ? trim($input['condition']) : '';
         $additionalNote = is_string($input['additional_note'] ?? null) ? trim($input['additional_note']) : '';
         $serviceIds = $this->serviceIds($input['service_ids'] ?? []);
         $appointmentCode = is_string($input['appointment_code'] ?? null)
@@ -59,9 +76,6 @@ final class AppointmentController extends Controller
             : '';
         $errors = [];
 
-        if (!Validator::oneOf($bookingType, ['onsite'])) {
-            $errors['booking_type'] = 'Vui lòng chọn đặt lịch trực tiếp tại gara.';
-        }
         if ($vehicleId === false || $vehicleId < 1) {
             $errors['vehicle_id'] = 'Vui lòng chọn xe thuộc tài khoản của bạn.';
         }
@@ -71,20 +85,13 @@ final class AppointmentController extends Controller
         if ($time === '') {
             $errors['appointment_time'] = 'Vui lòng chọn giờ mong muốn.';
         }
-        if ($time !== '' && !Appointment::isValidBookingTime($time)) {
-            $errors['appointment_time'] = 'Vui lòng chọn giờ từ 07:30 đến 22:00, cách nhau 30 phút.';
-        }
         if (
             $date !== ''
             && $time !== ''
-            && Appointment::isValidBookingTime($time)
             && !$this->isFutureDateTime($date, $time)
         ) {
             $errors['appointment_date'] = 'Ngày không hợp lệ hoặc đã qua; vui lòng kiểm tra lại ngày và giờ.';
             $errors['appointment_time'] = 'Ngày không hợp lệ hoặc đã qua; vui lòng kiểm tra lại ngày và giờ.';
-        }
-        if ($condition !== '' && !Validator::stringLength($condition, 1, 2000)) {
-            $errors['condition'] = 'Mô tả tình trạng xe không được vượt quá 2.000 ký tự.';
         }
         if ($additionalNote !== '' && !Validator::stringLength($additionalNote, 1, 2000)) {
             $errors['additional_note'] = 'Ghi chú không được vượt quá 2.000 ký tự.';
@@ -92,18 +99,18 @@ final class AppointmentController extends Controller
         if ($serviceIds === null) {
             $errors['service_ids'] = 'Danh sách dịch vụ không hợp lệ.';
             $serviceIds = [];
+        } elseif ($serviceIds === []) {
+            $errors['service_ids'] = 'Vui lòng chọn ít nhất một dịch vụ.';
         }
         if (!preg_match('/\AAC[0-9A-F]{24}\z/', $appointmentCode)) {
-            $errors['form'] = 'Phiên đặt lịch đã hết hạn. Vui lòng kiểm tra lại thông tin và thử lại.';
+            $errors['appointment_code'] = 'Phiên đặt lịch đã hết hạn. Vui lòng kiểm tra lại thông tin và thử lại.';
         }
 
         $old = [
-            'booking_type' => $bookingType,
             'vehicle_id' => is_string($input['vehicle_id'] ?? null) ? $input['vehicle_id'] : '',
             'service_ids' => $serviceIds,
             'appointment_date' => $date,
             'appointment_time' => $time,
-            'condition' => $condition,
             'additional_note' => $additionalNote,
             'appointment_code' => $appointmentCode,
         ];
@@ -121,28 +128,27 @@ final class AppointmentController extends Controller
             );
         }
 
-        $noteParts = [];
-        if ($condition !== '') {
-            $noteParts[] = 'Tình trạng xe: ' . $condition;
-        }
-        if ($additionalNote !== '') {
-            $noteParts[] = 'Ghi chú thêm: ' . $additionalNote;
-        }
-        $note = $noteParts === [] ? null : implode("\n\n", $noteParts);
-
         try {
             $appointmentId = (new Appointment($pdo))->createForCustomer(
                 $customerId,
                 (int) $vehicleId,
-                $bookingType,
                 $appointmentCode,
                 $date,
                 $time,
-                $note,
+                $additionalNote === '' ? null : $additionalNote,
                 $serviceIds
             );
         } catch (InvalidArgumentException $exception) {
-            return $this->form(['form' => $exception->getMessage()], $old, 422);
+            $message = $exception->getMessage();
+            $field = str_starts_with($message, 'Xe ')
+                ? 'vehicle_id'
+                : (str_contains($message, 'dịch vụ') || str_starts_with($message, 'Danh sách')
+                    ? 'service_ids'
+                    : (str_starts_with($message, 'Gara ') || str_contains($message, 'lịch trong ngày')
+                        ? 'appointment_date'
+                        : 'appointment_time'));
+
+            return $this->form([$field => $message], $old, 422);
         }
 
         flash('success', 'Yêu cầu đặt lịch đã được gửi và đang chờ gara xác nhận.');
@@ -165,7 +171,7 @@ final class AppointmentController extends Controller
 
         return $this->view('customer/appointments/index', [
             'appointments' => $appointments,
-            'bookingTypes' => $this->bookingTypes(),
+            'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'statuses' => $this->statuses(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'statusFilter' => $status,
@@ -197,7 +203,7 @@ final class AppointmentController extends Controller
             'services' => $catalog->details($appointmentId),
             'customer' => $user,
             'garage' => $this->garage,
-            'bookingTypes' => $this->bookingTypes(),
+            'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'statuses' => $this->statuses(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'success' => flash('success'),
@@ -224,14 +230,13 @@ final class AppointmentController extends Controller
 
         $activeStep = 1;
         foreach ([
-            'booking_type' => 1,
-            'vehicle_id' => 2,
-            'service_ids' => 3,
-            'appointment_date' => 4,
+            'vehicle_id' => 1,
+            'service_ids' => 2,
+            'appointment_date' => 3,
             'appointment_time' => 4,
-            'condition' => 5,
             'additional_note' => 5,
-            'form' => 1,
+            'appointment_code' => 6,
+            'form' => 4,
         ] as $field => $step) {
             if (isset($errors[$field])) {
                 $activeStep = $step;
@@ -279,7 +284,7 @@ final class AppointmentController extends Controller
     {
         if (
             !preg_match('/\A\d{4}-\d{2}-\d{2}\z/', $date)
-            || !Appointment::isValidBookingTime($time)
+            || !preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)
         ) {
             return false;
         }
@@ -302,7 +307,7 @@ final class AppointmentController extends Controller
     /**
      * @return array<string, string>
      */
-    private function bookingTypes(): array
+    private function appointmentTypeLabels(): array
     {
         return [
             'onsite' => 'Đặt lịch trực tiếp tại gara',

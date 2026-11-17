@@ -14,7 +14,7 @@ $statusClass = [
     'completed' => 'completed',
     'cancelled' => 'cancelled',
 ][$appointment['status']] ?? '';
-$typeLabel = $bookingTypes[$appointment['appointment_type']] ?? 'Khác';
+$typeLabel = $appointmentTypeLabels[$appointment['appointment_type']] ?? 'Lịch cũ';
 $statusLabel = $statuses[$appointment['status']] ?? 'Chưa xác định';
 $maintenanceStatus = $maintenanceStatuses[$appointment['maintenance_ticket_status'] ?? ''] ?? null;
 $appointmentDate = date('d/m/Y', strtotime((string) $appointment['appointment_date']));

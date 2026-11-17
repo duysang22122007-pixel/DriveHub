@@ -42,6 +42,8 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/dashboard', [$authController, 'dashboard'], [$authenticated]);
     $router->get('/admin', [$authController, 'adminHome'], [$authenticated, new RequireRole('admin')]);
     $router->get('/admin/appointments', [$adminAppointmentController, 'index'], [$authenticated, $admin]);
+    $router->get('/admin/garage-schedule', [$adminAppointmentController, 'schedule'], [$authenticated, $admin]);
+    $router->post('/admin/garage-schedule', [$adminAppointmentController, 'updateSchedule'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/appointments/{id}', [$adminAppointmentController, 'show'], [$authenticated, $admin]);
     $router->post('/admin/appointments/{id}/status', [$adminAppointmentController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/customer', [$homeController, 'index'], [$authenticated, $customer]);
@@ -50,6 +52,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/services/{id}', [$serviceController, 'show']);
 
     $router->get('/appointments/create', [$appointmentController, 'create'], [$authenticated, $customer]);
+    $router->get('/appointments/availability', [$appointmentController, 'availability'], [$authenticated, $customer]);
     $router->post('/appointments', [$appointmentController, 'store'], [$authenticated, $customer, $verifyCsrf]);
     $router->get('/appointments', [$appointmentController, 'history'], [$authenticated, $customer]);
     $router->get('/appointments/{id}', [$appointmentController, 'show'], [$authenticated, $customer]);

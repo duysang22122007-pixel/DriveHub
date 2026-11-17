@@ -73,7 +73,7 @@ ob_start();
                     $createdLabel = $appointment['created_at'] === null
                         ? '—'
                         : date('d/m/Y H:i', strtotime((string) $appointment['created_at']));
-                    $typeLabel = $bookingTypes[$appointment['appointment_type']] ?? 'Khác';
+                    $typeLabel = $appointmentTypeLabels[$appointment['appointment_type']] ?? 'Lịch cũ';
                 ?>
                 <tr>
                     <td><p class="code"><?= e($appointment['appointment_code']) ?></p><p class="cell-sub"><?= e($typeLabel) ?></p></td>

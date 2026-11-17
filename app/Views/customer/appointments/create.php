@@ -3,12 +3,7 @@
 declare(strict_types=1);
 
 $selectedServices = array_map('intval', is_array($old['service_ids'] ?? null) ? $old['service_ids'] : []);
-$bookingType = 'onsite';
 $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : '';
-$timeSlots = [];
-for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
-    $timeSlots[] = sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
-}
 
 ?>
 <!doctype html>
@@ -34,15 +29,15 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
         <div>
             <span class="eyebrow">Dịch vụ AutoCare Hub</span>
             <h1>Đặt lịch sửa chữa</h1>
-            <p>Gửi thời gian mong muốn; lịch chỉ được xác nhận sau khi gara phản hồi.</p>
+            <p>Chọn khung giờ còn chỗ; lịch ở trạng thái chờ cho đến khi gara xác nhận.</p>
         </div>
         <a class="button secondary" href="<?= e(url('appointments')) ?>">Lịch hẹn của tôi</a>
     </div>
 
-    <?php if (isset($errors['form'])): ?><div class="notice error" role="alert"><?= e($errors['form']) ?></div><?php endif; ?>
+    <?php if (isset($errors['form']) || isset($errors['appointment_code'])): ?><div class="notice error" role="alert"><?= e($errors['form'] ?? $errors['appointment_code']) ?></div><?php endif; ?>
 
     <ol class="progress" aria-label="Tiến trình đặt lịch">
-        <?php foreach (['Hình thức', 'Chọn xe', 'Dịch vụ', 'Thời gian', 'Liên hệ', 'Xác nhận'] as $index => $label): ?>
+        <?php foreach (['Chọn xe', 'Dịch vụ', 'Chọn ngày', 'Khung giờ', 'Ghi chú', 'Xác nhận'] as $index => $label): ?>
             <?php $step = $index + 1; ?>
             <li data-progress-step="<?= $step ?>" <?= $step === $activeStep ? 'aria-current="step"' : '' ?>>
                 <span class="progress-mark"><?= $step ?></span><span><?= e($label) ?></span>
@@ -57,20 +52,7 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
                 <input type="hidden" name="appointment_code" value="<?= e($old['appointment_code']) ?>">
 
                 <fieldset class="wizard-step" data-step="1">
-                    <legend>1. Chọn hình thức đặt lịch</legend>
-                    <p class="panel-intro">Mang xe đến gara vào thời gian mong muốn để kiểm tra hoặc sử dụng dịch vụ. Gara sẽ liên hệ xác nhận lịch hẹn.</p>
-                    <?php if (isset($errors['booking_type'])): ?><p class="field-error" role="alert"><?= e($errors['booking_type']) ?></p><?php endif; ?>
-                    <div class="choice-grid">
-                        <label class="choice-card <?= $bookingType === 'onsite' ? 'is-selected' : '' ?>">
-                            <input type="radio" name="booking_type" value="onsite" required <?= $bookingType === 'onsite' ? 'checked' : '' ?>>
-                            <span><strong>Đặt lịch trực tiếp tại gara</strong><small>Mang xe đến gara vào thời gian mong muốn để kiểm tra hoặc sử dụng dịch vụ.</small></span>
-                        </label>
-                    </div>
-                    <div class="form-actions form-actions-end"><button class="button" type="button" data-next>Tiếp tục</button></div>
-                </fieldset>
-
-                <fieldset class="wizard-step" data-step="2">
-                    <legend>2. Chọn xe cần hỗ trợ</legend>
+                    <legend>1. Chọn phương tiện</legend>
                     <p class="panel-intro">Danh sách chỉ gồm phương tiện thuộc tài khoản của bạn.</p>
                     <?php if (isset($errors['vehicle_id'])): ?><p class="field-error" role="alert"><?= e($errors['vehicle_id']) ?></p><?php endif; ?>
                     <?php if ($vehicles === []): ?>
@@ -93,12 +75,12 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
                     <div class="form-actions"><button class="button secondary" type="button" data-back>Quay lại</button><button class="button" type="button" data-next>Tiếp tục</button></div>
                 </fieldset>
 
-                <fieldset class="wizard-step" data-step="3">
-                    <legend>3. Chọn dịch vụ</legend>
-                    <p class="panel-intro">Có thể chọn nhiều dịch vụ. Giá và thời lượng chỉ mang tính tham khảo; gara xác nhận sau khi tiếp nhận yêu cầu.</p>
+                <fieldset class="wizard-step" data-step="2">
+                    <legend>2. Chọn dịch vụ</legend>
+                    <p class="panel-intro">Chọn ít nhất một dịch vụ. Giá và thời lượng chỉ mang tính tham khảo; gara xác nhận sau khi tiếp nhận xe.</p>
                     <?php if (isset($errors['service_ids'])): ?><p class="field-error" role="alert"><?= e($errors['service_ids']) ?></p><?php endif; ?>
                     <?php if ($services === []): ?>
-                        <div class="empty-state"><strong>Chưa có dịch vụ đang mở để chọn</strong><p>Bạn vẫn có thể gửi yêu cầu hỗ trợ hoặc mô tả nhu cầu; gara sẽ liên hệ xác nhận nội dung và thời gian.</p></div>
+                        <div class="empty-state"><strong>Chưa có dịch vụ đang mở để chọn</strong><p>Hiện chưa thể đặt lịch. Vui lòng liên hệ gara hoặc quay lại khi danh mục dịch vụ được mở.</p></div>
                     <?php else: ?>
                         <div class="service-grid">
                             <?php foreach ($services as $service): ?>
@@ -126,36 +108,40 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
                         </div>
                     <?php endif; ?>
                     <p id="service-selection-summary" class="hint" aria-live="polite"></p>
+                    <div class="form-actions"><button class="button secondary" type="button" data-back>Quay lại</button><button class="button" type="button" data-next <?= $services === [] ? 'disabled' : '' ?>>Tiếp tục</button></div>
+                </fieldset>
+
+                <fieldset class="wizard-step" data-step="3">
+                    <legend>3. Chọn ngày</legend>
+                    <p class="panel-intro">Chọn ngày để kiểm tra gara có hoạt động và còn sức chứa hay không.</p>
+                    <div class="field-grid">
+                        <div class="field">
+                            <label for="appointment-date">Ngày</label>
+                            <input id="appointment-date" type="date" name="appointment_date" min="<?= e($today) ?>" value="<?= e($old['appointment_date'] ?? '') ?>" required>
+                            <?php if (isset($errors['appointment_date'])): ?><p class="field-error" role="alert"><?= e($errors['appointment_date']) ?></p><?php endif; ?>
+                        </div>
+                    </div>
+                    <p id="availability-message" class="hint" role="status">Khung giờ và số chỗ còn lại sẽ hiển thị sau khi chọn ngày.</p>
                     <div class="form-actions"><button class="button secondary" type="button" data-back>Quay lại</button><button class="button" type="button" data-next>Tiếp tục</button></div>
                 </fieldset>
 
                 <fieldset class="wizard-step" data-step="4">
-                    <legend>4. Chọn ngày và giờ mong muốn</legend>
-                    <p class="panel-intro">Gara nhận lịch hằng ngày từ 07:30 đến 22:00, theo khoảng 30 phút. Đây là thời gian bạn đề xuất, không phải xác nhận còn chỗ.</p>
-                    <div class="field-grid">
-                        <div class="field">
-                            <label for="appointment-date">Ngày mong muốn</label>
-                            <input id="appointment-date" type="date" name="appointment_date" min="<?= e($today) ?>" value="<?= e($old['appointment_date'] ?? '') ?>" required>
-                            <?php if (isset($errors['appointment_date'])): ?><p class="field-error" role="alert"><?= e($errors['appointment_date']) ?></p><?php endif; ?>
-                        </div>
-                        <div class="field">
-                            <label for="appointment-time">Giờ mong muốn</label>
-                            <select id="appointment-time" name="appointment_time" required>
-                                <option value="">Chọn giờ</option>
-                                <?php foreach ($timeSlots as $timeSlot): ?>
-                                    <option value="<?= e($timeSlot) ?>" <?= ($old['appointment_time'] ?? '') === $timeSlot ? 'selected' : '' ?>><?= e($timeSlot) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <?php if (isset($errors['appointment_time'])): ?><p class="field-error" role="alert"><?= e($errors['appointment_time']) ?></p><?php endif; ?>
-                        </div>
+                    <legend>4. Chọn khung giờ</legend>
+                    <p class="panel-intro">Chỉ các khung giờ còn chỗ mới có thể chọn. Khung đã đủ số lịch sẽ bị khóa.</p>
+                    <div class="field">
+                        <label for="appointment-time">Khung giờ</label>
+                        <select id="appointment-time" name="appointment_time" required disabled>
+                            <option value="">Chọn ngày trước</option>
+                        </select>
+                        <?php if (isset($errors['appointment_time'])): ?><p class="field-error" role="alert"><?= e($errors['appointment_time']) ?></p><?php endif; ?>
                     </div>
-                    <p class="hint">Thời gian được hiểu theo giờ Việt Nam. Gara sẽ phản hồi để xác nhận hoặc đề xuất thời gian khác.</p>
+                    <p id="slot-capacity-message" class="hint" role="status">Chỗ còn lại sẽ được cập nhật theo ngày đã chọn.</p>
                     <div class="form-actions"><button class="button secondary" type="button" data-back>Quay lại</button><button class="button" type="button" data-next>Tiếp tục</button></div>
                 </fieldset>
 
                 <fieldset class="wizard-step" data-step="5">
-                    <legend>5. Thông tin liên hệ và tình trạng xe</legend>
-                    <p class="panel-intro">Thông tin liên hệ lấy từ tài khoản hiện tại. Muốn cập nhật, hãy chỉnh sửa hồ sơ trước khi gửi yêu cầu.</p>
+                    <legend>5. Nhập ghi chú</legend>
+                    <p class="panel-intro">Ghi rõ dấu hiệu xe, nhu cầu hoặc lưu ý khi gara tiếp nhận. Thông tin liên hệ lấy từ tài khoản của bạn.</p>
                     <div class="contact-card">
                         <div><span>Khách hàng</span><strong><?= e($customer['full_name']) ?></strong></div>
                         <div><span>Số điện thoại</span><strong><?= e($customer['phone']) ?></strong></div>
@@ -164,13 +150,8 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
                     </div>
                     <div class="field-grid" style="margin-top:18px">
                         <div class="field full">
-                            <label for="condition">Mô tả tình trạng xe (không bắt buộc)</label>
-                            <textarea id="condition" name="condition" maxlength="2000" placeholder="Ví dụ: tiếng kêu, đèn cảnh báo hoặc dấu hiệu cần kiểm tra"><?= e($old['condition'] ?? '') ?></textarea>
-                            <?php if (isset($errors['condition'])): ?><p class="field-error" role="alert"><?= e($errors['condition']) ?></p><?php endif; ?>
-                        </div>
-                        <div class="field full">
-                            <label for="additional-note">Ghi chú thêm cho gara (không bắt buộc)</label>
-                            <textarea id="additional-note" name="additional_note" maxlength="2000" placeholder="Thời gian liên hệ thuận tiện hoặc lưu ý khác"><?= e($old['additional_note'] ?? '') ?></textarea>
+                            <label for="additional-note">Ghi chú cho gara (không bắt buộc)</label>
+                            <textarea id="additional-note" name="additional_note" maxlength="2000" placeholder="Ví dụ: mô tả dấu hiệu xe hoặc lưu ý khi tiếp nhận"><?= e($old['additional_note'] ?? '') ?></textarea>
                             <?php if (isset($errors['additional_note'])): ?><p class="field-error" role="alert"><?= e($errors['additional_note']) ?></p><?php endif; ?>
                         </div>
                     </div>
@@ -178,21 +159,20 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
                 </fieldset>
 
                 <fieldset class="wizard-step" data-step="6">
-                    <legend>6. Kiểm tra và xác nhận</legend>
-                    <p class="panel-intro">Kiểm tra lại thông tin. Gửi yêu cầu sẽ tạo lịch ở trạng thái chờ gara xác nhận.</p>
+                    <legend>6. Xác nhận đặt lịch</legend>
+                    <p class="panel-intro">Kiểm tra thông tin trước khi xác nhận. Lịch sẽ được tạo ở trạng thái chờ gara xác nhận.</p>
                     <dl class="summary-list">
-                        <div class="summary-row"><dt>Hình thức</dt><dd id="summary-type">Chưa chọn</dd></div>
                         <div class="summary-row"><dt>Xe</dt><dd id="summary-vehicle">Chưa chọn</dd></div>
                         <div class="summary-row"><dt>Dịch vụ</dt><dd id="summary-services">Chưa chọn dịch vụ</dd></div>
                         <div class="summary-row"><dt>Ngày, giờ</dt><dd id="summary-datetime">Chưa chọn</dd></div>
                         <div class="summary-row"><dt>Liên hệ</dt><dd><?= e($customer['full_name']) ?><br><?= e($customer['phone']) ?><br><?= e($customer['email']) ?></dd></div>
-                        <div class="summary-row"><dt>Mô tả và ghi chú</dt><dd id="summary-notes">Chưa có ghi chú</dd></div>
+                        <div class="summary-row"><dt>Ghi chú</dt><dd id="summary-notes">Chưa có ghi chú</dd></div>
                     </dl>
                     <div class="summary-total">Tổng giá tham khảo <span id="summary-total">—</span></div>
                     <p class="summary-note">Giá và thời gian chưa phải báo giá hoặc xác nhận lịch cuối cùng. Gara sẽ liên hệ bạn theo thông tin tài khoản.</p>
                     <div class="form-actions">
                         <button class="button secondary" type="button" data-back>Quay lại chỉnh sửa</button>
-                        <button id="booking-submit" class="button" type="submit">Xác nhận gửi yêu cầu</button>
+                        <button id="booking-submit" class="button" type="submit">Xác nhận đặt lịch</button>
                     </div>
                 </fieldset>
             </form>
@@ -201,7 +181,7 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
         <aside class="aside">
             <section class="panel">
                 <h2>Hỗ trợ đặt lịch</h2>
-                <p class="panel-intro">Yêu cầu sẽ ở trạng thái chờ xác nhận cho đến khi Admin duyệt. Giờ đã chọn cần gara xác nhận.</p>
+                <p class="panel-intro">Giờ đã đủ sức chứa sẽ bị khóa. Lịch mới ở trạng thái chờ cho đến khi gara xác nhận.</p>
                 <?php if (is_string($garage['phone'] ?? null) && $garage['phone'] !== ''): ?>
                     <p><strong>Hotline gara</strong><br><a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $garage['phone'])) ?>"><?= e($garage['phone']) ?></a></p>
                 <?php else: ?>
@@ -218,9 +198,17 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
     const form = document.getElementById('booking-form');
     const steps = Array.from(form.querySelectorAll('.wizard-step'));
     const progress = Array.from(document.querySelectorAll('[data-progress-step]'));
+    const dateInput = document.getElementById('appointment-date');
+    const timeSelect = document.getElementById('appointment-time');
+    const dateMessage = document.getElementById('availability-message');
+    const slotMessage = document.getElementById('slot-capacity-message');
+    const availabilityUrl = <?= json_encode(url('appointments/availability'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
+    let preferredTime = <?= json_encode($old['appointment_time'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;
     const initialStep = <?= (int) $activeStep ?>;
     let activeStep = initialStep;
     let submitting = false;
+    let availabilityRequest = 0;
+    let dateHasAvailableSlots = false;
 
     const setStep = (number, scrollToHeading = true) => {
         activeStep = Math.max(1, Math.min(steps.length, number));
@@ -258,53 +246,110 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
     };
 
     const validateStep = (number) => {
-        if (number === 1 && !form.querySelector('input[name="booking_type"]:checked')) {
-            clientError(1, null, 'Vui lòng chọn hình thức đặt lịch.');
+        if (number === 1) {
+            if (!form.querySelector('input[name="vehicle_id"]:checked')) {
+                clientError(1, null, 'Vui lòng thêm hoặc chọn xe thuộc tài khoản của bạn.');
+                return false;
+            }
+        }
+        if (number === 2 && !form.querySelector('input[name="service_ids[]"]:checked')) {
+            clientError(2, null, 'Vui lòng chọn ít nhất một dịch vụ.');
             return false;
         }
-        if (number === 2) {
-            if (!form.querySelector('input[name="vehicle_id"]:checked')) {
-                clientError(2, null, 'Vui lòng thêm hoặc chọn xe thuộc tài khoản của bạn.');
+        if (number === 3) {
+            if (!dateInput.value) {
+                clientError(3, 'appointment-date', 'Vui lòng chọn ngày.');
+                return false;
+            }
+            if (dateInput.value < dateInput.min) {
+                clientError(3, 'appointment-date', 'Không thể chọn ngày trong quá khứ.');
+                return false;
+            }
+            if (!dateHasAvailableSlots) {
+                clientError(3, 'appointment-date', 'Ngày đã chọn không còn khung giờ có thể đặt.');
                 return false;
             }
         }
         if (number === 4) {
-            const date = document.getElementById('appointment-date');
-            const time = document.getElementById('appointment-time');
-            if (!date.value) {
-                clientError(4, 'appointment-date', 'Vui lòng chọn ngày mong muốn.');
+            if (!timeSelect.value) {
+                clientError(4, 'appointment-time', 'Vui lòng chọn một khung giờ còn chỗ.');
                 return false;
             }
-            if (date.value < date.min) {
-                clientError(4, 'appointment-date', 'Không thể chọn ngày trong quá khứ.');
-                return false;
-            }
-            if (!time.value) {
-                clientError(4, 'appointment-time', 'Vui lòng chọn giờ mong muốn.');
-                return false;
-            }
-            const [hours, minutes] = time.value.split(':').map(Number);
-            const minutesOfDay = hours * 60 + minutes;
-            if (
-                !Number.isInteger(hours)
-                || !Number.isInteger(minutes)
-                || minutesOfDay < 7 * 60 + 30
-                || minutesOfDay > 22 * 60
-                || (minutesOfDay - (7 * 60 + 30)) % 30 !== 0
-            ) {
-                clientError(4, 'appointment-time', 'Vui lòng chọn giờ từ 07:30 đến 22:00, cách nhau 30 phút.');
+            const selectedOption = timeSelect.options[timeSelect.selectedIndex];
+            if (!selectedOption || selectedOption.dataset.available !== 'true') {
+                clientError(4, 'appointment-time', 'Khung giờ này đã hết chỗ. Vui lòng chọn khung giờ khác.');
                 return false;
             }
         }
         return true;
     };
 
+    async function loadAvailability() {
+        const requestId = ++availabilityRequest;
+        const previousTime = timeSelect.value || preferredTime;
+        preferredTime = '';
+        dateHasAvailableSlots = false;
+        timeSelect.disabled = true;
+        timeSelect.innerHTML = '<option value="">Đang tải khung giờ...</option>';
+
+        if (!dateInput.value) {
+            timeSelect.innerHTML = '<option value="">Chọn ngày trước</option>';
+            dateMessage.textContent = 'Chọn ngày để xem lịch hoạt động và số chỗ còn lại.';
+            slotMessage.textContent = 'Chỗ còn lại sẽ được cập nhật theo ngày đã chọn.';
+            return;
+        }
+
+        dateMessage.textContent = 'Đang kiểm tra lịch hoạt động...';
+        try {
+            const query = new URLSearchParams({ date: dateInput.value });
+            const response = await fetch(`${availabilityUrl}?${query.toString()}`, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (requestId !== availabilityRequest) return;
+            if (!response.ok) {
+                throw new Error(result.error || 'Không thể tải khung giờ. Vui lòng thử lại.');
+            }
+
+            const availableSlots = Array.isArray(result.slots) ? result.slots : [];
+            timeSelect.innerHTML = '<option value="">Chọn khung giờ</option>';
+            availableSlots.forEach((slot) => {
+                const option = document.createElement('option');
+                option.value = slot.time;
+                option.disabled = !slot.available;
+                option.dataset.available = slot.available ? 'true' : 'false';
+                option.textContent = slot.available
+                    ? `${slot.time} · Còn ${slot.remaining} chỗ`
+                    : `${slot.time} · ${slot.passed ? 'Đã qua giờ' : 'Đã đủ chỗ'}`;
+                if (slot.available && slot.time === previousTime) option.selected = true;
+                timeSelect.append(option);
+            });
+
+            dateHasAvailableSlots = result.is_open === true && availableSlots.some((slot) => slot.available);
+            timeSelect.disabled = availableSlots.length === 0;
+            dateMessage.textContent = result.message || 'Không có khung giờ khả dụng.';
+            if (Number.isInteger(result.remaining_today)) {
+                dateMessage.textContent += ` Còn ${result.remaining_today} lịch trong ngày.`;
+            }
+            slotMessage.textContent = dateHasAvailableSlots
+                ? 'Khung giờ hết chỗ được hiển thị nhưng không thể chọn.'
+                : 'Ngày này không còn khung giờ có thể đặt.';
+            updateSummary();
+        } catch (error) {
+            if (requestId !== availabilityRequest) return;
+            timeSelect.innerHTML = '<option value="">Không tải được khung giờ</option>';
+            timeSelect.disabled = true;
+            dateMessage.textContent = error instanceof Error
+                ? error.message
+                : 'Không thể tải khung giờ. Vui lòng thử lại.';
+            slotMessage.textContent = 'Vui lòng tải lại khung giờ trước khi tiếp tục.';
+        }
+    }
+
     function updateSummary() {
-        const selectedType = form.querySelector('input[name="booking_type"]:checked');
         const selectedVehicle = form.querySelector('input[name="vehicle_id"]:checked');
         const vehicleLabel = selectedVehicle ? selectedVehicle.closest('.vehicle-choice').querySelector('.vehicle-copy strong').textContent : 'Chưa chọn xe';
-        const labels = { onsite: 'Đặt lịch trực tiếp tại gara' };
-        document.getElementById('summary-type').textContent = selectedType ? labels[selectedType.value] : 'Chưa chọn';
         document.getElementById('summary-vehicle').textContent = vehicleLabel;
 
         const selectedServices = Array.from(form.querySelectorAll('input[name="service_ids[]"]:checked'));
@@ -314,24 +359,22 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
         document.getElementById('summary-services').textContent = serviceNames.length ? `${serviceNames.join(', ')} (${duration} phút dự kiến)` : 'Chưa chọn dịch vụ';
         document.getElementById('service-selection-summary').textContent = serviceNames.length
             ? `Đã chọn ${serviceNames.length} dịch vụ · ${duration} phút dự kiến`
-            : 'Bạn có thể gửi yêu cầu không kèm dịch vụ; gara sẽ liên hệ làm rõ nhu cầu.';
+            : 'Chọn ít nhất một dịch vụ để tiếp tục.';
         document.getElementById('summary-total').textContent = serviceNames.length
             ? `${new Intl.NumberFormat('vi-VN').format(referenceTotal)} ₫`
             : 'Chưa có dịch vụ';
 
-        const date = document.getElementById('appointment-date').value;
-        const time = document.getElementById('appointment-time').value;
+        const date = dateInput.value;
+        const time = timeSelect.value;
         document.getElementById('summary-datetime').textContent = date && time
             ? `${new Date(`${date}T00:00:00`).toLocaleDateString('vi-VN')} · ${time}`
             : 'Chưa chọn';
-        const condition = document.getElementById('condition').value.trim();
         const note = document.getElementById('additional-note').value.trim();
-        const noteParts = [];
-        if (condition) noteParts.push(`Tình trạng xe: ${condition}`);
-        if (note) noteParts.push(`Ghi chú thêm: ${note}`);
-        document.getElementById('summary-notes').textContent = noteParts.join(' · ') || 'Chưa có ghi chú';
+        document.getElementById('summary-notes').textContent = note || 'Chưa có ghi chú';
     }
 
+    dateInput.addEventListener('change', loadAvailability);
+    timeSelect.addEventListener('change', updateSummary);
     form.querySelectorAll('[data-next]').forEach((button) => {
         button.addEventListener('click', () => {
             if (validateStep(activeStep)) setStep(activeStep + 1);
@@ -356,7 +399,7 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
             event.preventDefault();
             return;
         }
-        for (let step = 1; step <= 5; step++) {
+        for (let step = 1; step <= 6; step++) {
             if (!validateStep(step)) {
                 event.preventDefault();
                 return;
@@ -370,6 +413,7 @@ for ($minutes = 7 * 60 + 30; $minutes <= 22 * 60; $minutes += 30) {
     });
 
     setStep(initialStep, false);
+    if (dateInput.value) loadAvailability();
 })();
 </script>
 </body>

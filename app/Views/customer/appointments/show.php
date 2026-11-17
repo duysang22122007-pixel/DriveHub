@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$type = $bookingTypes[$appointment['appointment_type']] ?? 'Hình thức khác';
+$type = $appointmentTypeLabels[$appointment['appointment_type']] ?? 'Lịch cũ';
 $statusLabel = $statuses[$appointment['status']] ?? 'Chưa xác định';
 $maintenanceStatus = $maintenanceStatuses[$appointment['maintenance_ticket_status'] ?? ''] ?? null;
 $date = date('d/m/Y', strtotime((string) $appointment['appointment_date']));

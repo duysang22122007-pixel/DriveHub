@@ -32,22 +32,6 @@ final class Appointment
         return self::ADMIN_TRANSITIONS[$status] ?? [];
     }
 
-    public static function isValidBookingTime(string $time): bool
-    {
-        if (!preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)) {
-            return false;
-        }
-
-        [$hours, $minutes] = array_map('intval', explode(':', $time));
-        $minutesOfDay = $hours * 60 + $minutes;
-        $openingMinutes = 7 * 60 + 30;
-        $closingMinutes = 22 * 60;
-
-        return $minutesOfDay >= $openingMinutes
-            && $minutesOfDay <= $closingMinutes
-            && ($minutesOfDay - $openingMinutes) % 30 === 0;
-    }
-
     /**
      * @return array{items: list<array<string, mixed>>, total: int}
      */
@@ -214,7 +198,6 @@ final class Appointment
     public function createForCustomer(
         int $customerId,
         int $vehicleId,
-        string $bookingType,
         string $appointmentCode,
         string $date,
         string $time,
@@ -224,7 +207,6 @@ final class Appointment
         if (
             $customerId < 1
             || $vehicleId < 1
-            || $bookingType !== 'onsite'
             || !preg_match('/\AAC[0-9A-F]{24}\z/', $appointmentCode)
             || !$this->isFutureDateTime($date, $time)
         ) {
@@ -232,17 +214,39 @@ final class Appointment
         }
 
         $serviceIds = array_values(array_unique($serviceIds));
-        if (count($serviceIds) > 20 || array_filter($serviceIds, static fn (int $id): bool => $id < 1) !== []) {
+        if (
+            $serviceIds === []
+            || count($serviceIds) > 20
+            || array_filter($serviceIds, static fn (int $id): bool => $id < 1) !== []
+        ) {
             throw new \InvalidArgumentException('Danh sách dịch vụ không hợp lệ.');
+        }
+
+        $existing = $this->pdo->prepare(
+            'SELECT id FROM appointments
+             WHERE user_id = :user_id AND appointment_code = :appointment_code
+             LIMIT 1'
+        );
+        $existing->execute([
+            'user_id' => $customerId,
+            'appointment_code' => $appointmentCode,
+        ]);
+        $existingId = $existing->fetchColumn();
+        if ($existingId !== false) {
+            return (int) $existingId;
         }
 
         $this->pdo->beginTransaction();
         try {
-            $existing = $this->pdo->prepare(
-                'SELECT id FROM appointments
-                 WHERE user_id = :user_id AND appointment_code = :appointment_code
-                 LIMIT 1 FOR UPDATE'
-            );
+            $timezone = new DateTimeZone(self::BOOKING_TIMEZONE);
+            $requestedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $date, $timezone);
+            if ($requestedDate === false) {
+                throw new \InvalidArgumentException('Ngày đặt lịch không hợp lệ.');
+            }
+
+            $scheduleModel = new GarageSchedule($this->pdo);
+            $schedule = $scheduleModel->lockWeekday((int) $requestedDate->format('N'));
+
             $existing->execute([
                 'user_id' => $customerId,
                 'appointment_code' => $appointmentCode,
@@ -252,6 +256,26 @@ final class Appointment
                 $this->pdo->commit();
 
                 return (int) $existingId;
+            }
+
+            if ($schedule === null || (int) $schedule['is_open'] !== 1) {
+                throw new \InvalidArgumentException('Gara không nhận lịch vào ngày đã chọn.');
+            }
+            if ($scheduleModel->isClosedDate($date)) {
+                throw new \InvalidArgumentException('Gara nghỉ vào ngày đã chọn.');
+            }
+            if (!$this->isWithinSchedule($time, $schedule)) {
+                throw new \InvalidArgumentException('Khung giờ đã chọn không nằm trong giờ hoạt động của gara.');
+            }
+
+            $capacity = $this->bookingCapacity($date, $time);
+            if ($capacity['daily'] >= (int) $schedule['daily_capacity']) {
+                throw new \InvalidArgumentException(
+                    'Gara đã đủ ' . (int) $schedule['daily_capacity'] . ' lịch trong ngày. Vui lòng chọn ngày khác.'
+                );
+            }
+            if ($capacity['slot'] >= (int) $schedule['slot_capacity']) {
+                throw new \InvalidArgumentException('Khung giờ đã đủ chỗ. Vui lòng chọn khung giờ khác.');
             }
 
             $vehicle = $this->pdo->prepare(
@@ -280,7 +304,7 @@ final class Appointment
                     'user_id' => $customerId,
                     'vehicle_id' => $vehicleId,
                     'appointment_code' => $appointmentCode,
-                    'appointment_type' => $bookingType,
+                    'appointment_type' => 'onsite',
                     'appointment_date' => $date,
                     'appointment_time' => $time,
                     'note' => $note,
@@ -478,7 +502,7 @@ final class Appointment
     {
         if (
             !preg_match('/\A\d{4}-\d{2}-\d{2}\z/', $date)
-            || !self::isValidBookingTime($time)
+            || !preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)
         ) {
             return false;
         }
@@ -491,5 +515,56 @@ final class Appointment
             && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
             && $requested->format('Y-m-d H:i') === $date . ' ' . $time
             && $requested > new DateTimeImmutable('now', $timezone);
+    }
+
+    /**
+     * @param array<string, mixed> $schedule
+     */
+    private function isWithinSchedule(string $time, array $schedule): bool
+    {
+        if (!preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $time)) {
+            return false;
+        }
+
+        [$hours, $minutes] = array_map('intval', explode(':', $time));
+        $minutesOfDay = $hours * 60 + $minutes;
+        $openingMinutes = $this->minutesFromTime((string) $schedule['opens_at']);
+        $closingMinutes = $this->minutesFromTime((string) $schedule['closes_at']);
+        $interval = (int) $schedule['slot_interval_minutes'];
+
+        return $minutesOfDay >= $openingMinutes
+            && $minutesOfDay <= $closingMinutes
+            && ($minutesOfDay - $openingMinutes) % $interval === 0;
+    }
+
+    /**
+     * @return array{daily: int, slot: int}
+     */
+    private function bookingCapacity(string $date, string $time): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT COUNT(*) AS daily_count,
+                    SUM(CASE WHEN appointment_time = :appointment_time THEN 1 ELSE 0 END) AS slot_count
+             FROM appointments
+             WHERE appointment_date = :appointment_date
+               AND status IN ('pending', 'confirmed', 'checked_in')"
+        );
+        $statement->execute([
+            'appointment_time' => $time,
+            'appointment_date' => $date,
+        ]);
+        $counts = $statement->fetch();
+
+        return [
+            'daily' => (int) ($counts['daily_count'] ?? 0),
+            'slot' => (int) ($counts['slot_count'] ?? 0),
+        ];
+    }
+
+    private function minutesFromTime(string $time): int
+    {
+        [$hours, $minutes] = array_map('intval', explode(':', substr($time, 0, 5)));
+
+        return $hours * 60 + $minutes;
     }
 }
