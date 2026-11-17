@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\Appointment;
+use App\Models\GarageSchedule;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PDOException;
@@ -78,12 +79,68 @@ final class AdminAppointmentController extends Controller
             'statusFilter' => $status,
             'date' => $date,
             'statuses' => $this->statuses(),
-            'bookingTypes' => $this->bookingTypes(),
+            'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'errors' => $errors,
             'success' => flash('success'),
             'error' => flash('error'),
         ]);
+    }
+
+    public function schedule(Request $request): Response
+    {
+        return $this->scheduleView(
+            new GarageSchedule(Database::connection($this->databaseConfig))
+        );
+    }
+
+    public function updateSchedule(Request $request): Response
+    {
+        $model = new GarageSchedule(Database::connection($this->databaseConfig));
+        $action = $request->input('action');
+
+        try {
+            if ($action === 'weekly') {
+                $rows = $request->input('schedule');
+                if (!is_array($rows)) {
+                    throw new InvalidArgumentException('Dữ liệu lịch hoạt động không hợp lệ.');
+                }
+                $model->saveWeeklySchedule($rows);
+                flash('success', 'Lịch hoạt động và sức chứa đã được cập nhật.');
+            } elseif ($action === 'close') {
+                $date = $request->input('closed_date');
+                $reason = $request->input('reason', '');
+                if (!is_string($date) || !is_string($reason)) {
+                    throw new InvalidArgumentException('Thông tin ngày nghỉ không hợp lệ.');
+                }
+                $model->addClosure($date, trim($reason), (int) $_SESSION['user_id']);
+                flash('success', 'Ngày nghỉ của gara đã được lưu.');
+            } elseif ($action === 'remove') {
+                $date = $request->input('closed_date');
+                if (!is_string($date)) {
+                    throw new InvalidArgumentException('Ngày nghỉ không hợp lệ.');
+                }
+                $model->removeClosure($date);
+                flash('success', 'Ngày nghỉ đã được gỡ.');
+            } else {
+                throw new InvalidArgumentException('Thao tác cấu hình lịch không hợp lệ.');
+            }
+        } catch (InvalidArgumentException $exception) {
+            return $this->scheduleView(
+                $model,
+                $exception->getMessage(),
+                $action === 'weekly' && is_array($request->input('schedule'))
+                    ? $request->input('schedule')
+                    : null,
+                422
+            );
+        } catch (PDOException $exception) {
+            error_log('Garage schedule update failed: ' . $exception->getMessage());
+
+            return $this->scheduleView($model, 'Không thể cập nhật lịch gara do lỗi cơ sở dữ liệu. Vui lòng thử lại.', null, 500);
+        }
+
+        return Response::redirect(url('admin/garage-schedule'));
     }
 
     /**
@@ -111,7 +168,7 @@ final class AdminAppointmentController extends Controller
             'appointment' => $appointment,
             'services' => $catalog->details($appointmentId),
             'statuses' => $this->statuses(),
-            'bookingTypes' => $this->bookingTypes(),
+            'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'transitions' => $transitions,
             'success' => flash('success'),
@@ -181,7 +238,7 @@ final class AdminAppointmentController extends Controller
     /**
      * @return array<string, string>
      */
-    private function bookingTypes(): array
+    private function appointmentTypeLabels(): array
     {
         return [
             'onsite' => 'Trực tiếp tại gara',
@@ -217,5 +274,42 @@ final class AdminAppointmentController extends Controller
         return $parsed !== false
             && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
             && $parsed->format('Y-m-d') === $date;
+    }
+
+    /**
+     * @param array<mixed>|null $submittedSchedule
+     */
+    private function scheduleView(
+        GarageSchedule $model,
+        ?string $error = null,
+        ?array $submittedSchedule = null,
+        int $status = 200
+    ): Response {
+        $schedule = $model->weeklySchedule();
+        if ($submittedSchedule !== null) {
+            foreach ($schedule as &$day) {
+                $weekday = (int) $day['weekday'];
+                if (isset($submittedSchedule[$weekday]) && is_array($submittedSchedule[$weekday])) {
+                    $day = array_merge($day, $submittedSchedule[$weekday]);
+                }
+            }
+            unset($day);
+        }
+
+        return $this->view('admin/appointments/schedule', [
+            'schedule' => $schedule,
+            'closures' => $model->upcomingClosures(),
+            'weekdayNames' => [
+                1 => 'Thứ Hai',
+                2 => 'Thứ Ba',
+                3 => 'Thứ Tư',
+                4 => 'Thứ Năm',
+                5 => 'Thứ Sáu',
+                6 => 'Thứ Bảy',
+                7 => 'Chủ Nhật',
+            ],
+            'success' => flash('success'),
+            'error' => $error ?? flash('error'),
+        ], $status);
     }
 }
