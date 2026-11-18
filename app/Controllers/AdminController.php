@@ -16,6 +16,7 @@ use App\Models\VehicleModel;
 use App\Services\NhtsaClient;
 use App\Services\VehicleCatalogImporter;
 use App\Services\VehicleDataNormalizer;
+use App\Services\VehicleImageStorage;
 use App\Services\VehicleImportManager;
 use InvalidArgumentException;
 use PDOException;
@@ -764,8 +765,11 @@ final class AdminController extends Controller
         }
 
         $vehicles = $customers->vehiclesOf((int) $customerId);
+        $images = new VehicleImageStorage();
         foreach ($vehicles as &$vehicle) {
-            $vehicle['image'] = $this->vehicleImageUrl($vehicle['catalog_image'] ?? null);
+            $vehicle['image'] = $images->publicUrl($vehicle['image_path'] ?? null)
+                ?? $images->publicUrl($vehicle['catalog_image'] ?? null)
+                ?? url('assets/images/vehicle-placeholder.svg');
         }
         unset($vehicle);
 
@@ -774,22 +778,6 @@ final class AdminController extends Controller
             'vehicles' => $vehicles,
             'brands' => (new Vehicle($pdo))->activeBrands(),
         ], JSON_THROW_ON_ERROR));
-    }
-
-    private function vehicleImageUrl(mixed $path): ?string
-    {
-        if (!is_string($path) || trim($path) === '') {
-            return null;
-        }
-
-        $path = ltrim(trim($path), '/');
-        if (str_contains($path, '..') || !str_starts_with($path, 'assets/images/')) {
-            return null;
-        }
-
-        $file = dirname(__DIR__, 2) . '/public/' . $path;
-
-        return is_file($file) ? url($path) : null;
     }
 
     public function updateCustomerStatus(Request $request, array $parameters): Response

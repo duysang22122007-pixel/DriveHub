@@ -18,7 +18,7 @@ final class Vehicle
     public function forCustomer(int $customerId): array
     {
         $statement = $this->pdo->prepare(
-            'SELECT v.id, v.brand_id, b.name AS brand_name, v.model, v.license_plate,
+            'SELECT v.id, v.brand_id, v.image_path, b.name AS brand_name, v.model, v.license_plate,
                     v.manufacture_year, v.color, v.current_mileage,
                     vm.image AS catalog_image
              FROM vehicles AS v
@@ -70,7 +70,7 @@ final class Vehicle
     public function findForCustomer(int $vehicleId, int $customerId): ?array
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, brand_id, model, license_plate, manufacture_year, color, current_mileage
+            'SELECT id, brand_id, image_path, model, license_plate, manufacture_year, color, current_mileage
              FROM vehicles WHERE id = :id AND user_id = :user_id LIMIT 1'
         );
         $statement->execute(['id' => $vehicleId, 'user_id' => $customerId]);
@@ -80,15 +80,15 @@ final class Vehicle
     }
 
     /**
-     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
+     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int, image_path?: ?string} $data
      */
     public function create(int $customerId, array $data): int
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO vehicles
-                (user_id, brand_id, vehicle_model_id, model, license_plate, manufacture_year, color, current_mileage)
+                (user_id, brand_id, vehicle_model_id, model, license_plate, manufacture_year, color, current_mileage, image_path)
              VALUES
-                (:user_id, :brand_id, :vehicle_model_id, :model, :license_plate, :manufacture_year, :color, :current_mileage)'
+                (:user_id, :brand_id, :vehicle_model_id, :model, :license_plate, :manufacture_year, :color, :current_mileage, :image_path)'
         );
         $statement->execute([
             'user_id' => $customerId,
@@ -99,13 +99,14 @@ final class Vehicle
             'manufacture_year' => $data['manufacture_year'],
             'color' => $data['color'],
             'current_mileage' => $data['current_mileage'],
+            'image_path' => $data['image_path'] ?? null,
         ]);
 
         return (int) $this->pdo->lastInsertId();
     }
 
     /**
-     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
+      * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
      */
     public function updateForCustomer(int $vehicleId, int $customerId, array $data): bool
     {
@@ -130,18 +131,19 @@ final class Vehicle
     }
 
     /**
-     * @return bool False when appointments prevent deleting the vehicle.
+     * @return array{deleted: bool, image_path: ?string}|null Null when the vehicle is not owned by the customer.
      */
-    public function deleteUnusedForCustomer(int $vehicleId, int $customerId): ?bool
+    public function deleteUnusedForOwner(int $vehicleId, int $customerId): ?array
     {
         $this->pdo->beginTransaction();
 
         try {
             $vehicle = $this->pdo->prepare(
-                'SELECT id FROM vehicles WHERE id = :id AND user_id = :user_id FOR UPDATE'
+                'SELECT id, image_path FROM vehicles WHERE id = :id AND user_id = :user_id FOR UPDATE'
             );
             $vehicle->execute(['id' => $vehicleId, 'user_id' => $customerId]);
-            if ($vehicle->fetchColumn() === false) {
+            $vehicleRow = $vehicle->fetch();
+            if ($vehicleRow === false) {
                 $this->pdo->commit();
 
                 return null;
@@ -154,7 +156,7 @@ final class Vehicle
             if ($appointments->fetchColumn() !== false) {
                 $this->pdo->commit();
 
-                return false;
+                return ['deleted' => false, 'image_path' => $vehicleRow['image_path']];
             }
 
             $delete = $this->pdo->prepare(
@@ -163,52 +165,7 @@ final class Vehicle
             $delete->execute(['id' => $vehicleId, 'user_id' => $customerId]);
             $this->pdo->commit();
 
-            return true;
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-
-            throw $exception;
-        }
-    }
-
-    /**
-     * @return bool|null Null when the vehicle is not owned by the customer.
-     *                    False when appointments prevent deletion.
-     */
-    public function deleteUnusedForAdmin(int $vehicleId, int $customerId): ?bool
-    {
-        $this->pdo->beginTransaction();
-
-        try {
-            $vehicle = $this->pdo->prepare(
-                'SELECT id FROM vehicles WHERE id = :id AND user_id = :user_id FOR UPDATE'
-            );
-            $vehicle->execute(['id' => $vehicleId, 'user_id' => $customerId]);
-            if ($vehicle->fetchColumn() === false) {
-                $this->pdo->commit();
-
-                return null;
-            }
-
-            $appointments = $this->pdo->prepare(
-                'SELECT 1 FROM appointments WHERE vehicle_id = :vehicle_id LIMIT 1'
-            );
-            $appointments->execute(['vehicle_id' => $vehicleId]);
-            if ($appointments->fetchColumn() !== false) {
-                $this->pdo->commit();
-
-                return false;
-            }
-
-            $delete = $this->pdo->prepare(
-                'DELETE FROM vehicles WHERE id = :id AND user_id = :user_id'
-            );
-            $delete->execute(['id' => $vehicleId, 'user_id' => $customerId]);
-            $this->pdo->commit();
-
-            return true;
+            return ['deleted' => true, 'image_path' => $vehicleRow['image_path']];
         } catch (\Throwable $exception) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
@@ -241,7 +198,7 @@ final class Vehicle
     public function findForAdmin(int $vehicleId, int $customerId): ?array
     {
         $statement = $this->pdo->prepare(
-            'SELECT v.id, v.user_id, v.brand_id, v.vehicle_model_id, v.model,
+            'SELECT v.id, v.user_id, v.brand_id, v.vehicle_model_id, v.image_path, v.model,
                     v.license_plate, v.manufacture_year, v.color, v.current_mileage,
                     b.name AS brand_name, vm.image AS catalog_image,
                     u.full_name AS owner_name,
@@ -260,7 +217,7 @@ final class Vehicle
     }
 
     /**
-     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int} $data
+     * @param array{brand_id: int, model_id: ?int, model: string, license_plate: string, manufacture_year: ?int, color: ?string, current_mileage: int, image_path?: ?string} $data
      */
     public function updateForAdmin(int $vehicleId, int $customerId, array $data): bool
     {
@@ -271,6 +228,7 @@ final class Vehicle
                      ELSE NULL
                  END,
                  brand_id = :brand_id,
+                 image_path = :image_path,
                  model = :model,
                  license_plate = :license_plate,
                  manufacture_year = :manufacture_year,
@@ -282,6 +240,7 @@ final class Vehicle
             'catalog_brand_id' => $data['brand_id'],
             'catalog_model' => $data['model'],
             'brand_id' => $data['brand_id'],
+            'image_path' => $data['image_path'] ?? null,
             'model' => $data['model'],
             'license_plate' => $data['license_plate'],
             'manufacture_year' => $data['manufacture_year'],

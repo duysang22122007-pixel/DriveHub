@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title">
+  <title id="title">Ảnh phương tiện mặc định</title>
+  <rect width="640" height="360" rx="28" fill="#edf3f8"/>
+  <path d="M142 226h356l-20-74a39 39 0 0 0-37-29H222a39 39 0 0 0-37 29l-20 74Z" fill="#d3e1ec" stroke="#7993a8" stroke-width="9" stroke-linejoin="round"/>
+  <path d="m205 151-18 59h266l-18-59a17 17 0 0 0-16-12H221a17 17 0 0 0-16 12Z" fill="#f8fbfd" stroke="#7993a8" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M142 226h356v36a20 20 0 0 1-20 20h-27a38 38 0 0 0-76 0H264a38 38 0 0 0-76 0h-26a20 20 0 0 1-20-20v-36Z" fill="#b9ccda" stroke="#7993a8" stroke-width="9" stroke-linejoin="round"/>
+  <circle cx="226" cy="282" r="25" fill="#49677d"/>
+  <circle cx="413" cy="282" r="25" fill="#49677d"/>
+  <circle cx="226" cy="282" r="10" fill="#edf3f8"/>
+  <circle cx="413" cy="282" r="10" fill="#edf3f8"/>
+  <text x="320" y="76" text-anchor="middle" fill="#668096" font-family="Arial,sans-serif" font-size="24" font-weight="700">DRIVEHUB</text>
+</svg>

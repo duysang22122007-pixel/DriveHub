@@ -134,7 +134,7 @@ final class Customer
     public function vehiclesOf(int $customerId): array
     {
         $statement = $this->pdo->prepare(
-            "SELECT v.id, v.user_id, v.brand_id, v.license_plate, v.model, v.manufacture_year, v.color,
+            "SELECT v.id, v.user_id, v.brand_id, v.image_path, v.license_plate, v.model, v.manufacture_year, v.color,
                     v.current_mileage, v.created_at,
                     b.name AS brand_name, vm.image AS catalog_image
              FROM vehicles AS v
