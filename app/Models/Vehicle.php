@@ -19,9 +19,11 @@ final class Vehicle
     {
         $statement = $this->pdo->prepare(
             'SELECT v.id, v.brand_id, b.name AS brand_name, v.model, v.license_plate,
-                    v.manufacture_year, v.color, v.current_mileage
+                    v.manufacture_year, v.color, v.current_mileage,
+                    vm.image AS catalog_image
              FROM vehicles AS v
              INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             LEFT JOIN vehicle_models AS vm ON vm.id = v.vehicle_model_id
              WHERE v.user_id = :user_id
              ORDER BY v.created_at DESC, v.id DESC'
         );
@@ -172,6 +174,51 @@ final class Vehicle
     }
 
     /**
+     * @return bool|null Null when the vehicle is not owned by the customer.
+     *                    False when appointments prevent deletion.
+     */
+    public function deleteUnusedForAdmin(int $vehicleId, int $customerId): ?bool
+    {
+        $this->pdo->beginTransaction();
+
+        try {
+            $vehicle = $this->pdo->prepare(
+                'SELECT id FROM vehicles WHERE id = :id AND user_id = :user_id FOR UPDATE'
+            );
+            $vehicle->execute(['id' => $vehicleId, 'user_id' => $customerId]);
+            if ($vehicle->fetchColumn() === false) {
+                $this->pdo->commit();
+
+                return null;
+            }
+
+            $appointments = $this->pdo->prepare(
+                'SELECT 1 FROM appointments WHERE vehicle_id = :vehicle_id LIMIT 1'
+            );
+            $appointments->execute(['vehicle_id' => $vehicleId]);
+            if ($appointments->fetchColumn() !== false) {
+                $this->pdo->commit();
+
+                return false;
+            }
+
+            $delete = $this->pdo->prepare(
+                'DELETE FROM vehicles WHERE id = :id AND user_id = :user_id'
+            );
+            $delete->execute(['id' => $vehicleId, 'user_id' => $customerId]);
+            $this->pdo->commit();
+
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function allForAdmin(): array
@@ -196,10 +243,12 @@ final class Vehicle
         $statement = $this->pdo->prepare(
             'SELECT v.id, v.user_id, v.brand_id, v.vehicle_model_id, v.model,
                     v.license_plate, v.manufacture_year, v.color, v.current_mileage,
-                    b.name AS brand_name, u.full_name AS owner_name,
+                    b.name AS brand_name, vm.image AS catalog_image,
+                    u.full_name AS owner_name,
                     u.email AS owner_email, u.phone AS owner_phone
              FROM vehicles AS v
              INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             LEFT JOIN vehicle_models AS vm ON vm.id = v.vehicle_model_id
              INNER JOIN users AS u ON u.id = v.user_id AND u.role = \'customer\'
              WHERE v.id = :vehicle_id AND v.user_id = :customer_id
              LIMIT 1'

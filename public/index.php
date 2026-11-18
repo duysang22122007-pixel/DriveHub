@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Router;
 
 define('BASE_PATH', dirname(__DIR__));
+$request = null;
 
 require BASE_PATH . '/app/Helpers/functions.php';
 
@@ -50,10 +51,21 @@ try {
     $registerRoutes = require BASE_PATH . '/routes/web.php';
     $registerRoutes($router, $databaseConfig, $garageConfig);
 
-    $router->dispatch(Request::fromGlobals())->send();
+    $request = Request::fromGlobals();
+    $router->dispatch($request)->send();
 } catch (Throwable $exception) {
     error_log((string) $exception);
     http_response_code(500);
+
+    if ($request instanceof Request && preg_match('#\A/admin/customers/\d+/detail/?\z#', $request->path()) === 1) {
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(
+            ['error' => 'Không thể tải thông tin khách hàng lúc này. Vui lòng thử lại sau.'],
+            JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
+        return;
+    }
+
     header('Content-Type: text/html; charset=UTF-8');
 
     $isDatabaseError = $exception instanceof PDOException

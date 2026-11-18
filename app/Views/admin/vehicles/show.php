@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $pageTitle = 'Chi tiết phương tiện';
-$activeNav = 'vehicles';
+$activeNav = 'customers';
 $pageEyebrow = 'Phương tiện khách hàng';
 $pageDescription = $vehicle['brand_name'] . ' ' . $vehicle['model'] . ' · ' . $vehicle['license_plate'];
 $pageActions = '<a class="button secondary" href="' . e(url('admin/vehicles?customer_id=' . (int) $customer['id'])) . '">← Danh sách xe</a>'

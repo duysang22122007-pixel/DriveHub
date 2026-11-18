@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $pageTitle = $editing ? 'Cập nhật phương tiện' : 'Thêm phương tiện';
-$activeNav = 'vehicles';
+$activeNav = 'customers';
 $pageEyebrow = 'Khách hàng';
 $pageDescription = $customer['full_name'] . ' · ' . $customer['email'];
 $backUrl = $editing
