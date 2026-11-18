@@ -134,44 +134,41 @@ final class AdminController extends Controller
 
     public function vehicleModelsReview(Request $request): Response
     {
-        $keywordInput = $request->input('q', '');
-        $keyword = is_string($keywordInput) ? trim($keywordInput) : '';
-        if (mb_strlen($keyword, 'UTF-8') > 100) {
-            $keyword = mb_substr($keyword, 0, 100, 'UTF-8');
-        }
-
-        $brandValue = $request->input('brand_id', '');
-        $brandId = $brandValue === '' ? null : $this->positiveId($brandValue);
-        if ($brandValue !== '' && $brandId === null) {
-            $brandId = 0;
-        }
-
-        $statusInput = $request->input('status', 'unverified');
-        $status = is_string($statusInput) && in_array(
-            $statusInput,
-            ['all', 'unverified', 'verified', 'not_suitable'],
-            true
-        ) ? $statusInput : 'unverified';
-        $verificationStatus = $status === 'all' ? null : $status;
+        $filters = $this->vehicleModelReviewFilters($request);
         $pageInput = filter_var($request->input('page', 1), FILTER_VALIDATE_INT);
         $page = $pageInput === false || $pageInput < 1 ? 1 : $pageInput;
         $catalog = new VehicleModel(Database::connection($this->databaseConfig));
-        $pageData = $catalog->reviewPage($keyword, $brandId, $verificationStatus, $page);
+        $pageData = $catalog->reviewPage(
+            $filters['keyword'],
+            $filters['brandId'],
+            $filters['verificationStatus'],
+            $page
+        );
         $pageCount = max(1, (int) ceil($pageData['total'] / 25));
         if ($page > $pageCount) {
             $page = $pageCount;
-            $pageData = $catalog->reviewPage($keyword, $brandId, $verificationStatus, $page);
+            $pageData = $catalog->reviewPage(
+                $filters['keyword'],
+                $filters['brandId'],
+                $filters['verificationStatus'],
+                $page
+            );
         }
 
         return $this->view('admin/vehicle-import/review', [
             'models' => $pageData['items'],
             'total' => $pageData['total'],
+            'approvalCount' => $catalog->pendingNhtsaReviewCount(
+                $filters['keyword'],
+                $filters['brandId'],
+                $filters['verificationStatus']
+            ),
             'page' => $page,
             'pageCount' => $pageCount,
             'brands' => (new VehicleBrand(Database::connection($this->databaseConfig)))->search(),
-            'q' => $keyword,
-            'brandId' => $brandId,
-            'status' => $status,
+            'q' => $filters['keyword'],
+            'brandId' => $filters['brandId'],
+            'status' => $filters['status'],
             'success' => flash('success'),
             'error' => flash('error'),
         ]);
@@ -247,6 +244,39 @@ final class AdminController extends Controller
         );
 
         return Response::redirect(url('admin/vehicle-import/review'));
+    }
+
+    public function approveAllVehicleModels(Request $request): Response
+    {
+        $filters = $this->vehicleModelReviewFilters($request);
+        $pageInput = filter_var($request->input('page', 1), FILTER_VALIDATE_INT);
+        $page = $pageInput === false || $pageInput < 1 ? 1 : $pageInput;
+        $result = (new VehicleModel(Database::connection($this->databaseConfig)))
+            ->approvePendingNhtsaModels(
+                $filters['keyword'],
+                $filters['brandId'],
+                $filters['verificationStatus'],
+                (int) ($_SESSION['user_id'] ?? 0)
+            );
+
+        if ($result['updated'] === 0) {
+            flash('success', 'Không có dòng xe NHTSA nào đang chờ xác minh và đang hoạt động phù hợp bộ lọc.');
+        } else {
+            $message = 'Đã duyệt thành công ' . $result['updated'] . ' dòng xe.';
+            if ($result['skipped'] > 0) {
+                $message .= ' Không xử lý ' . $result['skipped'] . ' dòng do trạng thái đã thay đổi.';
+            }
+            flash('success', $message);
+        }
+
+        $query = [
+            'q' => $filters['keyword'],
+            'brand_id' => $filters['brandId'] ?? '',
+            'status' => $filters['status'],
+            'page' => $page,
+        ];
+
+        return Response::redirect(url('admin/vehicle-import/review?' . http_build_query($query)));
     }
 
     public function startVehicleImport(Request $request): Response
@@ -623,6 +653,38 @@ final class AdminController extends Controller
         $id = filter_var($value, FILTER_VALIDATE_INT);
 
         return $id !== false && $id > 0 ? $id : null;
+    }
+
+    /**
+     * @return array{keyword: string, brandId: ?int, status: string, verificationStatus: ?string}
+     */
+    private function vehicleModelReviewFilters(Request $request): array
+    {
+        $keywordInput = $request->input('q', '');
+        $keyword = is_string($keywordInput) ? trim($keywordInput) : '';
+        if (mb_strlen($keyword, 'UTF-8') > 100) {
+            $keyword = mb_substr($keyword, 0, 100, 'UTF-8');
+        }
+
+        $brandValue = $request->input('brand_id', '');
+        $brandId = $brandValue === '' ? null : $this->positiveId($brandValue);
+        if ($brandValue !== '' && $brandId === null) {
+            $brandId = 0;
+        }
+
+        $statusInput = $request->input('status', 'unverified');
+        $status = is_string($statusInput) && in_array(
+            $statusInput,
+            ['all', 'unverified', 'verified', 'not_suitable'],
+            true
+        ) ? $statusInput : 'unverified';
+
+        return [
+            'keyword' => $keyword,
+            'brandId' => $brandId,
+            'status' => $status,
+            'verificationStatus' => $status === 'all' ? null : $status,
+        ];
     }
 
     private function catalogImage(Request $request, string $field, ?string $current): ?string

@@ -6,7 +6,7 @@ $pageTitle = 'Duyệt dòng xe NHTSA';
 $activeNav = 'vehicle-review';
 $pageEyebrow = 'Danh mục xe';
 $pageDescription = 'Loại phương tiện NHTSA chỉ xác định hãng, không xác nhận từng model. Chỉ dòng xe đang hoạt động và đã duyệt mới xuất hiện trong form đăng ký.';
-$pageStyles = '.data-table{min-width:1100px}';
+$pageStyles = '.data-table{min-width:1100px}.bulk form{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:0}.approve-all-dialog{width:min(460px,calc(100vw - 32px));padding:0;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);box-shadow:0 24px 70px rgba(11,39,64,.28)}.approve-all-dialog::backdrop{background:rgba(11,39,64,.52)}.approve-all-dialog-head{padding:20px 22px 0}.approve-all-dialog-head h2{margin:0;color:var(--navy);font-size:1.15rem}.approve-all-dialog-body{padding:12px 22px 20px;color:var(--muted);line-height:1.6}.approve-all-dialog-actions{display:flex;justify-content:flex-end;gap:9px;padding:14px 22px;border-top:1px solid var(--line);background:var(--surface-soft)}';
 $pageActions = '<a class="button secondary" href="' . e(url('admin/vehicle-import')) . '">Quay lại đồng bộ</a>';
 
 ob_start();
@@ -37,18 +37,36 @@ ob_start();
     <div class="panel-head">
         <div>
             <h2 class="panel-title">Kết quả (<?= (int) $total ?>)</h2>
-            <p class="panel-description">Chọn từng dòng hoặc cập nhật trạng thái hàng loạt cho các dòng đã chọn.</p>
+            <p class="panel-description">Duyệt tất cả dòng NHTSA đang hoạt động và chờ xác minh theo bộ lọc, hoặc chọn từng dòng để cập nhật.</p>
         </div>
     </div>
     <div class="panel-body">
-        <form id="bulk-review-form" method="post" action="<?= e(url('admin/vehicle-import/review/bulk')) ?>">
-            <?= csrf_field() ?>
-            <div class="bulk">
+        <div class="bulk">
+            <form id="bulk-review-form" method="post" action="<?= e(url('admin/vehicle-import/review/bulk')) ?>">
+                <?= csrf_field() ?>
                 <label for="bulk-status">Áp dụng cho các dòng đã chọn</label>
                 <select id="bulk-status" name="status" required><option value="">-- Chọn trạng thái --</option><option value="verified">Duyệt phù hợp</option><option value="not_suitable">Đánh dấu không phù hợp</option></select>
                 <button class="button small" type="submit" onclick="return confirm('Xác nhận cập nhật trạng thái các dòng xe đã chọn?')">Cập nhật hàng loạt</button>
+            </form>
+            <form id="approve-all-form" method="post" action="<?= e(url('admin/vehicle-import/review/approve-all')) ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="q" value="<?= e($q) ?>">
+                <input type="hidden" name="brand_id" value="<?= e($brandId ?? '') ?>">
+                <input type="hidden" name="status" value="<?= e($status) ?>">
+                <input type="hidden" name="page" value="<?= (int) $page ?>">
+                <button class="button small" type="button" id="open-approve-all-dialog" <?= $approvalCount === 0 ? 'disabled' : '' ?>>Duyệt tất cả dòng xe phù hợp (<?= (int) $approvalCount ?>)</button>
+            </form>
+        </div>
+        <dialog class="approve-all-dialog" id="approve-all-dialog" aria-labelledby="approve-all-dialog-title">
+            <div class="approve-all-dialog-head"><h2 id="approve-all-dialog-title">Xác nhận duyệt dòng xe</h2></div>
+            <div class="approve-all-dialog-body">
+                Bạn sắp duyệt toàn bộ <strong><?= (int) $approvalCount ?></strong> dòng xe NHTSA đang chờ xác minh và đang hoạt động theo bộ lọc hiện tại. Bạn có chắc chắn muốn thực hiện?
             </div>
-        </form>
+            <div class="approve-all-dialog-actions">
+                <button class="button secondary" type="button" id="cancel-approve-all">Hủy</button>
+                <button class="button" type="submit" form="approve-all-form">Xác nhận duyệt</button>
+            </div>
+        </dialog>
         <div class="table-wrap">
             <?php if ($models === []): ?>
                 <div class="empty-state">Không có dòng xe phù hợp bộ lọc.</div>
@@ -100,6 +118,20 @@ ob_start();
         </div>
     </div>
 </section>
+<script>
+(function () {
+    const dialog = document.getElementById('approve-all-dialog');
+    const openButton = document.getElementById('open-approve-all-dialog');
+    const cancelButton = document.getElementById('cancel-approve-all');
+    if (!dialog || !openButton || !cancelButton || typeof dialog.showModal !== 'function') return;
+
+    openButton.addEventListener('click', () => dialog.showModal());
+    cancelButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) dialog.close();
+    });
+})();
+</script>
 <?php
 $content = ob_get_clean();
 require BASE_PATH . '/app/Views/admin/_layout.php';

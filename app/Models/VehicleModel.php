@@ -54,20 +54,7 @@ final class VehicleModel
         int $page,
         int $pageSize = 25
     ): array {
-        $conditions = ["m.data_source = 'nhtsa'"];
-        $parameters = [];
-        if ($keyword !== '') {
-            $conditions[] = 'm.name LIKE :keyword';
-            $parameters['keyword'] = '%' . $keyword . '%';
-        }
-        if ($brandId !== null) {
-            $conditions[] = 'm.brand_id = :brand_id';
-            $parameters['brand_id'] = $brandId;
-        }
-        if ($verificationStatus !== null) {
-            $conditions[] = 'm.verification_status = :verification_status';
-            $parameters['verification_status'] = $verificationStatus;
-        }
+        [$conditions, $parameters] = $this->reviewConditions($keyword, $brandId, $verificationStatus);
         $where = implode(' AND ', $conditions);
 
         $count = $this->pdo->prepare(
@@ -101,6 +88,131 @@ final class VehicleModel
         $statement->execute();
 
         return ['items' => $statement->fetchAll(), 'total' => $total];
+    }
+
+    public function pendingNhtsaReviewCount(
+        string $keyword,
+        ?int $brandId,
+        ?string $verificationStatus
+    ): int {
+        [$conditions, $parameters] = $this->reviewConditions(
+            $keyword,
+            $brandId,
+            $verificationStatus,
+            true
+        );
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM vehicle_models AS m WHERE ' . implode(' AND ', $conditions)
+        );
+        $statement->execute($parameters);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * @return array{matched: int, updated: int, skipped: int}
+     */
+    public function approvePendingNhtsaModels(
+        string $keyword,
+        ?int $brandId,
+        ?string $verificationStatus,
+        int $reviewedBy
+    ): array {
+        if ($reviewedBy < 1) {
+            throw new \InvalidArgumentException('A valid reviewer is required.');
+        }
+
+        [$conditions, $parameters] = $this->reviewConditions(
+            $keyword,
+            $brandId,
+            $verificationStatus,
+            true
+        );
+        $where = implode(' AND ', $conditions);
+        $ownsTransaction = !$this->pdo->inTransaction();
+
+        try {
+            if ($ownsTransaction) {
+                $this->pdo->beginTransaction();
+            }
+
+            $matching = $this->pdo->prepare(
+                'SELECT m.id FROM vehicle_models AS m
+                 WHERE ' . $where . '
+                 ORDER BY m.id
+                 FOR UPDATE'
+            );
+            $matching->execute($parameters);
+            $matchedCount = 0;
+            while ($matching->fetchColumn() !== false) {
+                $matchedCount++;
+            }
+
+            if ($matchedCount === 0) {
+                if ($ownsTransaction) {
+                    $this->pdo->commit();
+                }
+
+                return ['matched' => 0, 'updated' => 0, 'skipped' => 0];
+            }
+
+            $update = $this->pdo->prepare(
+                "UPDATE vehicle_models AS m
+                 SET verification_status = 'verified',
+                     reviewed_by = :reviewed_by,
+                     reviewed_at = CURRENT_TIMESTAMP
+                 WHERE " . $where
+            );
+            $update->execute($parameters + ['reviewed_by' => $reviewedBy]);
+            $updatedCount = $update->rowCount();
+
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            return [
+                'matched' => $matchedCount,
+                'updated' => $updatedCount,
+                'skipped' => max(0, $matchedCount - $updatedCount),
+            ];
+        } catch (\Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * @return array{0: list<string>, 1: array<string, string|int>}
+     */
+    private function reviewConditions(
+        string $keyword,
+        ?int $brandId,
+        ?string $verificationStatus,
+        bool $pendingActiveOnly = false
+    ): array {
+        $conditions = ["m.data_source = 'nhtsa'"];
+        $parameters = [];
+        if ($keyword !== '') {
+            $conditions[] = 'm.name LIKE :keyword';
+            $parameters['keyword'] = '%' . $keyword . '%';
+        }
+        if ($brandId !== null) {
+            $conditions[] = 'm.brand_id = :brand_id';
+            $parameters['brand_id'] = $brandId;
+        }
+        if ($verificationStatus !== null) {
+            $conditions[] = 'm.verification_status = :verification_status';
+            $parameters['verification_status'] = $verificationStatus;
+        }
+        if ($pendingActiveOnly) {
+            $conditions[] = "m.verification_status = 'unverified'";
+            $conditions[] = 'm.status = 1';
+        }
+
+        return [$conditions, $parameters];
     }
 
     /**

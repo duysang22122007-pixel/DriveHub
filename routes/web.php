@@ -92,6 +92,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/admin/vehicle-import/{id}/continue', [$adminController, 'continueVehicleImport'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/vehicle-import/review', [$adminController, 'vehicleModelsReview'], [$authenticated, $admin]);
     $router->post('/admin/vehicle-import/review/bulk', [$adminController, 'bulkReviewVehicleModels'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/vehicle-import/review/approve-all', [$adminController, 'approveAllVehicleModels'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/vehicle-import/review/{id}', [$adminController, 'updateVehicleModelVerification'], [$authenticated, $admin, $verifyCsrf]);
 
     $router->get('/profile', [$profileController, 'showProfile'], [$authenticated]);
