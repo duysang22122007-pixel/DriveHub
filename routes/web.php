@@ -67,6 +67,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/vehicles/{id}/delete', [$vehicleController, 'delete'], [$authenticated, $customer, $verifyCsrf]);
 
     $router->get('/admin/customers', [$adminController, 'customers'], [$authenticated, $admin]);
+    $router->get('/admin/customers/{id}/detail', [$adminController, 'customerDetail'], [$authenticated, $admin]);
     $router->get('/admin/customers/{id}', [$adminController, 'showCustomer'], [$authenticated, $admin]);
     $router->post('/admin/customers/{id}/status', [$adminController, 'updateCustomerStatus'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/vehicles', [$adminVehicleController, 'index'], [$authenticated, $admin]);
@@ -74,6 +75,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/admin/vehicles/{customerId}', [$adminVehicleController, 'store'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/vehicles/{customerId}/{vehicleId}/edit', [$adminVehicleController, 'edit'], [$authenticated, $admin]);
     $router->post('/admin/vehicles/{customerId}/{vehicleId}/update', [$adminVehicleController, 'update'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/vehicles/{customerId}/{vehicleId}/delete', [$adminVehicleController, 'delete'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/vehicles/{customerId}/{vehicleId}', [$adminVehicleController, 'show'], [$authenticated, $admin]);
     $router->get('/admin/brands', [$adminController, 'brands'], [$authenticated, $admin]);
     $router->post('/admin/brands', [$adminController, 'storeBrand'], [$authenticated, $admin, $verifyCsrf]);

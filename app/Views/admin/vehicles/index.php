@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $pageTitle = 'Phương tiện';
-$activeNav = 'vehicles';
+$activeNav = 'customers';
 $pageEyebrow = 'Vận hành';
 $pageDescription = 'Chọn khách hàng để xem và quản lý chính xác các phương tiện thuộc tài khoản đó.';
 $pageStyles = '.data-table{min-width:820px}.customer-select{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.customer-select .filter-field{min-width:min(100%,360px)}';

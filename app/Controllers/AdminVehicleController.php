@@ -104,6 +104,9 @@ final class AdminVehicleController extends Controller
 
         $data = (new VehicleFormValidator($pdo))->validate($request);
         if (isset($data['errors'])) {
+            if ($request->input('ajax') === '1') {
+                return Response::json(json_encode(['success' => false, 'errors' => $data['errors']], JSON_THROW_ON_ERROR), 422);
+            }
             return $this->form($customer, $data['old'], false, null, $data['errors'], 422);
         }
 
@@ -112,6 +115,13 @@ final class AdminVehicleController extends Controller
         } catch (PDOException $exception) {
             if (!$this->isDuplicateKey($exception)) {
                 throw $exception;
+            }
+
+            if ($request->input('ajax') === '1') {
+                return Response::json(json_encode([
+                    'success' => false,
+                    'errors' => ['license_plate' => 'Biển số xe đã được đăng ký trong hệ thống.'],
+                ], JSON_THROW_ON_ERROR), 422);
             }
 
             return $this->form(
@@ -125,6 +135,10 @@ final class AdminVehicleController extends Controller
         }
 
         flash('success', 'Đã thêm phương tiện cho khách hàng.');
+
+        if ($request->input('ajax') === '1') {
+            return Response::json(json_encode(['success' => true], JSON_THROW_ON_ERROR));
+        }
 
         return Response::redirect(url('admin/vehicles?customer_id=' . $customerId));
     }
@@ -171,6 +185,9 @@ final class AdminVehicleController extends Controller
 
         $data = (new VehicleFormValidator($pdo))->validate($request, false, true);
         if (isset($data['errors'])) {
+            if ($request->input('ajax') === '1') {
+                return Response::json(json_encode(['success' => false, 'errors' => $data['errors']], JSON_THROW_ON_ERROR), 422);
+            }
             return $this->form($customer, $data['old'], true, $vehicleId, $data['errors'], 422);
         }
 
@@ -179,6 +196,13 @@ final class AdminVehicleController extends Controller
         } catch (PDOException $exception) {
             if (!$this->isDuplicateKey($exception)) {
                 throw $exception;
+            }
+
+            if ($request->input('ajax') === '1') {
+                return Response::json(json_encode([
+                    'success' => false,
+                    'errors' => ['license_plate' => 'Biển số xe đã được đăng ký cho một xe khác.'],
+                ], JSON_THROW_ON_ERROR), 422);
             }
 
             return $this->form(
@@ -193,7 +217,48 @@ final class AdminVehicleController extends Controller
 
         flash('success', 'Đã cập nhật thông tin phương tiện.');
 
+        if ($request->input('ajax') === '1') {
+            return Response::json(json_encode(['success' => true], JSON_THROW_ON_ERROR));
+        }
+
         return Response::redirect(url('admin/vehicles/' . $customerId . '/' . $vehicleId));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function delete(Request $request, array $parameters): Response
+    {
+        $customerId = $this->positiveId($parameters['customerId'] ?? null);
+        $vehicleId = $this->positiveId($parameters['vehicleId'] ?? null);
+        if ($customerId === null || $vehicleId === null) {
+            return Response::notFound();
+        }
+
+        $deleted = (new Vehicle(Database::connection($this->databaseConfig)))
+            ->deleteUnusedForAdmin($vehicleId, $customerId);
+        if ($deleted === null) {
+            return $request->input('ajax') === '1'
+                ? Response::json(json_encode(['success' => false, 'error' => 'Không tìm thấy phương tiện.'], JSON_THROW_ON_ERROR), 404)
+                : Response::notFound();
+        }
+        if (!$deleted) {
+            $message = 'Không thể xóa xe đã có lịch hẹn hoặc lịch sử tiếp nhận.';
+            if ($request->input('ajax') === '1') {
+                return Response::json(json_encode(['success' => false, 'error' => $message], JSON_THROW_ON_ERROR), 409);
+            }
+            flash('error', $message);
+
+            return Response::redirect(url('admin/vehicles?customer_id=' . $customerId));
+        }
+
+        if ($request->input('ajax') === '1') {
+            return Response::json(json_encode(['success' => true], JSON_THROW_ON_ERROR));
+        }
+
+        flash('success', 'Đã xóa phương tiện khỏi tài khoản khách hàng.');
+
+        return Response::redirect(url('admin/vehicles?customer_id=' . $customerId));
     }
 
     /**

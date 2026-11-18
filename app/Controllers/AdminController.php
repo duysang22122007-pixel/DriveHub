@@ -749,6 +749,49 @@ final class AdminController extends Controller
     /**
      * @param array<string, string> $parameters
      */
+    public function customerDetail(Request $request, array $parameters): Response
+    {
+        $customerId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($customerId === false || $customerId < 1) {
+            return Response::json(json_encode(['error' => 'Khách hàng không hợp lệ.'], JSON_THROW_ON_ERROR), 404);
+        }
+
+        $pdo = Database::connection($this->databaseConfig);
+        $customers = new Customer($pdo);
+        $customer = $customers->findDetail((int) $customerId);
+        if ($customer === null) {
+            return Response::json(json_encode(['error' => 'Không tìm thấy khách hàng.'], JSON_THROW_ON_ERROR), 404);
+        }
+
+        $vehicles = $customers->vehiclesOf((int) $customerId);
+        foreach ($vehicles as &$vehicle) {
+            $vehicle['image'] = $this->vehicleImageUrl($vehicle['catalog_image'] ?? null);
+        }
+        unset($vehicle);
+
+        return Response::json(json_encode([
+            'customer' => $customer,
+            'vehicles' => $vehicles,
+            'brands' => (new Vehicle($pdo))->activeBrands(),
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    private function vehicleImageUrl(mixed $path): ?string
+    {
+        if (!is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        $path = ltrim(trim($path), '/');
+        if (str_contains($path, '..') || !str_starts_with($path, 'assets/images/')) {
+            return null;
+        }
+
+        $file = dirname(__DIR__, 2) . '/public/' . $path;
+
+        return is_file($file) ? url($path) : null;
+    }
+
     public function updateCustomerStatus(Request $request, array $parameters): Response
     {
         $customerId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);

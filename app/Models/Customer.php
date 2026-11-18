@@ -134,11 +134,12 @@ final class Customer
     public function vehiclesOf(int $customerId): array
     {
         $statement = $this->pdo->prepare(
-            "SELECT v.id, v.user_id, v.license_plate, v.model, v.manufacture_year, v.color,
-                    v.current_mileage, v.status, v.created_at,
-                    b.name AS brand_name
+            "SELECT v.id, v.user_id, v.brand_id, v.license_plate, v.model, v.manufacture_year, v.color,
+                    v.current_mileage, v.created_at,
+                    b.name AS brand_name, vm.image AS catalog_image
              FROM vehicles AS v
              INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
+             LEFT JOIN vehicle_models AS vm ON vm.id = v.vehicle_model_id
              WHERE v.user_id = :user_id
              ORDER BY v.created_at DESC"
         );
