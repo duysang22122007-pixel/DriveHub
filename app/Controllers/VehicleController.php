@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
 use App\Services\VehicleFormValidator;
+use App\Services\VehicleImageStorage;
 use PDOException;
 
 final class VehicleController extends Controller
@@ -164,20 +165,26 @@ final class VehicleController extends Controller
     public function delete(Request $request, array $parameters): Response
     {
         $vehicleId = $this->vehicleId($parameters);
-        $deleted = (new Vehicle(Database::connection($this->databaseConfig)))
-            ->deleteUnusedForCustomer($vehicleId, $this->customerId());
+        $pdo = Database::connection($this->databaseConfig);
+        $vehicleModel = new Vehicle($pdo);
+        $deleted = $vehicleModel->deleteUnusedForOwner($vehicleId, $this->customerId());
 
         if ($deleted === null) {
             return Response::notFound();
         }
 
-        if (!$deleted) {
+        if (!$deleted['deleted']) {
             flash('error', 'Không thể xóa xe đã có lịch hẹn hoặc lịch sử tiếp nhận.');
 
             return Response::redirect(url('vehicles'));
         }
 
-        flash('success', 'Đã xóa xe khỏi tài khoản.');
+        $message = 'Đã xóa xe khỏi tài khoản.';
+        if (!(new VehicleImageStorage())->deleteIfUnused($pdo, $deleted['image_path'])) {
+            error_log('Unable to remove deleted customer vehicle image: ' . (string) $deleted['image_path']);
+            $message .= ' Tuy nhiên, chưa thể dọn ảnh phương tiện.';
+        }
+        flash('success', $message);
 
         return Response::redirect(url('vehicles'));
     }

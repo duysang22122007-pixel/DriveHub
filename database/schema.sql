@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     owner_id BIGINT UNSIGNED NOT NULL,
     brand_id BIGINT UNSIGNED NOT NULL,
+    image_path VARCHAR(255) NULL,
     model VARCHAR(120) NOT NULL,
     model_year YEAR NULL,
     license_plate VARCHAR(20) NOT NULL,
