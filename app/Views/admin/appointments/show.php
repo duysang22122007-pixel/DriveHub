@@ -65,8 +65,24 @@ ob_start();
                     <div class="detail-item"><dt class="detail-label">Lý do từ chối</dt><dd class="detail-value"><?= nl2br(e($appointment['admin_note'])) ?></dd></div>
                 <?php endif; ?>
                 <div class="detail-item"><dt class="detail-label">Cập nhật lần cuối</dt><dd class="detail-value"><?= e($updatedAt) ?></dd></div>
-                <?php if ($maintenanceStatus !== null): ?>
-                    <div class="detail-item"><dt class="detail-label">Phiếu sửa chữa</dt><dd class="detail-value"><?= e($appointment['ticket_code']) ?> · <?= e($maintenanceStatus) ?></dd></div>
+                <?php if (!empty($appointment['ticket_code'])): ?>
+                    <div class="detail-item">
+                        <dt class="detail-label">Phiếu sửa chữa</dt>
+                        <dd class="detail-value">
+                            <a href="<?= e(url('admin/tickets/' . (int)$appointment['maintenance_ticket_id'])) ?>" style="font-weight:700;color:#2563eb;text-decoration:none;">
+                                <?= e($appointment['ticket_code']) ?>
+                            </a>
+                            · <span class="status checked-in" style="font-size:12px;padding:2px 8px;"><?= e($maintenanceStatus ?? 'Đang xử lý') ?></span>
+                        </dd>
+                    </div>
+                <?php elseif ($appointment['status'] === 'confirmed' || $appointment['status'] === 'checked_in'): ?>
+                    <div class="detail-item">
+                        <dt class="detail-label">Phiếu sửa chữa</dt>
+                        <dd class="detail-value">
+                            <span style="color:#667788;margin-right:8px;">Chưa tạo phiếu</span>
+                            <a href="<?= e(url('admin/tickets/create?appointment_id=' . (int)$appointment['id'])) ?>" class="button" style="padding:4px 10px;font-size:12px;">+ Tạo phiếu sửa chữa ngay</a>
+                        </dd>
+                    </div>
                 <?php endif; ?>
             </dl>
         </div>

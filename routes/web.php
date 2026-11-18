@@ -7,6 +7,7 @@ use App\Controllers\AuthController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminAppointmentController;
 use App\Controllers\AdminVehicleController;
+use App\Controllers\AdminTicketController;
 use App\Controllers\AppointmentController;
 use App\Controllers\VehicleController;
 use App\Controllers\ProfileController;
@@ -25,6 +26,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $adminController = new AdminController($databaseConfig);
     $adminAppointmentController = new AdminAppointmentController($databaseConfig);
     $adminVehicleController = new AdminVehicleController($databaseConfig);
+    $adminTicketController = new AdminTicketController($databaseConfig);
     $profileController = new ProfileController($databaseConfig);
     $serviceController = new ServiceController($databaseConfig, $garageConfig);
     $guestOnly = new GuestOnly($databaseConfig);
@@ -46,6 +48,16 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/admin/garage-schedule', [$adminAppointmentController, 'updateSchedule'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/appointments/{id}', [$adminAppointmentController, 'show'], [$authenticated, $admin]);
     $router->post('/admin/appointments/{id}/status', [$adminAppointmentController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
+
+    $router->get('/admin/tickets', [$adminTicketController, 'index'], [$authenticated, $admin]);
+    $router->get('/admin/tickets/create', [$adminTicketController, 'create'], [$authenticated, $admin]);
+    $router->post('/admin/tickets', [$adminTicketController, 'store'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/tickets/{id}', [$adminTicketController, 'show'], [$authenticated, $admin]);
+    $router->post('/admin/tickets/{id}/diagnosis', [$adminTicketController, 'updateDiagnosis'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/status', [$adminTicketController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/items', [$adminTicketController, 'addItem'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/items/{itemId}/update', [$adminTicketController, 'updateItem'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/items/{itemId}/delete', [$adminTicketController, 'deleteItem'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/customer', [$homeController, 'index'], [$authenticated, $customer]);
 
     $router->get('/services', [$serviceController, 'index']);

@@ -17,6 +17,7 @@ $adminIcon = static function (string $name): string {
     $icons = [
         'dashboard' => '<path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z"/>',
         'calendar' => '<path d="M7 3v2M17 3v2M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h3v3H8v-3Z"/>',
+        'ticket' => '<path d="m14.7 6.3 3 3-9.4 9.4H5.3v-3l9.4-9.4ZM18 3a3 3 0 0 1 2.2 5.1L18.8 9.5l-3.3-3.3 1.4-1.4A3 3 0 0 1 18 3Z"/>',
         'customers' => '<path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M10 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7 9v-1a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74"/>',
         'vehicle' => '<path d="M5 16h14M6 16l1-5 2-3h6l2 3 1 5M7 16v2M17 16v2M9 11h6M8 13h.01M16 13h.01"/>',
         'brand' => '<path d="M12 3 4 7v6c0 4 3.4 7 8 8 4.6-1 8-4 8-8V7l-8-4Zm0 5v6M9 11h6"/>',
@@ -43,6 +44,7 @@ $adminNavGroups = [
     ],
     'Vận hành' => [
         ['key' => 'appointments', 'label' => 'Lịch hẹn', 'href' => url('admin/appointments'), 'icon' => 'calendar'],
+        ['key' => 'tickets', 'label' => 'Phiếu sửa chữa', 'href' => url('admin/tickets'), 'icon' => 'ticket'],
         ['key' => 'garage-schedule', 'label' => 'Lịch hoạt động gara', 'href' => url('admin/garage-schedule'), 'icon' => 'calendar'],
         ['key' => 'customers', 'label' => 'Khách hàng', 'href' => url('admin/customers'), 'icon' => 'customers'],
     ],
