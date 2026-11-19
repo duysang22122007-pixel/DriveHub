@@ -13,6 +13,7 @@ $accountAction = $userRole === 'admin'
     ? url('admin')
     : ($isCustomer ? url('profile') : url('login'));
 $accountLabel = $userRole === null ? 'Đăng nhập' : ($userRole === 'admin' ? 'Quản trị' : 'Tài khoản');
+$homeUrl = url($userRole === 'customer' ? 'customer' : ($userRole === 'admin' ? 'admin' : ''));
 
 $formatPrice = static function (array $service): string {
     $price = (float) ($service['price'] ?? 0);
@@ -205,10 +206,10 @@ $clearUrl = url('services');
         </a>
         <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
         <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="<?= e(url()) ?>">Trang chủ</a>
+            <a href="<?= e($homeUrl . '#home') ?>">Trang chủ</a>
             <a href="<?= e(url('services')) ?>" aria-current="page">Dịch vụ</a>
-            <a href="<?= e(url() . '#process') ?>">Quy trình</a>
-            <a href="<?= e(url() . '#contact') ?>">Liên hệ</a>
+            <a href="<?= e($homeUrl . '#process') ?>">Quy trình</a>
+            <a href="<?= e($homeUrl . '#contact') ?>">Liên hệ</a>
             <?php if ($userRole === 'customer'): ?><a href="<?= e(url('vehicles')) ?>">Xe của tôi</a><?php endif; ?>
             <?php if ($userRole === 'customer'): ?><a href="<?= e(url('appointments')) ?>">Lịch hẹn</a><?php endif; ?>
         </nav>
