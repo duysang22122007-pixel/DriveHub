@@ -3,12 +3,6 @@
 declare(strict_types=1);
 
 $isCustomer = $userRole === 'customer';
-$primaryAction = $userRole === 'admin'
-    ? url('admin')
-    : ($isCustomer ? url('vehicles') : url('register'));
-$primaryActionLabel = $userRole === 'admin'
-    ? 'Mở quản trị'
-    : ($isCustomer ? 'Quản lý xe của tôi' : 'Tạo tài khoản khách hàng');
 $accountAction = $userRole === 'admin'
     ? url('admin')
     : ($isCustomer ? url('profile') : url('login'));
@@ -24,6 +18,7 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="AutoCare Hub hỗ trợ chăm sóc, bảo dưỡng và quản lý sửa chữa ô tô với quy trình minh bạch.">
     <title>AutoCare Hub | Chăm xe an tâm, hành trình trọn vẹn</title>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root {
             color-scheme: light;
@@ -47,22 +42,11 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         button, a { -webkit-tap-highlight-color: transparent; }
         a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
         .container { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
-        .topline { background: var(--navy-deep); color: #d7e5f1; font-size: .82rem; }
-        .topline-inner { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-        .topline a { color: #fff; }
-        .site-header { position: sticky; top: 0; z-index: 20; background: rgb(255 255 255 / 96%); border-bottom: 1px solid var(--line); backdrop-filter: blur(14px); }
-        .nav-wrap { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 26px; }
         .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--navy); font-size: 1.15rem; font-weight: 800; letter-spacing: -.04em; white-space: nowrap; }
         .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; color: white; border-radius: 13px; background: var(--blue); box-shadow: 0 8px 18px #2563eb35; }
         .brand-mark svg { width: 25px; height: 25px; }
-        .nav-links { display: flex; align-items: center; gap: 28px; color: #4a5b6d; font-size: .92rem; font-weight: 600; }
-        .nav-links a:not(.nav-account) { position: relative; padding: 8px 0; transition: color .18s ease; }
-        .nav-links a:not(.nav-account)::after { position: absolute; right: 0; bottom: 1px; left: 0; height: 2px; background: var(--blue); content: ""; transform: scaleX(0); transform-origin: left; transition: transform .18s ease; }
-        .nav-links a:not(.nav-account):hover, .nav-links a[aria-current="page"], .footer-links a:hover { color: var(--blue); }
-        .nav-links a:not(.nav-account):hover::after, .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+        .footer-links a:hover { color: var(--blue); }
         #home, #services, #process, #contact { scroll-margin-top: 92px; }
-        .nav-actions { display: flex; align-items: center; gap: 12px; }
-        .menu-toggle { display: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 19px; border: 1px solid transparent; border-radius: 9px; font-size: .92rem; font-weight: 700; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; cursor: pointer; }
         .btn:hover { transform: translateY(-1px); }
         .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 9px 22px #2563eb2c; }
@@ -269,26 +253,13 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         .footer-links { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 14px 24px; color: #d4e2ed; font-size: .88rem; }
         .copyright { padding-top: 18px; border-top: 1px solid #ffffff1a; color: #aebfce; font-size: .8rem; }
         @media (max-width: 920px) {
-            .nav-links { gap: 17px; }
-            .nav-account { display: none; }
             .service-grid { grid-template-columns: repeat(2, 1fr); }
             .steps { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 680px) {
             .container { width: min(100% - 32px, 560px); }
-            .topline-inner { justify-content: center; min-height: 34px; }
-            .topline-note { display: none; }
-            .nav-wrap { min-height: 66px; flex-wrap: wrap; gap: 0; }
             .brand { font-size: 1rem; }
             .brand-mark { width: 38px; height: 38px; }
-            .nav-actions { order: 2; gap: 8px; }
-            .nav-actions .btn { min-height: 39px; padding: 0 12px; font-size: .82rem; }
-            .menu-toggle { display: block; position: absolute; opacity: 0; pointer-events: none; }
-            .menu-label { display: grid; place-items: center; width: 40px; height: 40px; margin-left: 2px; border: 1px solid var(--line); border-radius: 9px; color: var(--navy); font-size: 1.2rem; cursor: pointer; }
-            .nav-links { display: none; order: 3; width: 100%; padding: 3px 0 17px; flex-direction: column; align-items: stretch; gap: 0; }
-            .nav-links a { padding: 11px 4px; border-top: 1px solid var(--line); }
-            .menu-toggle:checked ~ .nav-links { display: flex; }
-            .nav-wrap { position: relative; }
             .hero-grid { min-height: unset; padding-top: 60px; padding-bottom: 48px; }
             h1 { max-width: 520px; font-size: clamp(2.5rem, 12vw, 3.7rem); }
             .hero-copy { font-size: 1rem; }
@@ -304,46 +275,11 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
     </style>
 </head>
 <body>
-<div class="topline">
-    <div class="container topline-inner">
-        <span class="topline-note">Chăm sóc xe chuyên nghiệp, đồng hành trên mọi hành trình</span>
-        <?php if (is_string($garage['phone'] ?? null) && $garage['phone'] !== ''): ?>
-            <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $garage['phone'])) ?>">Hotline: <?= e($garage['phone']) ?></a>
-        <?php else: ?>
-            <span>Trung tâm chăm sóc và sửa chữa ô tô</span>
-        <?php endif; ?>
-    </div>
-</div>
-<header class="site-header">
-    <div class="container nav-wrap">
-        <a class="brand" href="<?= e(url()) ?>" aria-label="AutoCare Hub - Trang chủ">
-            <span class="brand-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M3 13.5h18l-1.6-5a2 2 0 0 0-1.9-1.4H6.5a2 2 0 0 0-1.9 1.4L3 13.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 13.5v4a1.5 1.5 0 0 0 1.5 1.5H7m13-5.5v4a1.5 1.5 0 0 1-1.5 1.5H17M3 15h2m14 0h2m-13-8 1 4m7-4-1 4m-5 5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span>AutoCare Hub</span>
-        </a>
-        <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
-        <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="#home" aria-current="page">Trang chủ</a>
-            <a href="#services">Dịch vụ</a>
-            <a href="#process">Quy trình</a>
-            <a href="#contact">Liên hệ</a>
-            <?php if ($userRole === 'customer'): ?><a href="<?= e(url('vehicles')) ?>">Xe của tôi</a><?php endif; ?>
-            <?php if ($userRole === 'customer'): ?><a href="<?= e(url('appointments')) ?>">Lịch hẹn</a><?php endif; ?>
-        </nav>
-        <div class="nav-actions">
-            <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
-            <a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
-            <?php if ($isCustomer): ?>
-                <form method="post" action="<?= e(url('logout')) ?>" style="margin:0">
-                    <?= csrf_field() ?>
-                    <button class="btn btn-outline" type="submit">Đăng xuất</button>
-                </form>
-            <?php endif; ?>
-            <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
-        </div>
-    </div>
-</header>
+<?php
+$activeCustomerNav = 'home';
+$customerHeaderOnHome = true;
+require __DIR__ . '/partials/customer-header.php';
+?>
 
 <main>
     <section class="hero" id="home">
@@ -658,8 +594,8 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
     })();
 
     (() => {
-        const nav = document.querySelector('.site-header .nav-links');
-        const header = document.querySelector('.site-header');
+        const nav = document.querySelector('.customer-header-nav');
+        const header = document.querySelector('.customer-site-header');
         const sections = ['home', 'services', 'process', 'contact']
             .map((id) => document.getElementById(id))
             .filter((section) => section !== null);
@@ -703,7 +639,7 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         window.addEventListener('resize', scheduleUpdate);
         nav.addEventListener('click', (event) => {
             if (event.target.closest('a[href^="#"]')) {
-                const menuToggle = document.getElementById('menu-toggle');
+                const menuToggle = document.getElementById('customer-menu-toggle');
                 if (menuToggle) {
                     menuToggle.checked = false;
                 }

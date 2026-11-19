@@ -15,15 +15,10 @@ $selectedVehicle = is_string($old['vehicle_id'] ?? null) ? $old['vehicle_id'] : 
     <?php require __DIR__ . '/_styles.php'; ?>
 </head>
 <body>
-<header class="site-header"><div class="top">
-    <a class="brand" href="<?= e(url()) ?>">AutoCare Hub</a>
-    <nav aria-label="Điều hướng khách hàng">
-        <a href="<?= e(url('vehicles')) ?>">Xe của tôi</a>
-        <a href="<?= e(url('appointments')) ?>" aria-current="page">Lịch hẹn</a>
-        <a href="<?= e(url('profile')) ?>">Tài khoản</a>
-        <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
-    </nav>
-</div></header>
+<?php
+$activeCustomerNav = 'appointments';
+require __DIR__ . '/../../partials/customer-header.php';
+?>
 <main>
     <div class="page-heading">
         <div>

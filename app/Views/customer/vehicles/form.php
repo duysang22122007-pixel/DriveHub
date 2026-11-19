@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $editing ? 'Cập nhật xe' : 'Thêm xe' ?> | AutoCare Hub</title>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root { font-family: Inter, Arial, sans-serif; color:#172b3b; background:#f4f7fb; }
-        * { box-sizing:border-box; } body { margin:0; min-height:100vh; display:grid; place-items:center; padding:20px; }
-        main { width:min(100%,650px); padding:30px; border:1px solid #e3eaf1; border-radius:16px; background:#fff; box-shadow:0 12px 35px #123b5d0c; }
+        * { box-sizing:border-box; } body { margin:0; min-height:100vh; }
+        main { width:min(650px,calc(100% - 40px)); margin:38px auto; padding:30px; border:1px solid #e3eaf1; border-radius:16px; background:#fff; box-shadow:0 12px 35px #123b5d0c; }
         h1 { margin:0; color:#123b5d; } p { color:#667788; line-height:1.6; }
         .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
         label { display:block; margin:15px 0 7px; color:#29445b; font-size:.9rem; font-weight:700; }
@@ -15,10 +16,14 @@
         .field-error { margin:5px 0 0; color:#b42318; font-size:.84rem; } .span { grid-column:1/-1; }
         .actions { display:flex; gap:10px; margin-top:23px; } .button { display:inline-flex; align-items:center; justify-content:center; min-height:43px; padding:0 16px; border:0; border-radius:8px; background:#2563eb; color:#fff; text-decoration:none; font:inherit; font-weight:700; cursor:pointer; }
         .button.secondary { background:#e9eff6; color:#123b5d; }
-        @media(max-width:540px){main{padding:22px}.form-grid{grid-template-columns:1fr}.span{grid-column:auto}.actions{flex-direction:column}.button{width:100%}}
+        @media(max-width:540px){main{width:calc(100% - 32px);margin:24px auto;padding:22px}.form-grid{grid-template-columns:1fr}.span{grid-column:auto}.actions{flex-direction:column}.button{width:100%}}
     </style>
 </head>
 <body>
+<?php
+$activeCustomerNav = 'vehicles';
+require __DIR__ . '/../../partials/customer-header.php';
+?>
 <main>
     <h1><?= $editing ? 'Cập nhật thông tin xe' : 'Đăng ký xe mới' ?></h1>
     <p>Thông tin này được lưu trong hồ sơ tài khoản của bạn.</p>
