@@ -26,7 +26,7 @@ $referenceTotal = array_sum(array_map(
     <a class="brand" href="<?= e(url()) ?>">AutoCare Hub</a>
     <nav aria-label="Điều hướng khách hàng">
         <a href="<?= e(url('vehicles')) ?>">Xe của tôi</a>
-        <a href="<?= e(url('appointments')) ?>">Lịch hẹn</a>
+        <a href="<?= e(url('appointments')) ?>" aria-current="page">Lịch hẹn</a>
         <a href="<?= e(url('profile')) ?>">Tài khoản</a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
     </nav>

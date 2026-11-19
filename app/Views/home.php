@@ -60,6 +60,7 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         .nav-links a:not(.nav-account)::after { position: absolute; right: 0; bottom: 1px; left: 0; height: 2px; background: var(--blue); content: ""; transform: scaleX(0); transform-origin: left; transition: transform .18s ease; }
         .nav-links a:not(.nav-account):hover, .nav-links a[aria-current="page"], .footer-links a:hover { color: var(--blue); }
         .nav-links a:not(.nav-account):hover::after, .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+        #home, #services, #process, #contact { scroll-margin-top: 92px; }
         .nav-actions { display: flex; align-items: center; gap: 12px; }
         .menu-toggle { display: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 19px; border: 1px solid transparent; border-radius: 9px; font-size: .92rem; font-weight: 700; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; cursor: pointer; }
@@ -69,26 +70,26 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         .btn-outline { color: var(--navy); border-color: #cbd6e1; background: #fff; }
         .btn-outline:hover { background: var(--surface); }
         .btn svg { width: 17px; height: 17px; }
-        .hero { overflow: hidden; position: relative; background: radial-gradient(ellipse at 86% 16%, #2c5c7e 0, transparent 37%), linear-gradient(118deg, #0b2740 0%, #123b5d 54%, #17486b 100%); color: white; }
+        .hero { overflow: hidden; position: relative; background: radial-gradient(ellipse at 86% 16%, #dceeff 0, transparent 42%), linear-gradient(118deg, #f8fbff 0%, #eaf4ff 54%, #dceeff 100%); color: var(--navy-deep); }
         .hero-background { position: absolute; z-index: 0; inset: 0; overflow: hidden; }
-        .hero-slide { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; transition: opacity 1s cubic-bezier(.22, .61, .36, 1); will-change: opacity; }
+        .hero-slide { position: absolute; inset: 0; background-position: center; background-size: cover; filter: brightness(1.08) contrast(1.06); opacity: 0; transition: opacity 1s cubic-bezier(.22, .61, .36, 1); will-change: opacity; }
         .hero-slide.is-active { opacity: 1; }
-        .hero-background::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(5 24 42 / 95%) 0%, rgb(8 34 56 / 90%) 55%, rgb(12 45 70 / 84%) 100%); }
+        .hero-background::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(255 255 255 / 88%) 0%, rgb(255 255 255 / 76%) 36%, rgb(230 242 255 / 44%) 68%, rgb(219 236 255 / 28%) 100%); }
         .hero-grid { position: relative; z-index: 1; min-height: 548px; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; padding-top: 40px; padding-bottom: 44px; }
         .hero-pagination { position: absolute; z-index: 2; right: 0; bottom: 10px; left: 0; display: flex; justify-content: center; gap: 4px; }
         .hero-pagination button { display: grid; width: 34px; height: 34px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
-        .hero-pagination button::before { content: ""; width: 9px; height: 9px; border: 1px solid #fff; border-radius: 50%; background: #ffffff55; transition: background-color .25s ease; }
-        .hero-pagination button[aria-pressed="true"]::before { background: #fff; }
-        .hero-pagination button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
-        .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: #b8d5fa; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 800; }
+        .hero-pagination button::before { content: ""; width: 9px; height: 9px; border: 1px solid var(--navy); border-radius: 50%; background: #123b5d55; transition: background-color .25s ease; }
+        .hero-pagination button[aria-pressed="true"]::before { background: var(--navy); }
+        .hero-pagination button:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
+        .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: #2563a6; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 800; }
         .eyebrow::before { content: ""; width: 24px; height: 2px; background: #60a5fa; }
-        h1 { max-width: 650px; margin: 20px 0 18px; font-size: clamp(2.6rem, 5vw, 4.65rem); line-height: 1.04; letter-spacing: -.055em; }
-        .hero-copy { max-width: 520px; color: #d2e0eb; font-size: 1.08rem; line-height: 1.75; }
+        h1 { max-width: 650px; margin: 20px 0 18px; color: var(--navy-deep); font-size: clamp(2.6rem, 5vw, 4.65rem); line-height: 1.04; letter-spacing: -.055em; }
+        .hero-copy { max-width: 520px; color: #344f68; font-size: 1.08rem; line-height: 1.75; }
         .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 27px; }
-        .hero .btn-outline { color: white; background: #ffffff0a; border-color: #ffffff48; }
-        .hero .btn-outline:hover { background: #ffffff17; }
-        .hero-proof { display: flex; align-items: center; gap: 13px; margin-top: 28px; color: #d2e0eb; font-size: .86rem; }
-        .proof-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #60a5fa24; color: #9dc5ff; }
+        .hero .btn-outline { color: var(--navy); background: rgb(255 255 255 / 72%); border-color: #9db5ce; }
+        .hero .btn-outline:hover { background: #fff; }
+        .hero-proof { display: flex; align-items: center; gap: 13px; margin-top: 28px; color: #344f68; font-size: .86rem; }
+        .proof-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #2563eb18; color: #1d4ed8; }
         .section { padding: 90px 0; }
         .section-soft { background: var(--surface); }
         .section-heading { max-width: 650px; margin: 0 auto 42px; text-align: center; }
@@ -323,7 +324,7 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
         </a>
         <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
         <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="<?= e(url()) ?>" aria-current="page">Trang chủ</a>
+            <a href="#home" aria-current="page">Trang chủ</a>
             <a href="#services">Dịch vụ</a>
             <a href="#process">Quy trình</a>
             <a href="#contact">Liên hệ</a>
@@ -345,7 +346,7 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
 </header>
 
 <main>
-    <section class="hero">
+    <section class="hero" id="home">
         <div class="hero-background" aria-hidden="true">
             <div class="hero-slide is-active" style="background-image: url('<?= e(url('assets/images/d6036d73ca06c0f44b8b851c343eafdd.jpg')) ?>')"></div>
             <div class="hero-slide" style="background-image: url('<?= e(url('assets/images/d2d7a74f06ba822c9da94503ef0748a7.jpg')) ?>')"></div>
@@ -654,6 +655,61 @@ $bookingLabel = $isCustomer ? 'Đặt lịch sửa chữa' : ($userRole === 'adm
             motionPreference.addListener(syncAutoplay);
         }
         syncAutoplay();
+    })();
+
+    (() => {
+        const nav = document.querySelector('.site-header .nav-links');
+        const header = document.querySelector('.site-header');
+        const sections = ['home', 'services', 'process', 'contact']
+            .map((id) => document.getElementById(id))
+            .filter((section) => section !== null);
+        const links = Array.from(nav?.querySelectorAll('a[href^="#"]') ?? []);
+        if (!nav || !header || sections.length === 0 || links.length === 0) {
+            return;
+        }
+
+        let updatePending = false;
+        const updateActiveLink = () => {
+            updatePending = false;
+            const activeLine = header.getBoundingClientRect().bottom + 24;
+            const atPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+            let activeSection = atPageEnd ? sections[sections.length - 1] : sections[0];
+            if (!atPageEnd) {
+                sections.forEach((section) => {
+                    if (section.getBoundingClientRect().top <= activeLine) {
+                        activeSection = section;
+                    }
+                });
+            }
+
+            links.forEach((link) => {
+                const isActive = link.hash === `#${activeSection.id}`;
+                if (isActive) {
+                    link.setAttribute('aria-current', 'page');
+                } else {
+                    link.removeAttribute('aria-current');
+                }
+            });
+        };
+        const scheduleUpdate = () => {
+            if (updatePending) {
+                return;
+            }
+            updatePending = true;
+            window.requestAnimationFrame(updateActiveLink);
+        };
+
+        window.addEventListener('scroll', scheduleUpdate, { passive: true });
+        window.addEventListener('resize', scheduleUpdate);
+        nav.addEventListener('click', (event) => {
+            if (event.target.closest('a[href^="#"]')) {
+                const menuToggle = document.getElementById('menu-toggle');
+                if (menuToggle) {
+                    menuToggle.checked = false;
+                }
+            }
+        });
+        updateActiveLink();
     })();
 </script>
 </body>
