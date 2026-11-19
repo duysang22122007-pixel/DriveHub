@@ -54,6 +54,7 @@ $hasEditorialContent = $contentDescription !== '' || $benefits !== [] || $items 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="<?= e($service['description'] ?: 'Thông tin dịch vụ ' . $service['name'] . ' tại AutoCare Hub.') ?>">
     <title><?= e($service['name']) ?> | AutoCare Hub</title>
+    <?php if ($userRole === 'customer'): ?><link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>"><?php endif; ?>
     <style>
         :root {
             color-scheme: light;
@@ -203,6 +204,12 @@ $hasEditorialContent = $contentDescription !== '' || $benefits !== [] || $items 
     </style>
 </head>
 <body>
+<?php if ($userRole === 'customer'): ?>
+    <?php
+    $activeCustomerNav = 'services';
+    require __DIR__ . '/../partials/customer-header.php';
+    ?>
+<?php else: ?>
 <div class="topline">
     <div class="container topline-inner">
         <span class="topline-note">Chăm sóc xe chuyên nghiệp, đồng hành trên mọi hành trình</span>
@@ -227,8 +234,6 @@ $hasEditorialContent = $contentDescription !== '' || $benefits !== [] || $items 
             <a href="<?= e(url('services')) ?>" aria-current="page">Dịch vụ</a>
             <a href="<?= e($homeUrl . '#process') ?>">Quy trình</a>
             <a href="<?= e($homeUrl . '#contact') ?>">Liên hệ</a>
-            <?php if ($userRole === 'customer'): ?><a href="<?= e(url('vehicles')) ?>">Xe của tôi</a><?php endif; ?>
-            <?php if ($userRole === 'customer'): ?><a href="<?= e(url('appointments')) ?>">Lịch hẹn</a><?php endif; ?>
         </nav>
         <div class="nav-actions">
             <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
@@ -243,6 +248,7 @@ $hasEditorialContent = $contentDescription !== '' || $benefits !== [] || $items 
         </div>
     </div>
 </header>
+    <?php endif; ?>
 
 <main>
     <section class="detail-hero">

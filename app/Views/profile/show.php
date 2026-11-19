@@ -10,6 +10,7 @@ $role = $_SESSION['user_role'] ?? 'customer';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Thông tin cá nhân | AutoCare Hub</title>
+    <?php if ($role === 'customer'): ?><link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>"><?php endif; ?>
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}
         header{background:#123b5d;color:#fff}.top,main{width:min(1160px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}
@@ -27,8 +28,13 @@ $role = $_SESSION['user_role'] ?? 'customer';
     </style>
 </head>
 <body>
+<?php if ($role === 'customer'): ?>
+    <?php
+    $activeCustomerNav = 'account';
+    require __DIR__ . '/../partials/customer-header.php';
+    ?>
+<?php else: ?>
 <header><div class="top">
-    <?php if ($role === 'admin'): ?>
         <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
         <nav>
             <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
@@ -39,16 +45,8 @@ $role = $_SESSION['user_role'] ?? 'customer';
             <a href="<?= e(url('profile/change-password')) ?>">Đổi mật khẩu</a>
             <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
         </nav>
-    <?php else: ?>
-        <a class="brand" href="<?= e(url('customer')) ?>">AutoCare Hub</a>
-        <nav>
-            <a href="<?= e(url('vehicles')) ?>">Xe của tôi</a>
-            <a href="<?= e(url('profile')) ?>" class="active">Thông tin cá nhân</a>
-            <a href="<?= e(url('profile/change-password')) ?>">Đổi mật khẩu</a>
-            <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
-        </nav>
-    <?php endif; ?>
 </div></header>
+<?php endif; ?>
 
 <main>
     <h1>Thông tin cá nhân</h1>

@@ -4,14 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Xe của tôi | AutoCare Hub</title>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root { font-family: Inter, Arial, sans-serif; color: #172b3b; background: #f4f7fb; }
         * { box-sizing: border-box; } body { margin: 0; }
-        header { background: #123b5d; color: #fff; }
-        .top, main, footer { width: min(1120px, calc(100% - 36px)); margin: 0 auto; }
-        .top { min-height: 68px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-        .brand { color: white; font-weight: 800; font-size: 1.1rem; } .top nav { display:flex; gap:18px; align-items:center; }
-        a { color: #2563eb; text-decoration: none; font-weight: 600; } header a { color: #fff; }
+        main, footer { width: min(1120px, calc(100% - 36px)); margin: 0 auto; }
+        a { color: #2563eb; text-decoration: none; font-weight: 600; }
         main { padding: 38px 0 64px; } .heading { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:22px; }
         h1 { margin:0; color:#123b5d; font-size:clamp(1.8rem,4vw,2.4rem); } .sub { margin:8px 0 0; color:#667788; }
         .button { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border:0; border-radius:8px; background:#2563eb; color:#fff; font:inherit; font-weight:700; cursor:pointer; }
@@ -26,16 +24,14 @@
         .actions { display:flex; align-items:center; gap:10px; padding-top:14px; border-top:1px solid #edf1f5; }
         .actions form { margin-left:auto; } .empty { grid-column:1/-1; text-align:center; padding:44px 20px; } .empty p { color:#667788; }
         footer { padding:18px 0 26px; border-top:1px solid #e3eaf1; color:#748395; font-size:.85rem; }
-        @media(max-width:680px) { .top { align-items:flex-start; flex-direction:column; padding:14px 0; } .top nav { flex-wrap:wrap; gap:12px; } .heading { align-items:flex-start; flex-direction:column; } .heading-actions { width:100%; flex-direction:column; } .heading-actions .button { width:100%; } .grid { grid-template-columns:1fr; } }
+        @media(max-width:680px) { .heading { align-items:flex-start; flex-direction:column; } .heading-actions { width:100%; flex-direction:column; } .heading-actions .button { width:100%; } .grid { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
-<header><div class="top">
-    <a class="brand" href="<?= e(url()) ?>">AutoCare Hub</a>
-    <nav><a href="<?= e(url()) ?>">Trang chủ</a>
-        <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
-    </nav>
-</div></header>
+<?php
+$activeCustomerNav = 'vehicles';
+require __DIR__ . '/../../partials/customer-header.php';
+?>
 <main>
     <div class="heading">
         <div><h1>Xe của tôi</h1><p class="sub">Quản lý các phương tiện thuộc tài khoản của bạn.</p></div>
