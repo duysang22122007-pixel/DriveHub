@@ -54,7 +54,7 @@ $hasEditorialContent = $contentDescription !== '' || $benefits !== [] || $items 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="<?= e($service['description'] ?: 'Thông tin dịch vụ ' . $service['name'] . ' tại AutoCare Hub.') ?>">
     <title><?= e($service['name']) ?> | AutoCare Hub</title>
-    <?php if ($userRole === 'customer'): ?><link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>"><?php endif; ?>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root {
             color-scheme: light;
@@ -204,51 +204,10 @@ $hasEditorialContent = $contentDescription !== '' || $benefits !== [] || $items 
     </style>
 </head>
 <body>
-<?php if ($userRole === 'customer'): ?>
-    <?php
-    $activeCustomerNav = 'services';
-    require __DIR__ . '/../partials/customer-header.php';
-    ?>
-<?php else: ?>
-<div class="topline">
-    <div class="container topline-inner">
-        <span class="topline-note">Chăm sóc xe chuyên nghiệp, đồng hành trên mọi hành trình</span>
-        <?php if (is_string($garage['phone'] ?? null) && $garage['phone'] !== ''): ?>
-            <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $garage['phone'])) ?>">Hotline: <?= e($garage['phone']) ?></a>
-        <?php else: ?>
-            <span>Trung tâm chăm sóc và sửa chữa ô tô</span>
-        <?php endif; ?>
-    </div>
-</div>
-<header class="site-header">
-    <div class="container nav-wrap">
-        <a class="brand" href="<?= e(url()) ?>" aria-label="AutoCare Hub - Trang chủ">
-            <span class="brand-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M3 13.5h18l-1.6-5a2 2 0 0 0-1.9-1.4H6.5a2 2 0 0 0-1.9 1.4L3 13.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 13.5v4a1.5 1.5 0 0 0 1.5 1.5H7m13-5.5v4a1.5 1.5 0 0 1-1.5 1.5H17M3 15h2m14 0h2m-13-8 1 4m7-4-1 4m-5 5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </span>
-            <span>AutoCare Hub</span>
-        </a>
-        <input class="menu-toggle" type="checkbox" id="menu-toggle" aria-label="Bật hoặc tắt menu">
-        <nav class="nav-links" aria-label="Điều hướng chính">
-            <a href="<?= e($homeUrl . '#home') ?>">Trang chủ</a>
-            <a href="<?= e(url('services')) ?>" aria-current="page">Dịch vụ</a>
-            <a href="<?= e($homeUrl . '#process') ?>">Quy trình</a>
-            <a href="<?= e($homeUrl . '#contact') ?>">Liên hệ</a>
-        </nav>
-        <div class="nav-actions">
-            <a class="btn btn-primary" href="<?= e($primaryAction) ?>"><?= e($primaryActionLabel) ?></a>
-            <a class="nav-account btn btn-outline" href="<?= e($accountAction) ?>"><?= e($accountLabel) ?></a>
-            <?php if ($isCustomer): ?>
-                <form method="post" action="<?= e(url('logout')) ?>" style="margin:0">
-                    <?= csrf_field() ?>
-                    <button class="btn btn-outline" type="submit">Đăng xuất</button>
-                </form>
-            <?php endif; ?>
-            <label class="menu-label" for="menu-toggle" aria-label="Mở menu">☰</label>
-        </div>
-    </div>
-</header>
-    <?php endif; ?>
+<?php
+$activeCustomerNav = 'services';
+require __DIR__ . '/../partials/customer-header.php';
+?>
 
 <main>
     <section class="detail-hero">

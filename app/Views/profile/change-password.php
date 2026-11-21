@@ -10,10 +10,10 @@ $role = $_SESSION['user_role'] ?? 'customer';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Đổi mật khẩu | AutoCare Hub</title>
-    <?php if ($role === 'customer'): ?><link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>"><?php endif; ?>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root{font-family:Inter,Arial,sans-serif;color:#172b3b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}
-        header{background:#123b5d;color:#fff}.top,main{width:min(1160px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+        .legacy-profile-header{background:#123b5d;color:#fff}.top,main{width:min(1160px,calc(100% - 36px));margin:auto}.top{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px}
         .brand{color:#fff;font-size:1.1rem;font-weight:800;text-decoration:none}.top nav{display:flex;align-items:center;gap:18px}.top a{color:#fff;text-decoration:none}.top a.active{text-decoration:underline;text-underline-offset:3px}
         main{padding:34px 0 60px}h1{margin:0 0 6px;color:#123b5d}.sub{color:#6b7b8b;margin:0 0 24px}
         .button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 16px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
@@ -28,25 +28,10 @@ $role = $_SESSION['user_role'] ?? 'customer';
     </style>
 </head>
 <body>
-<?php if ($role === 'customer'): ?>
-    <?php
-    $activeCustomerNav = 'account';
-    require __DIR__ . '/../partials/customer-header.php';
-    ?>
-<?php else: ?>
-<header><div class="top">
-        <a class="brand" href="<?= e(url('admin')) ?>">AutoCare Hub · Admin</a>
-        <nav>
-            <a href="<?= e(url('admin/appointments')) ?>">Lịch hẹn</a>
-            <a href="<?= e(url('admin/customers')) ?>">Khách hàng</a>
-            <a href="<?= e(url('admin/vehicles')) ?>">Phương tiện</a>
-            <a href="<?= e(url('admin/brands')) ?>">Hãng xe</a>
-            <a href="<?= e(url('profile')) ?>">Thông tin cá nhân</a>
-            <a href="<?= e(url('profile/change-password')) ?>" class="active">Đổi mật khẩu</a>
-            <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="button secondary" type="submit">Đăng xuất</button></form>
-        </nav>
-</div></header>
-<?php endif; ?>
+<?php
+$activeCustomerNav = 'account';
+require __DIR__ . '/../partials/customer-header.php';
+?>
 
 <main>
     <h1>Đổi mật khẩu</h1>

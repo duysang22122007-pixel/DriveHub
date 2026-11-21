@@ -25,6 +25,18 @@ $serviceTotal = array_sum(array_map(
 ));
 $createdAt = $appointment['created_at'] === null ? '—' : date('d/m/Y H:i', strtotime((string) $appointment['created_at']));
 $updatedAt = $appointment['updated_at'] === null ? '—' : date('d/m/Y H:i', strtotime((string) $appointment['updated_at']));
+$cancellationRequestedAt = $appointment['cancellation_requested_at'] === null
+    ? '—'
+    : date('d/m/Y H:i', strtotime((string) $appointment['cancellation_requested_at']));
+$cancellationDecidedAt = $appointment['cancellation_decided_at'] === null
+    ? '—'
+    : date('d/m/Y H:i', strtotime((string) $appointment['cancellation_decided_at']));
+$cancellationStatusLabels = [
+    'none' => 'Không có yêu cầu hủy',
+    'requested' => 'Khách yêu cầu hủy',
+    'approved' => 'Đã xác nhận hủy',
+    'rejected' => 'Đã từ chối hủy',
+];
 
 $pageDescription = $typeLabel . ' · Tạo lúc ' . $createdAt;
 $pageActions = '<a class="button secondary" href="' . e(url('admin/appointments')) . '">← Danh sách lịch hẹn</a>';
@@ -64,6 +76,18 @@ ob_start();
                 <?php if ($appointment['status'] === 'rejected' && is_string($appointment['admin_note']) && trim($appointment['admin_note']) !== ''): ?>
                     <div class="detail-item"><dt class="detail-label">Lý do từ chối</dt><dd class="detail-value"><?= nl2br(e($appointment['admin_note'])) ?></dd></div>
                 <?php endif; ?>
+                <?php if (($appointment['cancellation_status'] ?? 'none') !== 'none'): ?>
+                    <div class="detail-item"><dt class="detail-label">Yêu cầu hủy</dt><dd class="detail-value">
+                        <strong><?= e($cancellationStatusLabels[$appointment['cancellation_status']] ?? 'Chưa xác định') ?></strong>
+                        · gửi lúc <?= e($cancellationRequestedAt) ?>
+                        <?php if (is_string($appointment['cancellation_reason']) && trim($appointment['cancellation_reason']) !== ''): ?>
+                            <br>Lý do: <?= nl2br(e($appointment['cancellation_reason'])) ?>
+                        <?php endif; ?>
+                        <?php if ($appointment['cancellation_decided_by'] !== null): ?>
+                            <br>Người xử lý (ID): <?= e($appointment['cancellation_decided_by']) ?> · <?= e($cancellationDecidedAt) ?>
+                        <?php endif; ?>
+                    </dd></div>
+                <?php endif; ?>
                 <div class="detail-item"><dt class="detail-label">Cập nhật lần cuối</dt><dd class="detail-value"><?= e($updatedAt) ?></dd></div>
                 <?php if (!empty($appointment['ticket_code'])): ?>
                     <div class="detail-item">
@@ -88,6 +112,40 @@ ob_start();
         </div>
     </section>
     <aside class="side-panel">
+        <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested'): ?>
+            <section class="panel">
+                <div class="panel-head"><div><h2 class="panel-title">Yêu cầu hủy từ khách hàng</h2><p class="panel-description">Quyết định này sẽ cập nhật đồng bộ trạng thái lịch ở cả hai phía.</p></div></div>
+                <div class="panel-body">
+                    <?php if (is_string($appointment['cancellation_reason']) && trim($appointment['cancellation_reason']) !== ''): ?><p class="muted"><strong>Lý do:</strong> <?= nl2br(e($appointment['cancellation_reason'])) ?></p><?php else: ?><p class="muted">Khách hàng không nhập lý do.</p><?php endif; ?>
+                    <div class="actions">
+                        <form method="post" action="<?= e(url('admin/appointments/' . (int) $appointment['id'] . '/cancellation')) ?>" onsubmit="return confirm('Xác nhận hủy lịch này?');">
+                            <?= csrf_field() ?><input type="hidden" name="decision" value="approved"><button class="button danger" type="submit">Xác nhận hủy</button>
+                        </form>
+                        <form method="post" action="<?= e(url('admin/appointments/' . (int) $appointment['id'] . '/cancellation')) ?>" onsubmit="return confirm('Từ chối yêu cầu hủy và giữ nguyên lịch?');">
+                            <?= csrf_field() ?><input type="hidden" name="decision" value="rejected"><button class="button secondary" type="submit">Từ chối hủy</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        <?php endif; ?>
+        <?php if ($cancellationHistory !== []): ?>
+            <section class="panel">
+                <div class="panel-head"><div><h2 class="panel-title">Lịch sử xử lý hủy</h2><p class="panel-description">Lưu người thực hiện và thời điểm từng bước.</p></div></div>
+                <div class="panel-body">
+                    <?php foreach ($cancellationHistory as $event): ?>
+                        <?php
+                            $eventLabels = ['requested' => 'Khách yêu cầu hủy', 'approved' => 'Đã xác nhận hủy', 'rejected' => 'Đã từ chối hủy'];
+                            $eventTime = date('d/m/Y H:i', strtotime((string) $event['created_at']));
+                        ?>
+                        <p class="muted"><strong><?= e($eventLabels[$event['action']] ?? $event['action']) ?></strong>
+                            · <?= e($event['actor_name'] ?? 'Tài khoản đã xóa') ?>
+                            · <?= e($eventTime) ?>
+                            <?php if (is_string($event['reason']) && trim($event['reason']) !== ''): ?><br>Lý do: <?= nl2br(e($event['reason'])) ?><?php endif; ?>
+                        </p>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
         <section class="panel appointment-status-panel">
             <div class="panel-head">
                 <div>
@@ -99,7 +157,7 @@ ob_start();
                 <?php if ($transitions === []): ?>
                     <p class="muted">Lịch hẹn đã ở trạng thái kết thúc, không còn thao tác chuyển trạng thái được phép.</p>
                 <?php else: ?>
-                    <p class="muted">Lý do từ chối là bắt buộc khi từ chối lịch.</p>
+                    <p class="muted">Lý do từ chối bắt buộc; có thể nhập lý do khi Admin chủ động hủy lịch.</p>
                     <form method="post" action="<?= e(url('admin/appointments/' . (int) $appointment['id'] . '/status')) ?>" id="status-form">
                         <?= csrf_field() ?>
                         <label class="field"><span>Trạng thái tiếp theo</span>
@@ -109,9 +167,9 @@ ob_start();
                                 <?php endforeach; ?>
                             </select>
                         </label>
-                        <label class="field" id="reason-field" hidden><span>Lý do từ chối</span>
+                        <label class="field" id="reason-field" hidden><span id="reason-label">Lý do</span>
                             <textarea name="reason" id="reason-input" maxlength="2000" aria-describedby="reason-help"></textarea>
-                            <small class="help" id="reason-help">Nội dung này sẽ hiển thị cho khách hàng trong chi tiết lịch bị từ chối.</small>
+                            <small class="help" id="reason-help">Lý do từ chối hoặc hủy sẽ hiển thị trong chi tiết lịch hẹn.</small>
                         </label>
                         <div class="actions" style="margin-top:16px"><button class="button" type="submit">Lưu trạng thái</button></div>
                     </form>
@@ -120,11 +178,15 @@ ob_start();
                             var statusSelect = document.getElementById('status-select');
                             var reasonField = document.getElementById('reason-field');
                             var reasonInput = document.getElementById('reason-input');
+                            var reasonLabel = document.getElementById('reason-label');
                             var form = document.getElementById('status-form');
                             function updateReasonField() {
                                 var rejected = statusSelect.value === 'rejected';
-                                reasonField.hidden = !rejected;
+                                var cancelled = statusSelect.value === 'cancelled';
+                                reasonField.hidden = !rejected && !cancelled;
                                 reasonInput.required = rejected;
+                                reasonInput.maxLength = cancelled ? 500 : 2000;
+                                reasonLabel.textContent = rejected ? 'Lý do từ chối' : 'Lý do hủy';
                             }
                             statusSelect.addEventListener('change', updateReasonField);
                             form.addEventListener('submit', function (event) {

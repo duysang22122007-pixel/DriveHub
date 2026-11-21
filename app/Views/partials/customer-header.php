@@ -3,16 +3,41 @@
 declare(strict_types=1);
 
 $activeCustomerNav = is_string($activeCustomerNav ?? null) ? $activeCustomerNav : '';
+$customerHeaderRole = $_SESSION['user_role'] ?? null;
+$customerHeaderName = is_string($_SESSION['user_name'] ?? null) ? trim($_SESSION['user_name']) : '';
 $customerHeaderOnHome = ($customerHeaderOnHome ?? false) === true;
-$customerHeaderHomeUrl = url('customer');
-$customerSectionHref = static function (string $section) use ($customerHeaderHomeUrl, $customerHeaderOnHome): string {
-    return $customerHeaderOnHome
-        ? '#' . $section
-        : $customerHeaderHomeUrl . '#' . $section;
+$customerHeaderHomeUrl = $customerHeaderRole === 'admin'
+    ? url('admin')
+    : ($customerHeaderRole === 'customer' ? url('customer') : url('services'));
+$customerSectionHref = static function (string $section) use (
+    $customerHeaderHomeUrl,
+    $customerHeaderOnHome,
+    $customerHeaderRole
+): string {
+    if ($customerHeaderOnHome && $customerHeaderRole === 'customer') {
+        return '#' . $section;
+    }
+
+    return $customerHeaderRole === 'customer'
+        ? $customerHeaderHomeUrl . '#' . $section
+        : url('services');
 };
 $customerServicesHref = $activeCustomerNav === 'services'
     ? url('services')
     : $customerSectionHref('services');
+$customerAppointmentsHref = $customerHeaderRole === 'admin'
+    ? url('admin/appointments')
+    : ($customerHeaderRole === 'customer' ? url('appointments') : url('login'));
+$customerPrimaryHref = $customerHeaderRole === 'admin'
+    ? url('admin')
+    : ($customerHeaderRole === 'customer' ? url('vehicles') : url('register'));
+$customerPrimaryLabel = $customerHeaderRole === 'admin'
+    ? 'Mở quản trị'
+    : ($customerHeaderRole === 'customer' ? 'Xe của tôi' : 'Đăng ký');
+$customerAccountHref = url('profile');
+$customerAccountLabel = $customerHeaderName !== ''
+    ? $customerHeaderName
+    : ($customerHeaderRole === 'admin' ? 'Quản trị viên' : 'Tài khoản');
 $customerHeaderGarage = is_array($garage ?? null)
     ? $garage
     : require dirname(__DIR__, 3) . '/config/garage.php';
@@ -42,14 +67,20 @@ $customerHeaderGarage = is_array($garage ?? null)
             <a href="<?= e($customerServicesHref) ?>"<?= $activeCustomerNav === 'services' ? ' aria-current="page"' : '' ?>>Dịch vụ</a>
             <a href="<?= e($customerSectionHref('process')) ?>">Quy trình</a>
             <a href="<?= e($customerSectionHref('contact')) ?>">Liên hệ</a>
-            <a href="<?= e(url('appointments')) ?>"<?= $activeCustomerNav === 'appointments' ? ' aria-current="page"' : '' ?>>Lịch hẹn</a>
+            <?php if ($customerHeaderRole === 'customer' || $customerHeaderRole === 'admin'): ?>
+                <a href="<?= e($customerAppointmentsHref) ?>"<?= $activeCustomerNav === 'appointments' ? ' aria-current="page"' : '' ?>><?= $customerHeaderRole === 'admin' ? 'Quản lý lịch' : 'Lịch hẹn' ?></a>
+            <?php endif; ?>
             <div class="customer-header-actions">
-                <a class="customer-nav-primary" href="<?= e(url('vehicles')) ?>"<?= $activeCustomerNav === 'vehicles' ? ' aria-current="page"' : '' ?>>Quản lý xe của tôi</a>
-                <a class="customer-nav-account" href="<?= e(url('profile')) ?>"<?= $activeCustomerNav === 'account' ? ' aria-current="page"' : '' ?>>Tài khoản</a>
-                <form class="customer-logout-form" method="post" action="<?= e(url('logout')) ?>">
-                    <?= csrf_field() ?>
-                    <button class="customer-header-link customer-nav-logout" type="submit">Đăng xuất</button>
-                </form>
+                <a class="customer-nav-primary" href="<?= e($customerPrimaryHref) ?>"<?= $activeCustomerNav === 'vehicles' ? ' aria-current="page"' : '' ?>><?= e($customerPrimaryLabel) ?></a>
+                <?php if ($customerHeaderRole === 'customer' || $customerHeaderRole === 'admin'): ?>
+                    <a class="customer-nav-account" href="<?= e($customerAccountHref) ?>"<?= $activeCustomerNav === 'account' ? ' aria-current="page"' : '' ?>><?= e($customerAccountLabel) ?></a>
+                    <form class="customer-logout-form" method="post" action="<?= e(url('logout')) ?>">
+                        <?= csrf_field() ?>
+                        <button class="customer-header-link customer-nav-logout" type="submit">Đăng xuất</button>
+                    </form>
+                <?php else: ?>
+                    <a class="customer-nav-account" href="<?= e(url('login')) ?>">Đăng nhập</a>
+                <?php endif; ?>
             </div>
         </nav>
     </div>

@@ -229,9 +229,14 @@ final class AppointmentController extends Controller
 
         try {
             $cancelled = (new Appointment(Database::connection($this->databaseConfig)))
-                ->cancelByCustomer($appointmentId, $customerId, $reason);
+                ->requestCancellationByCustomer($appointmentId, $customerId, $reason);
         } catch (\InvalidArgumentException $exception) {
             flash('error', $exception->getMessage());
+
+            return Response::redirect(url('appointments/' . $appointmentId));
+        } catch (\PDOException $exception) {
+            error_log('Appointment cancellation request failed: ' . $exception->getMessage());
+            flash('error', 'Không thể gửi yêu cầu hủy do lỗi cơ sở dữ liệu. Vui lòng thử lại.');
 
             return Response::redirect(url('appointments/' . $appointmentId));
         }
@@ -240,7 +245,7 @@ final class AppointmentController extends Controller
             return Response::notFound();
         }
 
-        flash('success', 'Lịch hẹn đã được hủy thành công.');
+        flash('success', 'Yêu cầu hủy lịch đã được gửi và đang chờ Admin xử lý.');
 
         return Response::redirect(url('appointments/' . $appointmentId));
     }

@@ -9,11 +9,12 @@ declare(strict_types=1);
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quên mật khẩu | AutoCare Hub</title>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root { font-family: Inter, Arial, sans-serif; color: #172b3b; background: #f4f7fb; }
         * { box-sizing: border-box; }
-        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px; }
-        main { width: min(100%, 480px); background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 12px 40px #123b5d14; }
+        body { margin: 0; min-height: 100vh; padding: 0; }
+        main { width: min(calc(100% - 32px), 480px); margin: 38px auto; background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 12px 40px #123b5d14; }
         h1 { margin: 0 0 8px; color: #123b5d; } p { color: #5b6b7b; }
         label { display: block; margin: 18px 0 7px; font-weight: 600; color: #172b3b; }
         input { width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
@@ -25,6 +26,7 @@ declare(strict_types=1);
     </style>
 </head>
 <body>
+<?php require __DIR__ . '/../partials/customer-header.php'; ?>
 <main>
     <h1>Quên mật khẩu</h1>
     <p>Nhập email tài khoản để nhận liên kết đặt lại mật khẩu.</p>

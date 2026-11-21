@@ -167,6 +167,7 @@ final class AdminAppointmentController extends Controller
         return $this->view('admin/appointments/show', [
             'appointment' => $appointment,
             'services' => $catalog->details($appointmentId),
+            'cancellationHistory' => $catalog->cancellationHistory($appointmentId),
             'statuses' => $this->statuses(),
             'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
@@ -201,7 +202,8 @@ final class AdminAppointmentController extends Controller
                 ->updateStatusByAdmin(
                     $appointmentId,
                     $status,
-                    $status === 'rejected' ? trim($reason) : null
+                    in_array($status, ['rejected', 'cancelled'], true) ? trim($reason) : null,
+                    (int) $_SESSION['user_id']
                 );
             if (!$updated) {
                 flash('error', 'Không tìm thấy lịch hẹn cần cập nhật.');
@@ -215,6 +217,48 @@ final class AdminAppointmentController extends Controller
         } catch (PDOException $exception) {
             error_log('Appointment status update failed: ' . $exception->getMessage());
             flash('error', 'Không thể cập nhật lịch hẹn do lỗi cơ sở dữ liệu. Vui lòng thử lại.');
+        }
+
+        return Response::redirect(url('admin/appointments/' . $appointmentId));
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    public function decideCancellation(Request $request, array $parameters): Response
+    {
+        $appointmentId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        $decision = $request->input('decision');
+        if (
+            $appointmentId === false
+            || $appointmentId < 1
+            || !is_string($decision)
+            || !in_array($decision, ['approved', 'rejected'], true)
+        ) {
+            flash('error', 'Thông tin xử lý yêu cầu hủy không hợp lệ.');
+
+            return Response::redirect(url('admin/appointments'));
+        }
+
+        try {
+            $updated = (new Appointment(Database::connection($this->databaseConfig)))
+                ->decideCancellationByAdmin($appointmentId, (int) $_SESSION['user_id'], $decision);
+            if (!$updated) {
+                flash('error', 'Không tìm thấy lịch hẹn cần cập nhật.');
+
+                return Response::redirect(url('admin/appointments'));
+            }
+            flash(
+                'success',
+                $decision === 'approved'
+                    ? 'Đã xác nhận hủy; trạng thái lịch đã đồng bộ thành Đã hủy.'
+                    : 'Đã từ chối yêu cầu hủy; trạng thái lịch được giữ nguyên.'
+            );
+        } catch (InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+        } catch (PDOException $exception) {
+            error_log('Appointment cancellation decision failed: ' . $exception->getMessage());
+            flash('error', 'Không thể xử lý yêu cầu hủy do lỗi cơ sở dữ liệu. Vui lòng thử lại.');
         }
 
         return Response::redirect(url('admin/appointments/' . $appointmentId));

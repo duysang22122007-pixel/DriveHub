@@ -4,6 +4,19 @@ declare(strict_types=1);
 
 $type = $appointmentTypeLabels[$appointment['appointment_type']] ?? 'Lịch cũ';
 $statusLabel = $statuses[$appointment['status']] ?? 'Chưa xác định';
+$cancellationStatus = $appointment['cancellation_status'] ?? 'none';
+$cancellationStatusLabels = [
+    'none' => 'Chưa yêu cầu hủy',
+    'requested' => 'Đang chờ Admin xử lý yêu cầu hủy',
+    'approved' => 'Đã hủy',
+    'rejected' => 'Yêu cầu hủy bị từ chối',
+];
+$cancellationRequestedAt = $appointment['cancellation_requested_at'] === null
+    ? null
+    : date('d/m/Y H:i', strtotime((string) $appointment['cancellation_requested_at']));
+$cancellationDecidedAt = $appointment['cancellation_decided_at'] === null
+    ? null
+    : date('d/m/Y H:i', strtotime((string) $appointment['cancellation_decided_at']));
 $maintenanceStatus = $maintenanceStatuses[$appointment['maintenance_ticket_status'] ?? ''] ?? null;
 $date = date('d/m/Y', strtotime((string) $appointment['appointment_date']));
 $time = substr((string) $appointment['appointment_time'], 0, 5);
@@ -36,6 +49,14 @@ require __DIR__ . '/../../partials/customer-header.php';
         <section class="panel">
             <h2>Trạng thái</h2>
             <p><span class="status <?= e($appointment['status']) ?>"><?= e($statusLabel) ?></span></p>
+            <?php if ($cancellationStatus !== 'none'): ?>
+                <div class="notice <?= $cancellationStatus === 'rejected' ? 'error' : '' ?>" role="status">
+                    <strong><?= e($cancellationStatusLabels[$cancellationStatus] ?? 'Yêu cầu hủy chưa xác định') ?></strong>
+                    <?php if ($cancellationRequestedAt !== null): ?><br>Gửi lúc <?= e($cancellationRequestedAt) ?><?php endif; ?>
+                    <?php if ($cancellationDecidedAt !== null): ?><br>Cập nhật lúc <?= e($cancellationDecidedAt) ?><?php endif; ?>
+                    <?php if (is_string($appointment['cancellation_reason']) && trim($appointment['cancellation_reason']) !== ''): ?><br>Lý do: <?= nl2br(e($appointment['cancellation_reason'])) ?><?php endif; ?>
+                </div>
+            <?php endif; ?>
             <?php if ($maintenanceStatus !== null): ?><p>Phiếu sửa chữa: <?= e($maintenanceStatus) ?></p><?php endif; ?>
             <?php if ($appointment['status'] === 'rejected' && is_string($appointment['rejection_reason'] ?? null) && trim($appointment['rejection_reason']) !== ''): ?>
                 <div class="notice error" role="status"><strong>Lý do từ chối:</strong><br><?= nl2br(e($appointment['rejection_reason'])) ?></div>
@@ -65,17 +86,17 @@ require __DIR__ . '/../../partials/customer-header.php';
             <p class="summary-note">Đây là giá tham khảo đã lưu tại thời điểm gửi; không thay thế báo giá cuối cùng của gara.</p>
         </section>
         <aside class="aside">
-            <?php if (in_array($appointment['status'], ['pending', 'confirmed'], true)): ?>
+            <?php if (in_array($appointment['status'], ['pending', 'confirmed'], true) && $cancellationStatus !== 'requested'): ?>
             <section class="panel">
                 <h2>Hủy lịch hẹn</h2>
-                <p class="muted" style="margin:0 0 12px">Chỉ hủy khi lịch đang <strong>chờ xác nhận</strong> hoặc <strong>đã xác nhận</strong>. Sau khi hủy không thể hoàn tác.</p>
+                <p class="muted" style="margin:0 0 12px">Yêu cầu của bạn sẽ được Admin xem xét. Lịch chỉ chuyển thành <strong>Đã hủy</strong> sau khi được xác nhận.</p>
                 <form method="post" action="<?= e(url('appointments/' . (int) $appointment['id'] . '/cancel')) ?>" onsubmit="return confirm('Bạn có chắc muốn hủy lịch hẹn này không?');">
                     <?= csrf_field() ?>
                     <div style="margin-bottom:10px">
                         <label style="display:block;margin-bottom:4px;font-size:.8rem;font-weight:700;color:#526678">Lý do hủy (không bắt buộc)</label>
-                        <textarea name="cancellation_reason" maxlength="500" placeholder="Nhập lý do hủy nếu có…" style="width:100%;min-height:80px;padding:8px 10px;border:1px solid #d1dbe5;border-radius:8px;font:inherit;font-size:.86rem;resize:vertical;box-sizing:border-box"></textarea>
+                        <textarea name="cancellation_reason" maxlength="500" placeholder="Nhập lý do hủy nếu có…" style="width:100%;min-height:80px;padding:8px 10px;border:1px solid #d1dbe5;border-radius:8px;font:inherit;font-size:.86rem;resize:vertical;box-sizing:border-box"><?= $cancellationStatus === 'rejected' ? e($appointment['cancellation_reason']) : '' ?></textarea>
                     </div>
-                    <button class="button" type="submit" style="width:100%;background:#b42318;border-color:#b42318">Hủy lịch hẹn này</button>
+                    <button class="button" type="submit" style="width:100%;background:#b42318;border-color:#b42318"><?= $cancellationStatus === 'rejected' ? 'Gửi lại yêu cầu hủy' : 'Gửi yêu cầu hủy' ?></button>
                 </form>
             </section>
             <?php endif; ?>
