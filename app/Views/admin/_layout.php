@@ -48,6 +48,9 @@ $adminNavGroups = [
         ['key' => 'garage-schedule', 'label' => 'Lịch hoạt động gara', 'href' => url('admin/garage-schedule'), 'icon' => 'calendar'],
         ['key' => 'customers', 'label' => 'Khách hàng', 'href' => url('admin/customers'), 'icon' => 'customers'],
     ],
+    'Dịch vụ' => [
+        ['key' => 'services', 'label' => 'Quản lý dịch vụ', 'href' => url('admin/services'), 'icon' => 'model'],
+    ],
     'Danh mục xe' => [
         ['key' => 'brands', 'label' => 'Hãng xe', 'href' => url('admin/brands'), 'icon' => 'brand'],
         ['key' => 'models', 'label' => 'Dòng xe', 'href' => url('admin/models'), 'icon' => 'model'],

@@ -102,6 +102,11 @@
     transition: color .18s ease;
 }
 
+.customer-header-nav .customer-header-link {
+    width: auto;
+    margin: 0;
+}
+
 .customer-header-nav a::after,
 .customer-nav-logout::after {
     position: absolute;
@@ -251,7 +256,8 @@
     }
 
     .customer-header-nav a,
-    .customer-header-link {
+    .customer-header-link,
+    .customer-header-nav .customer-header-link {
         width: 100%;
         justify-content: flex-start;
         min-height: 44px;

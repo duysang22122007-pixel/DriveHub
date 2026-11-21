@@ -9,11 +9,12 @@ declare(strict_types=1);
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Đăng nhập | AutoCare Hub</title>
+    <link rel="stylesheet" href="<?= e(url('assets/customer-header.css')) ?>">
     <style>
         :root { font-family: Arial, sans-serif; color: #123b5d; background: #f3f6fa; }
         * { box-sizing: border-box; }
-        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px; }
-        main { width: min(100%, 440px); background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 12px 40px #123b5d14; }
+        body { margin: 0; min-height: 100vh; padding: 0; }
+        main { width: min(calc(100% - 32px), 440px); margin: 38px auto; background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 12px 40px #123b5d14; }
         h1 { margin: 0 0 8px; } p { color: #5b6b7b; }
         label { display: block; margin: 18px 0 7px; font-weight: 600; }
         input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
@@ -22,6 +23,7 @@ declare(strict_types=1);
     </style>
 </head>
 <body>
+<?php require __DIR__ . '/../partials/customer-header.php'; ?>
 <main>
     <h1>Đăng nhập</h1>
     <p>Truy cập tài khoản AutoCare Hub của bạn.</p>

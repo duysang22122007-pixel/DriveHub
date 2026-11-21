@@ -64,6 +64,11 @@ require __DIR__ . '/../../partials/customer-header.php';
                     <?php if ($appointment['status'] === 'rejected' && is_string($appointment['rejection_reason'] ?? null) && trim($appointment['rejection_reason']) !== ''): ?>
                         <p class="notice error"><strong>Lý do từ chối:</strong> <?= nl2br(e($appointment['rejection_reason'])) ?></p>
                     <?php endif; ?>
+                    <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested'): ?>
+                        <p class="notice" role="status">Đang chờ Admin xử lý yêu cầu hủy.</p>
+                    <?php elseif (($appointment['cancellation_status'] ?? 'none') === 'rejected'): ?>
+                        <p class="notice error" role="status">Yêu cầu hủy bị từ chối; lịch vẫn giữ trạng thái hiện tại.</p>
+                    <?php endif; ?>
                     <?php if ($maintenanceStatus !== null): ?><p>Phiếu sửa chữa: <?= e($maintenanceStatus) ?></p><?php endif; ?>
                     <p><?= (int) $appointment['service_count'] ?> dịch vụ · Tham khảo <?= e(number_format((float) $appointment['reference_total'], 0, ',', '.')) ?> ₫</p>
                     <a class="card-link" href="<?= e(url('appointments/' . (int) $appointment['id'])) ?>">Xem chi tiết →</a>

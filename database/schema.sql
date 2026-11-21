@@ -117,6 +117,10 @@ CREATE TABLE IF NOT EXISTS appointments (
     customer_note TEXT NULL,
     admin_note TEXT NULL,
     cancellation_reason VARCHAR(500) NULL,
+    cancellation_status ENUM('none', 'requested', 'approved', 'rejected') NOT NULL DEFAULT 'none',
+    cancellation_requested_at DATETIME NULL,
+    cancellation_decided_by BIGINT UNSIGNED NULL,
+    cancellation_decided_at DATETIME NULL,
     active_slot DATETIME GENERATED ALWAYS AS (
         CASE
             WHEN status IN ('pending', 'confirmed', 'checked_in') THEN scheduled_at
@@ -131,10 +135,31 @@ CREATE TABLE IF NOT EXISTS appointments (
     KEY idx_appointments_customer_date (customer_id, scheduled_at),
     KEY idx_appointments_vehicle_date (vehicle_id, scheduled_at),
     KEY idx_appointments_status_date (status, scheduled_at),
+    KEY idx_appointments_cancellation_status (cancellation_status, cancellation_requested_at),
     CONSTRAINT fk_appointments_customer FOREIGN KEY (customer_id) REFERENCES users (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_appointments_customer_vehicle FOREIGN KEY (vehicle_id, customer_id)
-        REFERENCES vehicles (id, owner_id) ON UPDATE CASCADE ON DELETE RESTRICT
+        REFERENCES vehicles (id, owner_id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_cancellation_decider FOREIGN KEY (cancellation_decided_by) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS appointment_cancellation_events (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    appointment_id BIGINT UNSIGNED NOT NULL,
+    actor_id BIGINT UNSIGNED NULL,
+    action ENUM('requested', 'approved', 'rejected') NOT NULL,
+    reason VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_appointment_cancellation_events_appointment (appointment_id, created_at),
+    KEY idx_appointment_cancellation_events_actor (actor_id, created_at),
+    CONSTRAINT fk_appointment_cancellation_events_appointment
+        FOREIGN KEY (appointment_id) REFERENCES appointments (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_appointment_cancellation_events_actor
+        FOREIGN KEY (actor_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS appointment_details (

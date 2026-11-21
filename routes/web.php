@@ -7,6 +7,7 @@ use App\Controllers\AuthController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminAppointmentController;
 use App\Controllers\AdminVehicleController;
+use App\Controllers\AdminServiceController;
 use App\Controllers\AdminTicketController;
 use App\Controllers\AppointmentController;
 use App\Controllers\VehicleController;
@@ -26,6 +27,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $adminController = new AdminController($databaseConfig);
     $adminAppointmentController = new AdminAppointmentController($databaseConfig);
     $adminVehicleController = new AdminVehicleController($databaseConfig);
+    $adminServiceController = new AdminServiceController($databaseConfig);
     $adminTicketController = new AdminTicketController($databaseConfig);
     $profileController = new ProfileController($databaseConfig);
     $serviceController = new ServiceController($databaseConfig, $garageConfig);
@@ -48,6 +50,15 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/admin/garage-schedule', [$adminAppointmentController, 'updateSchedule'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/admin/appointments/{id}', [$adminAppointmentController, 'show'], [$authenticated, $admin]);
     $router->post('/admin/appointments/{id}/status', [$adminAppointmentController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/appointments/{id}/cancellation', [$adminAppointmentController, 'decideCancellation'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/services', [$adminServiceController, 'index'], [$authenticated, $admin]);
+    $router->post('/admin/services', [$adminServiceController, 'store'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/services/move', [$adminServiceController, 'move'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/services/{id}/update', [$adminServiceController, 'update'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/services/{id}/delete', [$adminServiceController, 'deactivate'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/service-categories', [$adminServiceController, 'saveCategory'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/service-categories/{id}/update', [$adminServiceController, 'updateCategory'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/service-categories/{id}/delete', [$adminServiceController, 'deleteCategory'], [$authenticated, $admin, $verifyCsrf]);
 
     $router->get('/admin/tickets', [$adminTicketController, 'index'], [$authenticated, $admin]);
     $router->get('/admin/tickets/create', [$adminTicketController, 'create'], [$authenticated, $admin]);
