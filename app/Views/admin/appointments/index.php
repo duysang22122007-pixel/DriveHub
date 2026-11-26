@@ -37,7 +37,7 @@ ob_start();
             <label for="appointment-status">Trạng thái</label>
             <select id="appointment-status" name="status">
                 <option value="">Tất cả trạng thái</option>
-                <?php foreach ($statuses as $statusValue => $statusName): ?>
+                <?php foreach ($filterStatuses as $statusValue => $statusName): ?>
                     <option value="<?= e($statusValue) ?>" <?= $statusFilter === $statusValue ? 'selected' : '' ?>><?= e($statusName) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -82,12 +82,17 @@ ob_start();
                     <td><span class="cell-main"><?= e($dateLabel) ?></span><span class="cell-sub"><?= e($timeLabel) ?></span></td>
                     <td class="note"><?= e($appointment['note'] ?? 'Không có ghi chú') ?></td>
                     <td>
-                        <span class="status <?= e($statusClass) ?>"><?= e($statuses[$appointment['status']] ?? 'Chưa xác định') ?></span>
-                        <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested'): ?>
-                            <p><span class="status pending">Khách yêu cầu hủy</span></p>
-                            <?php if (is_string($appointment['cancellation_reason']) && trim($appointment['cancellation_reason']) !== ''): ?><p class="cell-sub">Lý do hủy: <?= e($appointment['cancellation_reason']) ?></p><?php endif; ?>
-                        <?php elseif (($appointment['cancellation_status'] ?? 'none') === 'rejected'): ?>
-                            <p><span class="status rejected">Đã từ chối yêu cầu hủy</span></p>
+                        <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested' && in_array($appointment['status'], ['pending', 'confirmed'], true)): ?>
+                            <span class="status want-cancel">Muốn hủy lịch</span>
+                            <p class="cell-sub">Trạng thái gốc: <?= e($statuses[$appointment['status']] ?? 'Chưa xác định') ?></p>
+                            <?php if (is_string($appointment['cancellation_reason']) && trim($appointment['cancellation_reason']) !== ''): ?><p class="cell-sub">Lý do: <?= e($appointment['cancellation_reason']) ?></p><?php endif; ?>
+                        <?php else: ?>
+                            <span class="status <?= e($statusClass) ?>"><?= e($statuses[$appointment['status']] ?? 'Chưa xác định') ?></span>
+                            <?php if ($appointment['status'] === 'cancelled' && ($appointment['cancellation_status'] ?? 'none') === 'approved' && $appointment['cancellation_decided_by'] === null): ?>
+                                <p class="cell-sub">Khách đã hủy trực tiếp</p>
+                            <?php elseif (($appointment['cancellation_status'] ?? 'none') === 'rejected'): ?>
+                                <p><span class="status rejected">Đã từ chối yêu cầu hủy</span></p>
+                            <?php endif; ?>
                         <?php endif; ?>
                         <?php $ticketStatus = $maintenanceStatuses[$appointment['maintenance_ticket_status'] ?? ''] ?? null; ?>
                         <?php if ($ticketStatus !== null): ?><p class="cell-sub">Phiếu sửa chữa: <?= e($ticketStatus) ?></p><?php endif; ?>

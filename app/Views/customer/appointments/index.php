@@ -22,12 +22,25 @@ require __DIR__ . '/../../partials/customer-header.php';
         <a class="button" href="<?= e(url('appointments/create')) ?>">+ Đặt lịch mới</a>
     </div>
     <?php foreach ($errors as $errorMessage): ?><p class="notice error" role="alert"><?= e($errorMessage) ?></p><?php endforeach; ?>
+    <?php if (!empty($pendingReviews)): ?>
+        <section class="notice" role="status" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px">
+            <div>
+                <strong>Bạn có <?= count($pendingReviews) ?> dịch vụ đã thanh toán đang chờ đánh giá</strong>
+                <div style="font-size:.88rem;margin-top:4px">Hãy gửi đánh giá trải nghiệm để AutoCare Hub phục vụ bạn tốt hơn.</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <?php foreach ($pendingReviews as $pr): ?>
+                    <a class="button" style="min-height:36px;padding:0 12px;font-size:.84rem" href="<?= e(url('appointments/' . (int) $pr['appointment_id'] . '#review-form')) ?>">Đánh giá <?= e($pr['appointment_code']) ?> →</a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
     <form method="get" action="<?= e(url('appointments')) ?>" class="panel" style="display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:18px;padding:16px">
         <label for="appointment-status" style="display:grid;gap:6px;min-width:220px;color:#34495e;font-weight:700">
             Lọc theo trạng thái
             <select id="appointment-status" name="status" style="min-height:42px;padding:8px 10px;border:1px solid #cbd6e1;border-radius:8px;background:#fff;font:inherit">
                 <option value="">Tất cả trạng thái</option>
-                <?php foreach ($statuses as $statusValue => $statusName): ?>
+                <?php foreach ($filterStatuses as $statusValue => $statusName): ?>
                     <option value="<?= e($statusValue) ?>" <?= $statusFilter === $statusValue ? 'selected' : '' ?>><?= e($statusName) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -55,7 +68,11 @@ require __DIR__ . '/../../partials/customer-header.php';
                 <article class="appointment-card">
                     <div class="appointment-card-head">
                         <div><h2>Mã lịch <?= e($appointment['appointment_code']) ?></h2><p><?= e($type) ?></p></div>
-                        <span class="status <?= e($appointment['status']) ?>"><?= e($statusLabel) ?></span>
+                        <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested' && in_array($appointment['status'], ['pending', 'confirmed'], true)): ?>
+                            <span class="status want-cancel">Muốn hủy lịch</span>
+                        <?php else: ?>
+                            <span class="status <?= e($appointment['status']) ?>"><?= e($statusLabel) ?></span>
+                        <?php endif; ?>
                     </div>
                     <p><strong><?= e($appointment['brand_name'] . ' ' . $appointment['model']) ?></strong><br>
                         <?= e($appointment['license_plate']) ?> · <?= e($date) ?> lúc <?= e($time) ?></p>
@@ -64,13 +81,20 @@ require __DIR__ . '/../../partials/customer-header.php';
                     <?php if ($appointment['status'] === 'rejected' && is_string($appointment['rejection_reason'] ?? null) && trim($appointment['rejection_reason']) !== ''): ?>
                         <p class="notice error"><strong>Lý do từ chối:</strong> <?= nl2br(e($appointment['rejection_reason'])) ?></p>
                     <?php endif; ?>
-                    <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested'): ?>
-                        <p class="notice" role="status">Đang chờ Admin xử lý yêu cầu hủy.</p>
+                    <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested' && in_array($appointment['status'], ['pending', 'confirmed'], true)): ?>
+                        <p class="notice" role="status" style="background:#fff1e6;color:#9a3412">Trạng thái <strong>Muốn hủy lịch</strong> đã được cập nhật sang Admin (trạng thái gốc: <?= e($statusLabel) ?>).</p>
                     <?php elseif (($appointment['cancellation_status'] ?? 'none') === 'rejected'): ?>
                         <p class="notice error" role="status">Yêu cầu hủy bị từ chối; lịch vẫn giữ trạng thái hiện tại.</p>
                     <?php endif; ?>
                     <?php if ($maintenanceStatus !== null): ?><p>Phiếu sửa chữa: <?= e($maintenanceStatus) ?></p><?php endif; ?>
                     <p><?= (int) $appointment['service_count'] ?> dịch vụ · Tham khảo <?= e(number_format((float) $appointment['reference_total'], 0, ',', '.')) ?> ₫</p>
+                    <?php if (($appointment['invoice_status'] ?? null) === 'paid'): ?>
+                        <?php if (!empty($appointment['review_rating'])): ?>
+                            <p style="color:#067647;font-weight:700">Đã thanh toán · Đã đánh giá <?= (int) $appointment['review_rating'] ?>/5 ★</p>
+                        <?php else: ?>
+                            <p><a class="button" style="min-height:36px;padding:0 12px;font-size:.84rem;margin-top:8px" href="<?= e(url('appointments/' . (int) $appointment['id'] . '#review-form')) ?>">Đã thanh toán · Gửi đánh giá ngay →</a></p>
+                        <?php endif; ?>
+                    <?php endif; ?>
                     <a class="card-link" href="<?= e(url('appointments/' . (int) $appointment['id'])) ?>">Xem chi tiết →</a>
                 </article>
             <?php endforeach; ?>

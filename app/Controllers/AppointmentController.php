@@ -11,6 +11,8 @@ use App\Core\Response;
 use App\Core\Validator;
 use App\Models\Appointment;
 use App\Models\GarageSchedule;
+use App\Models\Invoice;
+use App\Models\Review;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -160,19 +162,25 @@ final class AppointmentController extends Controller
     {
         $statusInput = $request->input('status', '');
         $status = is_string($statusInput) ? $statusInput : '';
+        $filterStatuses = $this->filterStatuses();
         $errors = [];
-        if (!is_string($statusInput) || ($status !== '' && !array_key_exists($status, $this->statuses()))) {
+        if (!is_string($statusInput) || ($status !== '' && !array_key_exists($status, $filterStatuses))) {
             $errors[] = 'Bộ lọc trạng thái không hợp lệ.';
             $status = '';
         }
 
-        $appointments = (new Appointment(Database::connection($this->databaseConfig)))
-            ->historyForCustomer((int) $_SESSION['user_id'], $status === '' ? null : $status);
+        $pdo = Database::connection($this->databaseConfig);
+        $customerId = (int) $_SESSION['user_id'];
+        $appointments = (new Appointment($pdo))
+            ->historyForCustomer($customerId, $status === '' ? null : $status);
+        $pendingReviews = (new Review($pdo))->pendingForCustomer($customerId);
 
         return $this->view('customer/appointments/index', [
             'appointments' => $appointments,
+            'pendingReviews' => $pendingReviews,
             'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'statuses' => $this->statuses(),
+            'filterStatuses' => $filterStatuses,
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'statusFilter' => $status,
             'errors' => $errors,
@@ -190,23 +198,40 @@ final class AppointmentController extends Controller
         }
 
         $customerId = (int) $_SESSION['user_id'];
-        $catalog = new Appointment(Database::connection($this->databaseConfig));
+        $pdo = Database::connection($this->databaseConfig);
+        $catalog = new Appointment($pdo);
         $appointment = $catalog->findForCustomer($appointmentId, $customerId);
         if ($appointment === null) {
             return Response::notFound();
         }
 
-        $user = (new User(Database::connection($this->databaseConfig)))->findById($customerId);
+        $user = (new User($pdo))->findById($customerId);
+        $invoiceModel = new Invoice($pdo);
+        $invoice = $invoiceModel->findByAppointmentId($appointmentId);
+        $invoiceDetails = $invoice !== null ? $invoiceModel->getDetails((int) $invoice['id']) : [];
+        $payments = $invoice !== null ? $invoiceModel->getPayments((int) $invoice['id']) : [];
+        $review = (new Review($pdo))->findByAppointmentForCustomer($appointmentId, $customerId);
+        $reviewRequestSentAt = isset($appointment['maintenance_ticket_id']) && $appointment['maintenance_ticket_id'] !== null
+            ? $invoiceModel->reviewRequestSentAt((int) $appointment['maintenance_ticket_id'])
+            : null;
 
         return $this->view('customer/appointments/show', [
             'appointment' => $appointment,
             'services' => $catalog->details($appointmentId),
             'customer' => $user,
             'garage' => $this->garage,
+            'invoice' => $invoice,
+            'invoiceDetails' => $invoiceDetails,
+            'payments' => $payments,
+            'invoiceStatuses' => Invoice::STATUS_LABELS,
+            'paymentMethods' => Invoice::PAYMENT_METHOD_LABELS,
+            'review' => $review,
+            'reviewRequestSentAt' => $reviewRequestSentAt,
             'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'statuses' => $this->statuses(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'success' => flash('success'),
+            'error' => flash('error'),
         ]);
     }
 
@@ -226,17 +251,21 @@ final class AppointmentController extends Controller
         if ($reason === '') {
             $reason = null;
         }
+        $modeInput = $input['cancel_mode'] ?? 'request';
+        $mode = is_string($modeInput) && in_array($modeInput, ['request', 'immediate'], true)
+            ? $modeInput
+            : 'request';
 
         try {
             $cancelled = (new Appointment(Database::connection($this->databaseConfig)))
-                ->requestCancellationByCustomer($appointmentId, $customerId, $reason);
+                ->requestCancellationByCustomer($appointmentId, $customerId, $reason, $mode);
         } catch (\InvalidArgumentException $exception) {
             flash('error', $exception->getMessage());
 
             return Response::redirect(url('appointments/' . $appointmentId));
         } catch (\PDOException $exception) {
             error_log('Appointment cancellation request failed: ' . $exception->getMessage());
-            flash('error', 'Không thể gửi yêu cầu hủy do lỗi cơ sở dữ liệu. Vui lòng thử lại.');
+            flash('error', 'Không thể cập nhật trạng thái hủy lịch do lỗi cơ sở dữ liệu. Vui lòng thử lại.');
 
             return Response::redirect(url('appointments/' . $appointmentId));
         }
@@ -245,9 +274,84 @@ final class AppointmentController extends Controller
             return Response::notFound();
         }
 
-        flash('success', 'Yêu cầu hủy lịch đã được gửi và đang chờ Admin xử lý.');
+        flash(
+            'success',
+            $mode === 'immediate'
+                ? 'Lịch hẹn đã được hủy thành công và đồng bộ trạng thái Đã hủy.'
+                : 'Đã cập nhật trạng thái Muốn hủy lịch và gửi thông báo tới Admin.'
+        );
 
         return Response::redirect(url('appointments/' . $appointmentId));
+    }
+
+    /**
+     * Khách hàng rút lại trạng thái Muốn hủy lịch.
+     *
+     * @param array<string, string> $parameters
+     */
+    public function withdrawCancel(Request $request, array $parameters): Response
+    {
+        $appointmentId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($appointmentId === false || $appointmentId < 1) {
+            return Response::notFound();
+        }
+
+        $customerId = (int) $_SESSION['user_id'];
+        try {
+            $withdrawn = (new Appointment(Database::connection($this->databaseConfig)))
+                ->withdrawCancellationByCustomer($appointmentId, $customerId);
+        } catch (\InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+
+            return Response::redirect(url('appointments/' . $appointmentId));
+        }
+
+        if (!$withdrawn) {
+            return Response::notFound();
+        }
+
+        flash('success', 'Đã giữ lại lịch hẹn và hủy bỏ yêu cầu muốn hủy.');
+
+        return Response::redirect(url('appointments/' . $appointmentId));
+    }
+
+    /**
+     * Khách hàng gửi biểu mẫu đánh giá dịch vụ sau thanh toán.
+     *
+     * @param array<string, string> $parameters
+     */
+    public function submitReview(Request $request, array $parameters): Response
+    {
+        $appointmentId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($appointmentId === false || $appointmentId < 1) {
+            return Response::notFound();
+        }
+
+        $rating = filter_var($request->input('rating'), FILTER_VALIDATE_INT);
+        $comment = is_string($request->input('comment')) ? $request->input('comment') : null;
+        if ($rating === false || $rating < 1 || $rating > 5) {
+            flash('error', 'Vui lòng chọn số sao đánh giá từ 1 đến 5.');
+
+            return Response::redirect(url('appointments/' . $appointmentId . '#review-form'));
+        }
+
+        $customerId = (int) $_SESSION['user_id'];
+        try {
+            (new Review(Database::connection($this->databaseConfig)))->submitForCustomer(
+                (int) $appointmentId,
+                $customerId,
+                (int) $rating,
+                $comment
+            );
+            flash('success', 'Cảm ơn bạn! Đánh giá dịch vụ của bạn đã được ghi nhận.');
+        } catch (\InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+        } catch (\PDOException $exception) {
+            error_log('Customer review submission failed: ' . $exception->getMessage());
+            flash('error', 'Không thể gửi đánh giá lúc này. Vui lòng thử lại.');
+        }
+
+        return Response::redirect(url('appointments/' . $appointmentId . '#review-form'));
     }
 
     /**
@@ -366,6 +470,22 @@ final class AppointmentController extends Controller
             'rejected' => 'Không thể tiếp nhận',
             'checked_in' => 'Đã tiếp nhận',
             'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function filterStatuses(): array
+    {
+        return [
+            'pending' => 'Chờ gara xác nhận',
+            'confirmed' => 'Đã xác nhận',
+            'cancellation_requested' => 'Muốn hủy lịch',
+            'checked_in' => 'Đã tiếp nhận',
+            'completed' => 'Hoàn thành',
+            'rejected' => 'Không thể tiếp nhận',
             'cancelled' => 'Đã hủy',
         ];
     }

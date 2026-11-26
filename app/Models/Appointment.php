@@ -56,7 +56,9 @@ final class Appointment
             $parameters['phone_keyword'] = $pattern;
             $parameters['plate_keyword'] = $pattern;
         }
-        if ($status !== null) {
+        if ($status === 'cancellation_requested') {
+            $conditions[] = "a.cancellation_status = 'requested' AND a.status IN ('pending', 'confirmed')";
+        } elseif ($status !== null) {
             $conditions[] = 'a.status = :status';
             $parameters['status'] = $status;
         }
@@ -400,7 +402,9 @@ final class Appointment
     {
         $conditions = ['a.user_id = :user_id'];
         $parameters = ['user_id' => $customerId];
-        if ($status !== null) {
+        if ($status === 'cancellation_requested') {
+            $conditions[] = "a.cancellation_status = 'requested' AND a.status IN ('pending', 'confirmed')";
+        } elseif ($status !== null) {
             $conditions[] = 'a.status = :status';
             $parameters['status'] = $status;
         }
@@ -412,13 +416,17 @@ final class Appointment
                    a.cancellation_requested_at, a.cancellation_decided_at,
                    CASE WHEN a.status = \'rejected\' THEN a.admin_note ELSE NULL END AS rejection_reason,
                     v.model, v.license_plate, b.name AS brand_name,
-                   t.status AS maintenance_ticket_status,
+                   t.id AS maintenance_ticket_id, t.status AS maintenance_ticket_status,
+                   inv.status AS invoice_status, inv.total_amount AS invoice_total,
+                   r.rating AS review_rating,
                     COALESCE(details.service_count, 0) AS service_count,
                     COALESCE(details.reference_total, 0) AS reference_total
              FROM appointments AS a
              INNER JOIN vehicles AS v ON v.id = a.vehicle_id AND v.user_id = a.user_id
              INNER JOIN vehicle_brands AS b ON b.id = v.brand_id
              LEFT JOIN maintenance_tickets AS t ON t.appointment_id = a.id
+             LEFT JOIN invoices AS inv ON inv.ticket_id = t.id
+             LEFT JOIN reviews AS r ON r.ticket_id = t.id
              LEFT JOIN (
                  SELECT appointment_id, COUNT(*) AS service_count,
                         SUM(price * quantity) AS reference_total
@@ -455,19 +463,152 @@ final class Appointment
     }
 
     /**
-     * Khách hàng hủy lịch hẹn của chính mình.
-     * Chỉ cho phép hủy khi trạng thái là 'pending' hoặc 'confirmed'.
+     * Khách hàng gửi trạng thái muốn hủy lịch hoặc hủy lịch ngay (khi chưa tiếp nhận).
      *
+     * @param string $mode 'request' (Muốn hủy lịch) | 'immediate' (Hủy luôn)
      * @throws \InvalidArgumentException khi không thể hủy ở trạng thái hiện tại
      */
-    public function requestCancellationByCustomer(int $appointmentId, int $customerId, ?string $reason): bool
-    {
+    public function requestCancellationByCustomer(
+        int $appointmentId,
+        int $customerId,
+        ?string $reason,
+        string $mode = 'request'
+    ): bool {
         if ($appointmentId < 1 || $customerId < 1) {
             throw new \InvalidArgumentException('Thông tin lịch hẹn không hợp lệ.');
+        }
+        if (!in_array($mode, ['request', 'immediate'], true)) {
+            throw new \InvalidArgumentException('Thao tác hủy lịch không hợp lệ.');
         }
 
         if ($reason !== null && trim($reason) !== '' && preg_match('/\A.{1,500}\z/us', $reason) !== 1) {
             throw new \InvalidArgumentException('Lý do hủy không được vượt quá 500 ký tự.');
+        }
+
+        $cleanReason = ($reason !== null && trim($reason) !== '') ? trim($reason) : null;
+
+        $this->pdo->beginTransaction();
+        try {
+            $select = $this->pdo->prepare(
+                'SELECT status, user_id, cancellation_status, cancellation_reason
+                 FROM appointments WHERE id = :id LIMIT 1 FOR UPDATE'
+            );
+            $select->execute(['id' => $appointmentId]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+
+            if ($row === false || (int) $row['user_id'] !== $customerId) {
+                $this->pdo->rollBack();
+
+                return false;
+            }
+
+            if (!in_array($row['status'], ['pending', 'confirmed'], true)) {
+                $this->pdo->rollBack();
+                throw new \InvalidArgumentException('Không thể hủy khi lịch đã tiếp nhận tại gara hoặc đã kết thúc.');
+            }
+            if ($row['cancellation_status'] === 'approved') {
+                $this->pdo->rollBack();
+                throw new \InvalidArgumentException('Lịch hẹn này đã được hủy.');
+            }
+
+            if ($mode === 'immediate') {
+                $ticketCheck = $this->pdo->prepare(
+                    'SELECT 1 FROM maintenance_tickets WHERE appointment_id = :appointment_id LIMIT 1'
+                );
+                $ticketCheck->execute(['appointment_id' => $appointmentId]);
+                if ($ticketCheck->fetchColumn() !== false) {
+                    $this->pdo->rollBack();
+                    throw new \InvalidArgumentException('Lịch hẹn đã có phiếu sửa chữa nên không thể hủy trực tiếp; vui lòng gửi yêu cầu hủy để Admin xử lý.');
+                }
+
+                $finalReason = $cleanReason ?? (is_string($row['cancellation_reason']) && trim($row['cancellation_reason']) !== '' ? trim($row['cancellation_reason']) : null);
+                $update = $this->pdo->prepare(
+                    "UPDATE appointments
+                     SET status = 'cancelled',
+                         cancellation_status = 'approved',
+                         cancellation_reason = :reason,
+                         cancellation_requested_at = COALESCE(cancellation_requested_at, CURRENT_TIMESTAMP),
+                         cancellation_decided_by = NULL,
+                         cancellation_decided_at = CURRENT_TIMESTAMP
+                     WHERE id = :id AND user_id = :user_id
+                       AND status IN ('pending', 'confirmed')"
+                );
+                $update->execute([
+                    'reason'  => $finalReason,
+                    'id'      => $appointmentId,
+                    'user_id' => $customerId,
+                ]);
+
+                if ($update->rowCount() !== 1) {
+                    $this->pdo->rollBack();
+
+                    return false;
+                }
+
+                $this->recordCancellationEvent(
+                    $appointmentId,
+                    $customerId,
+                    'approved',
+                    $finalReason
+                );
+                $this->pdo->commit();
+
+                return true;
+            }
+
+            if ($row['cancellation_status'] === 'requested') {
+                $this->pdo->rollBack();
+                throw new \InvalidArgumentException('Lịch hẹn đang ở trạng thái Muốn hủy lịch.');
+            }
+
+            $update = $this->pdo->prepare(
+                "UPDATE appointments
+                 SET cancellation_status = 'requested',
+                     cancellation_reason = :reason,
+                     cancellation_requested_at = CURRENT_TIMESTAMP,
+                     cancellation_decided_by = NULL,
+                     cancellation_decided_at = NULL
+                 WHERE id = :id AND user_id = :user_id
+                   AND status IN ('pending', 'confirmed')
+                   AND cancellation_status IN ('none', 'rejected')"
+            );
+            $update->execute([
+                'reason'  => $cleanReason,
+                'id'      => $appointmentId,
+                'user_id' => $customerId,
+            ]);
+
+            if ($update->rowCount() !== 1) {
+                $this->pdo->rollBack();
+
+                return false;
+            }
+
+            $this->recordCancellationEvent(
+                $appointmentId,
+                $customerId,
+                'requested',
+                $cleanReason
+            );
+            $this->pdo->commit();
+
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Khách hàng rút lại trạng thái muốn hủy lịch để giữ lịch hẹn ban đầu.
+     */
+    public function withdrawCancellationByCustomer(int $appointmentId, int $customerId): bool
+    {
+        if ($appointmentId < 1 || $customerId < 1) {
+            throw new \InvalidArgumentException('Thông tin lịch hẹn không hợp lệ.');
         }
 
         $this->pdo->beginTransaction();
@@ -485,35 +626,21 @@ final class Appointment
                 return false;
             }
 
-            if (!in_array($row['status'], ['pending', 'confirmed'], true)) {
+            if ($row['cancellation_status'] !== 'requested' || !in_array($row['status'], ['pending', 'confirmed'], true)) {
                 $this->pdo->rollBack();
-                throw new \InvalidArgumentException('Không thể yêu cầu hủy khi lịch đã bắt đầu hoặc đã kết thúc.');
-            }
-            if ($row['cancellation_status'] === 'requested') {
-                $this->pdo->rollBack();
-                throw new \InvalidArgumentException('Yêu cầu hủy lịch này đang chờ Admin xử lý.');
-            }
-            if ($row['cancellation_status'] === 'approved') {
-                $this->pdo->rollBack();
-                throw new \InvalidArgumentException('Lịch hẹn này đã được hủy.');
+                throw new \InvalidArgumentException('Lịch hẹn không ở trạng thái Muốn hủy lịch để hoàn tác.');
             }
 
             $update = $this->pdo->prepare(
                 "UPDATE appointments
-                 SET cancellation_status = 'requested',
-                     cancellation_reason = :reason,
-                     cancellation_requested_at = CURRENT_TIMESTAMP,
+                 SET cancellation_status = 'none',
+                     cancellation_reason = NULL,
+                     cancellation_requested_at = NULL,
                      cancellation_decided_by = NULL,
                      cancellation_decided_at = NULL
-                 WHERE id = :id AND user_id = :user_id
-                   AND status IN ('pending', 'confirmed')
-                   AND cancellation_status IN ('none', 'rejected')"
+                 WHERE id = :id AND user_id = :user_id AND cancellation_status = 'requested'"
             );
-            $update->execute([
-                'reason'  => ($reason !== null && trim($reason) !== '') ? trim($reason) : null,
-                'id'      => $appointmentId,
-                'user_id' => $customerId,
-            ]);
+            $update->execute(['id' => $appointmentId, 'user_id' => $customerId]);
 
             if ($update->rowCount() !== 1) {
                 $this->pdo->rollBack();
@@ -521,12 +648,6 @@ final class Appointment
                 return false;
             }
 
-            $this->recordCancellationEvent(
-                $appointmentId,
-                $customerId,
-                'requested',
-                ($reason !== null && trim($reason) !== '') ? trim($reason) : null
-            );
             $this->pdo->commit();
 
             return true;

@@ -35,7 +35,7 @@ $cancellationDecidedAt = $appointment['cancellation_decided_at'] === null
     : date('d/m/Y H:i', strtotime((string) $appointment['cancellation_decided_at']));
 $cancellationStatusLabels = [
     'none' => 'Không có yêu cầu hủy',
-    'requested' => 'Khách yêu cầu hủy',
+    'requested' => 'Muốn hủy lịch',
     'approved' => 'Đã xác nhận hủy',
     'rejected' => 'Đã từ chối hủy',
 ];
@@ -55,7 +55,12 @@ ob_start();
                 <h2 class="panel-title">Thông tin lịch hẹn</h2>
                 <p class="panel-description">Thông tin khách hàng, phương tiện và nội dung yêu cầu.</p>
             </div>
-            <span class="status <?= e($statusClass) ?>"><?= e($statusLabel) ?></span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                <?php if (($appointment['cancellation_status'] ?? 'none') === 'requested' && in_array($appointment['status'], ['pending', 'confirmed'], true)): ?>
+                    <span class="status want-cancel">Muốn hủy lịch</span>
+                <?php endif; ?>
+                <span class="status <?= e($statusClass) ?>"><?= e($statusLabel) ?></span>
+            </div>
         </div>
         <div class="panel-body">
             <dl class="detail-summary">
@@ -87,6 +92,8 @@ ob_start();
                         <?php endif; ?>
                         <?php if ($appointment['cancellation_decided_by'] !== null): ?>
                             <br>Người xử lý (ID): <?= e($appointment['cancellation_decided_by']) ?> · <?= e($cancellationDecidedAt) ?>
+                        <?php elseif ($appointment['status'] === 'cancelled' && ($appointment['cancellation_status'] ?? 'none') === 'approved'): ?>
+                            <br>Khách hàng đã tự hủy trực tiếp · <?= e($cancellationDecidedAt) ?>
                         <?php endif; ?>
                     </dd></div>
                 <?php endif; ?>

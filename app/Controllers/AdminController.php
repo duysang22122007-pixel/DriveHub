@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\VehicleBrand;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
+use App\Services\BrandSpreadsheetService;
 use App\Services\NhtsaClient;
 use App\Services\VehicleCatalogImporter;
 use App\Services\VehicleDataNormalizer;
@@ -432,6 +433,74 @@ final class AdminController extends Controller
         flash('success', 'Đã cập nhật hãng xe.');
 
         return Response::redirect(url('admin/brands'));
+    }
+
+    public function importBrands(Request $request): Response
+    {
+        $file = $request->file('excel_file');
+        if (!is_array($file)) {
+            flash('error', 'Vui lòng chọn tệp Excel (.xlsx) hoặc CSV (.csv) để tải lên.');
+
+            return Response::redirect(url('admin/brands'));
+        }
+
+        try {
+            $result = (new BrandSpreadsheetService(Database::connection($this->databaseConfig)))
+                ->importUploadedFile($file);
+
+            $message = sprintf(
+                'Đã xử lý bảng Excel hãng xe: thêm mới %d, cập nhật %d, giữ nguyên %d',
+                $result['created'],
+                $result['updated'],
+                $result['unchanged']
+            );
+            if ($result['skipped'] > 0) {
+                $message .= sprintf(', bỏ qua %d dòng không hợp lệ', $result['skipped']);
+            }
+            $message .= '.';
+
+            flash('success', $message);
+            if ($result['errors'] !== []) {
+                flash('error', implode(' | ', $result['errors']));
+            }
+        } catch (InvalidArgumentException $exception) {
+            flash('error', $exception->getMessage());
+        } catch (RuntimeException $exception) {
+            flash('error', $exception->getMessage());
+        } catch (PDOException $exception) {
+            error_log('Brand spreadsheet import failed: ' . $exception->getMessage());
+            flash('error', 'Không thể nhập bảng hãng xe do lỗi cơ sở dữ liệu.');
+        }
+
+        return Response::redirect(url('admin/brands'));
+    }
+
+    public function downloadBrandsTemplate(): Response
+    {
+        $binary = (new BrandSpreadsheetService(Database::connection($this->databaseConfig)))
+            ->buildXlsxBinary([]);
+
+        return new Response($binary, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="mau-hang-xe.xlsx"',
+            'Content-Length' => (string) strlen($binary),
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
+    }
+
+    public function exportBrands(): Response
+    {
+        $pdo = Database::connection($this->databaseConfig);
+        $brands = (new VehicleBrand($pdo))->search();
+        $binary = (new BrandSpreadsheetService($pdo))->buildXlsxBinary($brands);
+        $filename = 'hang-xe-' . date('Ymd_His') . '.xlsx';
+
+        return new Response($binary, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => (string) strlen($binary),
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
     }
 
     public function models(Request $request): Response

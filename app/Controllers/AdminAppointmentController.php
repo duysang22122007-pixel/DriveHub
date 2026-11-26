@@ -34,9 +34,10 @@ final class AdminAppointmentController extends Controller
         }
 
         $errors = [];
+        $filterStatuses = $this->filterStatuses();
         $statusInput = $request->input('status', '');
         $status = is_string($statusInput) ? $statusInput : '';
-        if ($status !== '' && !array_key_exists($status, $this->statuses())) {
+        if ($status !== '' && !array_key_exists($status, $filterStatuses)) {
             $errors[] = 'Bộ lọc trạng thái không hợp lệ.';
             $status = '';
         }
@@ -79,6 +80,7 @@ final class AdminAppointmentController extends Controller
             'statusFilter' => $status,
             'date' => $date,
             'statuses' => $this->statuses(),
+            'filterStatuses' => $filterStatuses,
             'appointmentTypeLabels' => $this->appointmentTypeLabels(),
             'maintenanceStatuses' => $this->maintenanceStatuses(),
             'errors' => $errors,
@@ -275,6 +277,22 @@ final class AdminAppointmentController extends Controller
             'rejected' => 'Đã từ chối',
             'checked_in' => 'Đã tiếp nhận',
             'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function filterStatuses(): array
+    {
+        return [
+            'pending' => 'Chờ xác nhận',
+            'confirmed' => 'Đã xác nhận',
+            'cancellation_requested' => 'Muốn hủy lịch',
+            'checked_in' => 'Đã tiếp nhận',
+            'completed' => 'Hoàn thành',
+            'rejected' => 'Đã từ chối',
             'cancelled' => 'Đã hủy',
         ];
     }

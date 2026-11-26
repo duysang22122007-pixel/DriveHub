@@ -7,12 +7,39 @@ $activeNav = 'brands';
 $pageEyebrow = 'Danh mục xe';
 $pageDescription = 'Cập nhật danh mục hãng xe dùng khi khách hàng đăng ký phương tiện.';
 $pageStyles = '.data-table{min-width:1000px}.brand-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}';
-$pageActions = '<a class="button" href="#add-brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm hãng xe</a>';
+$pageActions = '<a class="button secondary" href="' . e(url('admin/brands/template')) . '">Tải file mẫu Excel</a>'
+    . '<a class="button secondary" href="' . e(url('admin/brands/export')) . '">Xuất bảng Excel</a>'
+    . '<a class="button" href="#add-brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm hãng xe</a>';
 
 ob_start();
 ?>
 <?php if (is_string($success) && $success !== ''): ?><p class="notice" role="status"><?= e($success) ?></p><?php endif; ?>
 <?php if (is_string($error) && $error !== ''): ?><p class="notice error" role="alert"><?= e($error) ?></p><?php endif; ?>
+
+<section class="panel" id="import-brands">
+    <div class="panel-head">
+        <div>
+            <h2 class="panel-title">Nhập / Tự động cập nhật hãng xe từ bảng Excel</h2>
+            <p class="panel-description">Tải lên tệp Excel (<code>.xlsx</code>) hoặc <code>.csv</code> gồm cột <strong>Tên hãng xe</strong>, <strong>Trạng thái</strong> (1 = hoạt động, 0 = ngừng) và <strong>Logo</strong> (tùy chọn). Hãng chưa có sẽ được thêm mới; hãng đã có sẽ tự động cập nhật.</p>
+        </div>
+        <div class="actions">
+            <a class="button secondary small" href="<?= e(url('admin/brands/template')) ?>">Tải file mẫu (.xlsx)</a>
+            <a class="button ghost small" href="<?= e(url('admin/brands/export')) ?>">Xuất danh sách hiện tại (.xlsx)</a>
+        </div>
+    </div>
+    <div class="panel-body">
+        <form method="post" action="<?= e(url('admin/brands/import')) ?>" enctype="multipart/form-data" class="form-grid">
+            <?= csrf_field() ?>
+            <div class="field" style="grid-column:span 2">
+                <label for="excel-file">Chọn bảng Excel (.xlsx hoặc .csv, tối đa 5 MB)</label>
+                <input id="excel-file" type="file" name="excel_file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" required>
+            </div>
+            <div class="form-actions">
+                <button class="button" type="submit">Tải lên &amp; Tự động cập nhật</button>
+            </div>
+        </form>
+    </div>
+</section>
 
 <section class="panel catalog-create" id="add-brand">
     <div class="panel-head">

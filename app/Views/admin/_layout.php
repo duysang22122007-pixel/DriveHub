@@ -45,6 +45,7 @@ $adminNavGroups = [
     'Vận hành' => [
         ['key' => 'appointments', 'label' => 'Lịch hẹn', 'href' => url('admin/appointments'), 'icon' => 'calendar'],
         ['key' => 'tickets', 'label' => 'Phiếu sửa chữa', 'href' => url('admin/tickets'), 'icon' => 'ticket'],
+        ['key' => 'completed-history', 'label' => 'Lịch sử đã hoàn thành', 'href' => url('admin/completed-history'), 'icon' => 'review'],
         ['key' => 'garage-schedule', 'label' => 'Lịch hoạt động gara', 'href' => url('admin/garage-schedule'), 'icon' => 'calendar'],
         ['key' => 'customers', 'label' => 'Khách hàng', 'href' => url('admin/customers'), 'icon' => 'customers'],
     ],
@@ -192,6 +193,7 @@ $adminNavGroups = [
         .note{max-width:230px;white-space:pre-wrap;overflow-wrap:anywhere}
         .status{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:.74rem;font-weight:800;line-height:1.3;white-space:nowrap}
         .status.pending{background:var(--amber-soft);color:var(--amber)}
+        .status.want-cancel{background:#fff1e6;color:#c2410c;border:1px solid #fed7aa}
         .status.confirmed,.status.checked-in,.status.verified,.status.active{background:var(--green-soft);color:var(--green)}
         .status.rejected,.status.cancelled,.status.not_suitable,.status.locked{background:var(--red-soft);color:var(--red)}
         .status.completed{background:#eaf2ff;color:#175cd3}
