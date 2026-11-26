@@ -329,7 +329,7 @@ require __DIR__ . '/partials/customer-header.php';
             <div class="section-heading">
                 <span class="section-kicker">Dịch vụ của chúng tôi</span>
                 <h2>Chăm sóc toàn diện cho chiếc xe của bạn</h2>
-                <p>Danh mục hiển thị trực tiếp từ hệ thống dịch vụ của gara. Giá và thời lượng được cập nhật theo dữ liệu đang áp dụng.</p>
+                <p>Giá khởi điểm tham khảo tại Hà Nội cho xe phổ thông; báo giá cuối cùng có thể thay đổi theo dòng xe, phụ tùng, vật tư và tình trạng thực tế.</p>
             </div>
             <?php if ($services === []): ?>
                 <div class="empty-state">
@@ -362,7 +362,7 @@ require __DIR__ . '/partials/customer-header.php';
                                 <h3><a href="<?= e(url('services/' . (int) $service['id'])) ?>"><?= e($service['name']) ?></a></h3>
                                 <p><?= e($service['description'] ?: 'Dịch vụ chăm sóc và sửa chữa xe tại gara.') ?></p>
                                 <div class="service-meta">
-                                    <strong><?= e($servicePrice > 0 ? number_format($servicePrice, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá') ?></strong>
+                                    <strong><?= e($servicePrice > 0 ? 'Từ ' . number_format($servicePrice, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá') ?></strong>
                                     <span><?= e($serviceDuration > 0 ? 'Khoảng ' . $serviceDuration . ' phút' : 'Liên hệ để biết thời gian') ?></span>
                                 </div>
                                 <div class="service-actions">

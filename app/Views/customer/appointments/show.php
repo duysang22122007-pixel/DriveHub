@@ -24,6 +24,8 @@ $referenceTotal = array_sum(array_map(
     static fn (array $service): float => (float) $service['price'] * (int) $service['quantity'],
     $services
 ));
+$hasCompleteReferencePrices = $services !== []
+    && count(array_filter($services, static fn (array $service): bool => (float) $service['price'] > 0)) === count($services);
 
 ?>
 <!doctype html>
@@ -74,7 +76,7 @@ require __DIR__ . '/../../partials/customer-header.php';
                     <dd>
                         <?php if ($services === []): ?>Chưa chọn dịch vụ; gara sẽ liên hệ làm rõ nhu cầu.<?php else: ?>
                             <?php foreach ($services as $service): ?>
-                                <?= e($service['service_name']) ?> · <?= e(number_format((float) $service['price'], 0, ',', '.')) ?> ₫
+                                <?= e($service['service_name']) ?> · <?= (float) $service['price'] > 0 ? 'Từ ' . e(number_format((float) $service['price'], 0, ',', '.')) . ' ₫' : 'Chưa có giá tham khảo' ?>
                                 <?= (int) $service['quantity'] > 1 ? '× ' . (int) $service['quantity'] : '' ?><br>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -82,7 +84,7 @@ require __DIR__ . '/../../partials/customer-header.php';
                 </div>
                 <div class="summary-row"><dt>Mô tả và ghi chú</dt><dd><?= $appointment['note'] !== null && $appointment['note'] !== '' ? nl2br(e($appointment['note'])) : 'Chưa có ghi chú.' ?></dd></div>
             </dl>
-            <div class="summary-total">Tổng giá tham khảo <span><?= $services === [] ? 'Chưa có dịch vụ' : e(number_format($referenceTotal, 0, ',', '.') . ' ₫') ?></span></div>
+            <div class="summary-total">Tổng khởi điểm tham khảo <span><?= !$hasCompleteReferencePrices ? 'Chưa đủ giá tham khảo' : e(number_format($referenceTotal, 0, ',', '.') . ' ₫') ?></span></div>
             <p class="summary-note">Đây là giá tham khảo đã lưu tại thời điểm gửi; không thay thế báo giá cuối cùng của gara.</p>
         </section>
         <aside class="aside">

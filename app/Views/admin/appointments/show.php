@@ -23,6 +23,8 @@ $serviceTotal = array_sum(array_map(
     static fn (array $service): float => (float) $service['price'] * (int) $service['quantity'],
     $services
 ));
+$hasCompleteReferencePrices = $services !== []
+    && count(array_filter($services, static fn (array $service): bool => (float) $service['price'] > 0)) === count($services);
 $createdAt = $appointment['created_at'] === null ? '—' : date('d/m/Y H:i', strtotime((string) $appointment['created_at']));
 $updatedAt = $appointment['updated_at'] === null ? '—' : date('d/m/Y H:i', strtotime((string) $appointment['updated_at']));
 $cancellationRequestedAt = $appointment['cancellation_requested_at'] === null
@@ -67,10 +69,10 @@ ob_start();
                         <?php foreach ($services as $service): ?>
                             <div class="service-line">
                                 <span><?= e($service['service_name']) ?><?= (int) $service['quantity'] > 1 ? ' × ' . (int) $service['quantity'] : '' ?></span>
-                                <strong><?= e(number_format((float) $service['price'], 0, ',', '.')) ?> ₫</strong>
+                                <strong><?= (float) $service['price'] > 0 ? 'Từ ' . e(number_format((float) $service['price'], 0, ',', '.')) . ' ₫' : 'Chưa có giá tham khảo' ?></strong>
                             </div>
                         <?php endforeach; ?>
-                        <div class="service-total"><strong>Tổng tham khảo: <?= e(number_format($serviceTotal, 0, ',', '.')) ?> ₫</strong></div>
+                        <div class="service-total"><strong>Tổng khởi điểm tham khảo: <?= $hasCompleteReferencePrices ? e(number_format($serviceTotal, 0, ',', '.')) . ' ₫' : 'Chưa đủ giá tham khảo' ?></strong></div>
                     <?php endif; ?>
                 </dd></div>
                 <?php if ($appointment['status'] === 'rejected' && is_string($appointment['admin_note']) && trim($appointment['admin_note']) !== ''): ?>
