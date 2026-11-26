@@ -17,7 +17,7 @@ $homeUrl = url($userRole === 'customer' ? 'customer' : ($userRole === 'admin' ? 
 
 $formatPrice = static function (array $service): string {
     $price = (float) ($service['price'] ?? 0);
-    return $price > 0 ? number_format($price, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá';
+    return $price > 0 ? 'Từ ' . number_format($price, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá';
 };
 $formatDuration = static function (array $service): string {
     $duration = (int) ($service['duration'] ?? 0);
@@ -197,7 +197,7 @@ require __DIR__ . '/../partials/customer-header.php';
         <div class="container">
             <span class="eyebrow">Dịch vụ của AutoCare Hub</span>
             <h1>Chọn đúng dịch vụ cho chiếc xe của bạn</h1>
-            <p>Danh mục được cập nhật trực tiếp từ hệ thống gara. Bạn có thể tìm theo tên dịch vụ hoặc lọc theo nhóm để xem thông tin chi tiết và đặt lịch.</p>
+            <p>Giá khởi điểm tham khảo tại Hà Nội cho xe phổ thông; báo giá cuối cùng tùy dòng xe, phụ tùng, vật tư và tình trạng thực tế. Bạn có thể tìm theo tên dịch vụ hoặc lọc theo nhóm.</p>
         </div>
     </section>
 

@@ -17,7 +17,7 @@ $homeUrl = url($userRole === 'customer' ? 'customer' : ($userRole === 'admin' ? 
 
 $formatPrice = static function (array $item): string {
     $price = (float) ($item['price'] ?? 0);
-    return $price > 0 ? number_format($price, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá';
+    return $price > 0 ? 'Từ ' . number_format($price, 0, ',', '.') . ' ₫' : 'Liên hệ để được báo giá';
 };
 $formatDuration = static function (array $item): string {
     $duration = (int) ($item['duration'] ?? 0);
@@ -223,7 +223,7 @@ require __DIR__ . '/../partials/customer-header.php';
                     <h1><?= e($service['name']) ?></h1>
                     <p><?= e($service['description'] ?: 'Dịch vụ chăm sóc và sửa chữa xe tại gara.') ?></p>
                     <div class="detail-meta">
-                        <span class="meta-pill"><strong>Giá tham khảo:</strong> <?= e($formatPrice($service)) ?></span>
+                        <span class="meta-pill"><strong>Giá khởi điểm:</strong> <?= e($formatPrice($service)) ?></span>
                         <span class="meta-pill"><strong>Thời gian:</strong> <?= e($formatDuration($service)) ?></span>
                     </div>
                     <div class="detail-actions">

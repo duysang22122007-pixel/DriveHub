@@ -72,7 +72,7 @@ require __DIR__ . '/../../partials/customer-header.php';
 
                 <fieldset class="wizard-step" data-step="2">
                     <legend>2. Chọn dịch vụ</legend>
-                    <p class="panel-intro">Chọn ít nhất một dịch vụ. Giá và thời lượng chỉ mang tính tham khảo; gara xác nhận sau khi tiếp nhận xe.</p>
+                    <p class="panel-intro">Giá hiển thị là mức khởi điểm tại Hà Nội cho xe phổ thông; tổng tiền tạm tính, chưa gồm phần phát sinh do dòng xe, phụ tùng hoặc tình trạng thực tế. Gara xác nhận báo giá cuối cùng sau khi tiếp nhận xe.</p>
                     <?php if (isset($errors['service_ids'])): ?><p class="field-error" role="alert"><?= e($errors['service_ids']) ?></p><?php endif; ?>
                     <?php if ($services === []): ?>
                         <div class="empty-state"><strong>Chưa có dịch vụ đang mở để chọn</strong><p>Hiện chưa thể đặt lịch. Vui lòng liên hệ gara hoặc quay lại khi danh mục dịch vụ được mở.</p></div>
@@ -90,7 +90,7 @@ require __DIR__ . '/../../partials/customer-header.php';
                                         <strong><?= e($service['name']) ?></strong>
                                         <p><?= e($service['description'] ?: 'Chưa có mô tả dịch vụ.') ?></p>
                                         <span class="service-meta">
-                                            <span><?= (float) $service['price'] > 0 ? e(number_format((float) $service['price'], 0, ',', '.') . ' ₫') : 'Chưa có giá tham khảo' ?></span>
+                                            <span><?= (float) $service['price'] > 0 ? e('Từ ' . number_format((float) $service['price'], 0, ',', '.') . ' ₫') : 'Chưa có giá tham khảo' ?></span>
                                             <span><?= (int) $service['duration'] > 0 ? 'Khoảng ' . (int) $service['duration'] . ' phút' : 'Chưa có thời lượng' ?></span>
                                         </span>
                                     </span>
@@ -163,7 +163,7 @@ require __DIR__ . '/../../partials/customer-header.php';
                         <div class="summary-row"><dt>Liên hệ</dt><dd><?= e($customer['full_name']) ?><br><?= e($customer['phone']) ?><br><?= e($customer['email']) ?></dd></div>
                         <div class="summary-row"><dt>Ghi chú</dt><dd id="summary-notes">Chưa có ghi chú</dd></div>
                     </dl>
-                    <div class="summary-total">Tổng giá tham khảo <span id="summary-total">—</span></div>
+                    <div class="summary-total">Tổng khởi điểm tham khảo <span id="summary-total">—</span></div>
                     <p class="summary-note">Giá và thời gian chưa phải báo giá hoặc xác nhận lịch cuối cùng. Gara sẽ liên hệ bạn theo thông tin tài khoản.</p>
                     <div class="form-actions">
                         <button class="button secondary" type="button" data-back>Quay lại chỉnh sửa</button>
