@@ -6,6 +6,7 @@ use App\Controllers\HomeController;
 use App\Controllers\AuthController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminAppointmentController;
+use App\Controllers\AdminCompletedHistoryController;
 use App\Controllers\AdminVehicleController;
 use App\Controllers\AdminServiceController;
 use App\Controllers\AdminTicketController;
@@ -29,6 +30,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $adminVehicleController = new AdminVehicleController($databaseConfig);
     $adminServiceController = new AdminServiceController($databaseConfig);
     $adminTicketController = new AdminTicketController($databaseConfig);
+    $adminCompletedHistoryController = new AdminCompletedHistoryController($databaseConfig);
     $profileController = new ProfileController($databaseConfig);
     $serviceController = new ServiceController($databaseConfig, $garageConfig);
     $guestOnly = new GuestOnly($databaseConfig);
@@ -69,6 +71,11 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/admin/tickets/{id}/items', [$adminTicketController, 'addItem'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/items/{itemId}/update', [$adminTicketController, 'updateItem'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/items/{itemId}/delete', [$adminTicketController, 'deleteItem'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/invoice', [$adminTicketController, 'createInvoice'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/payment', [$adminTicketController, 'recordPayment'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/send-review', [$adminTicketController, 'sendReviewForm'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/completed-history', [$adminCompletedHistoryController, 'index'], [$authenticated, $admin]);
+    $router->post('/admin/reviews/{id}/toggle', [$adminCompletedHistoryController, 'toggleReviewVisibility'], [$authenticated, $admin, $verifyCsrf]);
     $router->get('/customer', [$homeController, 'index'], [$authenticated, $customer]);
 
     $router->get('/services', [$serviceController, 'index']);
@@ -80,6 +87,8 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/appointments', [$appointmentController, 'history'], [$authenticated, $customer]);
     $router->get('/appointments/{id}', [$appointmentController, 'show'], [$authenticated, $customer]);
     $router->post('/appointments/{id}/cancel', [$appointmentController, 'cancel'], [$authenticated, $customer, $verifyCsrf]);
+    $router->post('/appointments/{id}/cancel-withdraw', [$appointmentController, 'withdrawCancel'], [$authenticated, $customer, $verifyCsrf]);
+    $router->post('/appointments/{id}/review', [$appointmentController, 'submitReview'], [$authenticated, $customer, $verifyCsrf]);
 
     $router->get('/vehicles', [$vehicleController, 'index'], [$authenticated, $customer]);
     $router->get('/vehicles/create', [$vehicleController, 'create'], [$authenticated, $customer]);
@@ -102,6 +111,9 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->get('/admin/vehicles/{customerId}/{vehicleId}', [$adminVehicleController, 'show'], [$authenticated, $admin]);
     $router->get('/admin/brands', [$adminController, 'brands'], [$authenticated, $admin]);
     $router->post('/admin/brands', [$adminController, 'storeBrand'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/brands/import', [$adminController, 'importBrands'], [$authenticated, $admin, $verifyCsrf]);
+    $router->get('/admin/brands/template', [$adminController, 'downloadBrandsTemplate'], [$authenticated, $admin]);
+    $router->get('/admin/brands/export', [$adminController, 'exportBrands'], [$authenticated, $admin]);
     $router->post('/admin/brands/{id}/update', [$adminController, 'updateBrand'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/brands/{id}/status', [$adminController, 'updateBrandStatus'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/brands/{id}/delete', [$adminController, 'deleteBrand'], [$authenticated, $admin, $verifyCsrf]);

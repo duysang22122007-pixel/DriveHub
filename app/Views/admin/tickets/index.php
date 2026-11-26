@@ -6,7 +6,8 @@ $pageTitle = 'Phiếu sửa chữa';
 $activeNav = 'tickets';
 $pageEyebrow = 'Vận hành';
 $pageDescription = 'Quản lý tiến độ sửa chữa, chẩn đoán lỗi và vật tư bảo dưỡng phương tiện.';
-$pageActions = '<a class="button" href="' . e(url('admin/tickets/create')) . '">+ Tạo phiếu sửa chữa</a>';
+$pageActions = '<a class="button secondary" href="' . e(url('admin/completed-history')) . '">Lịch sử đã hoàn thành</a>'
+    . '<a class="button" href="' . e(url('admin/tickets/create')) . '">+ Tạo phiếu sửa chữa</a>';
 
 $statusBadgeClass = [
     'received' => 'pending',

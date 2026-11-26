@@ -253,6 +253,166 @@ ob_start();
                 </div>
             </div>
         </section>
+
+        <!-- 4. HÓA ĐƠN, THANH TOÁN & BIỂU MẪU ĐÁNH GIÁ -->
+        <section class="panel" id="invoice-payment">
+            <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h2 class="panel-title">Hóa đơn, Thanh toán &amp; Biểu mẫu đánh giá</h2>
+                    <p class="panel-description">Lập hóa đơn từ hạng mục phiếu, xác nhận thanh toán và tự động gửi biểu mẫu đánh giá sau thanh toán.</p>
+                </div>
+                <?php if ($invoice !== null): ?>
+                    <?php
+                        $invStatusClass = [
+                            'unpaid' => 'pending',
+                            'partial' => 'pending',
+                            'paid' => 'confirmed',
+                            'cancelled' => 'cancelled',
+                        ][$invoice['status']] ?? 'pending';
+                    ?>
+                    <span class="status <?= e($invStatusClass) ?>"><?= e($invoiceStatuses[$invoice['status']] ?? $invoice['status']) ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="panel-body">
+                <?php if ($currentStatus === 'cancelled'): ?>
+                    <p style="color:#667788;">Phiếu sửa chữa đã hủy nên không phát sinh hóa đơn thanh toán.</p>
+                <?php elseif ($invoice === null): ?>
+                    <p style="color:#475569;margin-top:0;">Chưa có hóa đơn cho phiếu sửa chữa này. Hệ thống sẽ tổng hợp các hạng mục hiện tại (tổng ước tính <strong><?= number_format($totalCost, 0, ',', '.') ?> ₫</strong>) để xuất hóa đơn.</p>
+                    <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/invoice')) ?>" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                        <?= csrf_field() ?>
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Giảm giá (₫)</label>
+                            <input type="number" name="discount" min="0" step="1000" value="0" style="width:180px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
+                        </div>
+                        <button type="submit" class="button">Lập hóa đơn thanh toán</button>
+                    </form>
+                <?php else: ?>
+                    <?php
+                        $subtotal = (float) $invoice['subtotal'];
+                        $discount = (float) $invoice['discount'];
+                        $totalAmount = (float) $invoice['total_amount'];
+                        $amountPaid = (float) $invoice['amount_paid'];
+                        $remaining = max(0.0, $totalAmount - $amountPaid);
+                    ?>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;">
+                        <div>
+                            <small style="color:#667788;display:block;">Mã hóa đơn</small>
+                            <strong style="color:#123b5d;"><?= e($invoice['invoice_code']) ?></strong>
+                        </div>
+                        <div>
+                            <small style="color:#667788;display:block;">Tạm tính / Giảm giá</small>
+                            <strong><?= number_format($subtotal, 0, ',', '.') ?> ₫</strong>
+                            <?php if ($discount > 0): ?><span style="color:#b42318;font-size:12px;"> (-<?= number_format($discount, 0, ',', '.') ?> ₫)</span><?php endif; ?>
+                        </div>
+                        <div>
+                            <small style="color:#667788;display:block;">Tổng phải thu</small>
+                            <strong style="color:#123b5d;font-size:16px;"><?= number_format($totalAmount, 0, ',', '.') ?> ₫</strong>
+                        </div>
+                        <div>
+                            <small style="color:#667788;display:block;">Đã thanh toán / Còn lại</small>
+                            <strong style="color:#067647;"><?= number_format($amountPaid, 0, ',', '.') ?> ₫</strong>
+                            <span style="color:#667788;font-size:12px;"> / Còn <?= number_format($remaining, 0, ',', '.') ?> ₫</span>
+                        </div>
+                    </div>
+
+                    <?php if ($invoice['status'] === 'unpaid' && $amountPaid <= 0): ?>
+                        <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/invoice')) ?>" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;padding-bottom:14px;border-bottom:1px dashed #e2e8f0;">
+                            <?= csrf_field() ?>
+                            <div>
+                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Cập nhật giảm giá (₫)</label>
+                                <input type="number" name="discount" min="0" step="1000" value="<?= (int) $discount ?>" style="width:160px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">
+                            </div>
+                            <button type="submit" class="button secondary" style="font-size:13px;">Đồng bộ lại hạng mục hóa đơn</button>
+                        </form>
+                    <?php endif; ?>
+
+                    <?php if ($invoice['status'] !== 'paid' && $invoice['status'] !== 'cancelled'): ?>
+                        <div style="background:#f4f8ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin-bottom:16px;">
+                            <h3 style="margin:0 0 8px;font-size:14px;color:#123b5d;">Ghi nhận thanh toán</h3>
+                            <p style="margin:0 0 12px;font-size:13px;color:#475569;">Khi xác nhận thanh toán đủ, hệ thống sẽ tự động gửi biểu mẫu đánh giá dịch vụ tới tài khoản khách hàng.</p>
+                            <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/payment')) ?>" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end;">
+                                <?= csrf_field() ?>
+                                <div>
+                                    <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Phương thức</label>
+                                    <select name="payment_method" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">
+                                        <?php foreach ($paymentMethods as $mKey => $mLabel): ?>
+                                            <option value="<?= e($mKey) ?>"><?= e($mLabel) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Số tiền thanh toán (₫)</label>
+                                    <input type="number" name="amount" min="1" step="1000" value="<?= (int) round($remaining) ?>" required style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Mã giao dịch (tùy chọn)</label>
+                                    <input type="text" name="transaction_code" maxlength="150" placeholder="VD: VNPAY123456" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;">
+                                </div>
+                                <div>
+                                    <button type="submit" class="button" style="width:100%;">Xác nhận thanh toán</button>
+                                </div>
+                            </form>
+                        </div>
+                    <?php else: ?>
+                        <div style="background:#ecfdf3;border:1px solid #c9f0d9;border-radius:8px;padding:14px;margin-bottom:16px;">
+                            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+                                <div>
+                                    <strong style="color:#067647;">Đã thanh toán hoàn tất · Biểu mẫu đánh giá</strong>
+                                    <div style="font-size:13px;color:#334155;margin-top:4px;">
+                                        <?php if ($review !== null): ?>
+                                            Khách hàng đã đánh giá <strong><?= (int) $review['rating'] ?>/5 ★</strong> lúc <?= date('d/m/Y H:i', strtotime((string) $review['created_at'])) ?>.
+                                        <?php elseif ($reviewRequestSentAt !== null): ?>
+                                            Đã gửi biểu mẫu đánh giá tự động lúc <?= date('d/m/Y H:i', strtotime((string) $reviewRequestSentAt)) ?> (khách chưa gửi phản hồi).
+                                        <?php else: ?>
+                                            Biểu mẫu đánh giá đã mở trên trang chi tiết lịch hẹn của khách hàng.
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <?php if ($review === null): ?>
+                                    <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/send-review')) ?>">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="button secondary" style="font-size:13px;">Gửi lại biểu mẫu đánh giá</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($review !== null && is_string($review['comment']) && trim($review['comment']) !== ''): ?>
+                                <p style="margin:10px 0 0;padding:10px;background:#fff;border-radius:6px;border:1px solid #d1fae5;font-size:13px;color:#1e293b;">
+                                    “<?= nl2br(e($review['comment'])) ?>”
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($payments !== []): ?>
+                        <div>
+                            <strong style="display:block;font-size:13px;color:#123b5d;margin-bottom:8px;">Lịch sử giao dịch thanh toán</strong>
+                            <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
+                                <thead>
+                                    <tr style="border-bottom:1px solid #e2e8f0;background:#f8fafc;text-align:left;">
+                                        <th style="padding:8px;">Mã thanh toán</th>
+                                        <th style="padding:8px;">Phương thức</th>
+                                        <th style="padding:8px;">Mã GD</th>
+                                        <th style="padding:8px;text-align:right;">Số tiền</th>
+                                        <th style="padding:8px;">Thời gian</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($payments as $pay): ?>
+                                        <tr style="border-bottom:1px solid #edf1f5;">
+                                            <td style="padding:8px;"><strong><?= e($pay['payment_code']) ?></strong></td>
+                                            <td style="padding:8px;"><?= e($paymentMethods[$pay['payment_method']] ?? $pay['payment_method']) ?></td>
+                                            <td style="padding:8px;"><?= e($pay['transaction_code'] ?: '—') ?></td>
+                                            <td style="padding:8px;text-align:right;color:#067647;font-weight:700;"><?= number_format((float) $pay['amount'], 0, ',', '.') ?> ₫</td>
+                                            <td style="padding:8px;"><?= !empty($pay['paid_at']) ? date('d/m/Y H:i', strtotime((string) $pay['paid_at'])) : '—' ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </section>
     </div>
 
     <!-- CỘT BÊN PHẢI: ĐỔI TRẠNG THÁI & LỊCH SỬ TIẾN ĐỘ -->

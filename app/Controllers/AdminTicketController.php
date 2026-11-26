@@ -9,7 +9,9 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\Appointment;
+use App\Models\Invoice;
 use App\Models\MaintenanceTicket;
+use App\Models\Review;
 use App\Models\Service;
 use DateTimeImmutable;
 use InvalidArgumentException;
@@ -145,7 +147,8 @@ final class AdminTicketController extends Controller
             return Response::notFound();
         }
 
-        $model = new MaintenanceTicket(Database::connection($this->databaseConfig));
+        $pdo = Database::connection($this->databaseConfig);
+        $model = new MaintenanceTicket($pdo);
         $ticket = $model->findById($id);
         if (!$ticket) {
             return Response::notFound();
@@ -154,7 +157,7 @@ final class AdminTicketController extends Controller
         $items = $model->getItems($id);
         $histories = $model->getHistories($id);
 
-        $serviceModel = new Service(Database::connection($this->databaseConfig));
+        $serviceModel = new Service($pdo);
         $services = $serviceModel->listActive(48);
 
         $totalCost = array_sum(array_map(
@@ -162,12 +165,26 @@ final class AdminTicketController extends Controller
             $items
         ));
 
+        $invoiceModel = new Invoice($pdo);
+        $invoice = $invoiceModel->findByTicketId($id);
+        $invoiceDetails = $invoice !== null ? $invoiceModel->getDetails((int) $invoice['id']) : [];
+        $payments = $invoice !== null ? $invoiceModel->getPayments((int) $invoice['id']) : [];
+        $reviewRequestSentAt = $invoiceModel->reviewRequestSentAt($id);
+        $review = (new Review($pdo))->findByTicketId($id);
+
         return $this->view('admin/tickets/show', [
             'ticket' => $ticket,
             'items' => $items,
             'histories' => $histories,
             'services' => $services,
             'totalCost' => $totalCost,
+            'invoice' => $invoice,
+            'invoiceDetails' => $invoiceDetails,
+            'payments' => $payments,
+            'invoiceStatuses' => Invoice::STATUS_LABELS,
+            'paymentMethods' => Invoice::PAYMENT_METHOD_LABELS,
+            'reviewRequestSentAt' => $reviewRequestSentAt,
+            'review' => $review,
             'statuses' => MaintenanceTicket::STATUS_LABELS,
             'itemStatuses' => MaintenanceTicket::ITEM_STATUS_LABELS,
             'success' => flash('success'),
@@ -359,5 +376,107 @@ final class AdminTicketController extends Controller
         }
 
         return Response::redirect(url('admin/tickets/' . $ticketId));
+    }
+
+    /**
+     * Tạo mới hoặc đồng bộ hóa đơn từ phiếu sửa chữa
+     *
+     * @param array<string, string> $parameters
+     */
+    public function createInvoice(Request $request, array $parameters): Response
+    {
+        $ticketId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($ticketId === false || $ticketId < 1) {
+            return Response::notFound();
+        }
+
+        $discount = filter_var($request->input('discount', 0), FILTER_VALIDATE_FLOAT);
+        if ($discount === false || $discount < 0) {
+            flash('error', 'Số tiền giảm giá không hợp lệ.');
+
+            return Response::redirect(url('admin/tickets/' . $ticketId));
+        }
+
+        try {
+            $invoiceModel = new Invoice(Database::connection($this->databaseConfig));
+            $invoiceModel->createOrSyncFromTicket((int) $ticketId, (float) $discount);
+            flash('success', 'Đã lập / cập nhật hóa đơn cho phiếu sửa chữa.');
+        } catch (Throwable $e) {
+            flash('error', 'Không thể lập hóa đơn: ' . $e->getMessage());
+        }
+
+        return Response::redirect(url('admin/tickets/' . $ticketId));
+    }
+
+    /**
+     * Ghi nhận thanh toán và tự động gửi biểu mẫu đánh giá khi thanh toán đủ
+     *
+     * @param array<string, string> $parameters
+     */
+    public function recordPayment(Request $request, array $parameters): Response
+    {
+        $ticketId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($ticketId === false || $ticketId < 1) {
+            return Response::notFound();
+        }
+
+        $method = (string) $request->input('payment_method', 'cash');
+        $amount = filter_var($request->input('amount', 0), FILTER_VALIDATE_FLOAT);
+        $transactionCode = is_string($request->input('transaction_code')) ? $request->input('transaction_code') : null;
+
+        if ($amount === false || $amount <= 0) {
+            flash('error', 'Vui lòng nhập số tiền thanh toán lớn hơn 0.');
+
+            return Response::redirect(url('admin/tickets/' . $ticketId));
+        }
+
+        try {
+            $result = (new Invoice(Database::connection($this->databaseConfig)))->recordPayment(
+                (int) $ticketId,
+                $method,
+                (float) $amount,
+                $transactionCode
+            );
+            if ($result['invoice_status'] === 'paid') {
+                flash(
+                    'success',
+                    $result['review_sent']
+                        ? 'Đã xác nhận thanh toán đủ và tự động gửi biểu mẫu đánh giá cho khách hàng.'
+                        : 'Đã xác nhận thanh toán đủ hóa đơn.'
+                );
+            } else {
+                flash('success', 'Đã ghi nhận thanh toán một phần cho hóa đơn.');
+            }
+        } catch (Throwable $e) {
+            flash('error', 'Lỗi ghi nhận thanh toán: ' . $e->getMessage());
+        }
+
+        return Response::redirect(url('admin/tickets/' . $ticketId));
+    }
+
+    /**
+     * Gửi lại biểu mẫu đánh giá sau thanh toán
+     *
+     * @param array<string, string> $parameters
+     */
+    public function sendReviewForm(Request $request, array $parameters): Response
+    {
+        $ticketId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($ticketId === false || $ticketId < 1) {
+            return Response::notFound();
+        }
+
+        try {
+            (new Invoice(Database::connection($this->databaseConfig)))->sendReviewReminder((int) $ticketId);
+            flash('success', 'Đã gửi biểu mẫu đánh giá tới tài khoản khách hàng.');
+        } catch (Throwable $e) {
+            flash('error', $e->getMessage());
+        }
+
+        $redirectTo = $request->input('redirect') === 'history'
+            ? url('admin/completed-history')
+            : url('admin/tickets/' . $ticketId);
+
+        return Response::redirect($redirectTo);
     }
 }
