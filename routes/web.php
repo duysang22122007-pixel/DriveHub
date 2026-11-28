@@ -69,6 +69,7 @@ return static function (Router $router, array $databaseConfig, array $garageConf
     $router->post('/admin/tickets/{id}/diagnosis', [$adminTicketController, 'updateDiagnosis'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/status', [$adminTicketController, 'updateStatus'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/items', [$adminTicketController, 'addItem'], [$authenticated, $admin, $verifyCsrf]);
+    $router->post('/admin/tickets/{id}/services', [$adminTicketController, 'addServices'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/items/{itemId}/update', [$adminTicketController, 'updateItem'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/items/{itemId}/delete', [$adminTicketController, 'deleteItem'], [$authenticated, $admin, $verifyCsrf]);
     $router->post('/admin/tickets/{id}/invoice', [$adminTicketController, 'createInvoice'], [$authenticated, $admin, $verifyCsrf]);

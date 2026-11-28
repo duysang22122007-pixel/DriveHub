@@ -81,7 +81,7 @@ final class MaintenanceTicket
                        b.name AS brand_name,
                        u.id AS customer_id, u.full_name AS customer_name, u.phone AS customer_phone,
                        adm.full_name AS admin_name,
-                       COALESCE((SELECT SUM(d.quantity * d.unit_price) FROM maintenance_details d WHERE d.ticket_id = t.id), 0) AS total_estimated_cost,
+                       COALESCE((SELECT SUM(d.quantity * d.unit_price) FROM maintenance_details d WHERE d.ticket_id = t.id AND d.status <> 'skipped'), 0) AS total_estimated_cost,
                        (SELECT COUNT(*) FROM maintenance_details d WHERE d.ticket_id = t.id) AS total_items
                 FROM maintenance_tickets AS t
                 INNER JOIN vehicles AS v ON v.id = t.vehicle_id
@@ -494,25 +494,137 @@ final class MaintenanceTicket
         if ($name === '') {
             throw new InvalidArgumentException('Tên hạng mục sửa chữa không được để trống.');
         }
+        if ($ticketId < 1 || $quantity < 1 || !is_finite($unitPrice) || $unitPrice < 0 || $unitPrice > 999999999999.99) {
+            throw new InvalidArgumentException('Số lượng hoặc đơn giá hạng mục không hợp lệ.');
+        }
+        if ($serviceId !== null && $serviceId < 1) {
+            throw new InvalidArgumentException('Dịch vụ không hợp lệ.');
+        }
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO maintenance_details
-                (ticket_id, service_id, item_name, description, quantity, unit_price, status, note)
-             VALUES
-                (:ticket_id, :service_id, :item_name, :description, :quantity, :unit_price, :status, :note)'
-        );
-        $stmt->execute([
-            'ticket_id' => $ticketId,
-            'service_id' => ($serviceId !== null && $serviceId > 0) ? $serviceId : null,
-            'item_name' => $name,
-            'description' => ($description !== null && trim($description) !== '') ? trim($description) : null,
-            'quantity' => max(1, $quantity),
-            'unit_price' => max(0.0, $unitPrice),
-            'status' => 'pending',
-            'note' => ($note !== null && trim($note) !== '') ? trim($note) : null,
-        ]);
+        return $this->withTransaction(function () use (
+            $ticketId,
+            $serviceId,
+            $name,
+            $description,
+            $quantity,
+            $unitPrice,
+            $note
+        ): int {
+            $ticket = $this->lockEditableTicket($ticketId);
+            if ($serviceId !== null) {
+                $this->assertServiceIsActive($serviceId);
+                $this->assertServiceNotAttached($ticketId, $serviceId);
+            }
 
-        return (int) $this->pdo->lastInsertId();
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO maintenance_details
+                    (ticket_id, service_id, item_name, description, quantity, unit_price, status, note)
+                 VALUES
+                    (:ticket_id, :service_id, :item_name, :description, :quantity, :unit_price, :status, :note)'
+            );
+            $stmt->execute([
+                'ticket_id' => $ticketId,
+                'service_id' => $serviceId,
+                'item_name' => $name,
+                'description' => ($description !== null && trim($description) !== '') ? trim($description) : null,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'status' => 'pending',
+                'note' => ($note !== null && trim($note) !== '') ? trim($note) : null,
+            ]);
+            $itemId = (int) $this->pdo->lastInsertId();
+
+            $this->syncUnpaidInvoice($ticketId, $ticket);
+
+            return $itemId;
+        });
+    }
+
+    /**
+     * Add active services to a ticket using prices and descriptions from the database.
+     *
+     * @param array<int, int> $serviceQuantities Service ID mapped to quantity
+     */
+    public function addServicesToTicket(int $ticketId, array $serviceQuantities): int
+    {
+        if ($ticketId < 1 || $serviceQuantities === [] || count($serviceQuantities) > 100) {
+            throw new InvalidArgumentException('Hãy chọn từ 1 đến 100 dịch vụ hợp lệ.');
+        }
+
+        $normalizedQuantities = [];
+        foreach ($serviceQuantities as $serviceId => $quantity) {
+            $normalizedId = filter_var((string) $serviceId, FILTER_VALIDATE_INT);
+            if ($normalizedId === false || $normalizedId < 1 || !is_int($quantity) || $quantity < 1) {
+                throw new InvalidArgumentException('Dịch vụ hoặc số lượng không hợp lệ.');
+            }
+            if (array_key_exists($normalizedId, $normalizedQuantities)) {
+                throw new InvalidArgumentException('Không thể chọn trùng một dịch vụ trong cùng một lần thêm.');
+            }
+
+            $normalizedQuantities[$normalizedId] = $quantity;
+        }
+
+        return $this->withTransaction(function () use ($ticketId, $normalizedQuantities): int {
+            $ticket = $this->lockEditableTicket($ticketId);
+            $serviceIds = array_keys($normalizedQuantities);
+            $placeholders = [];
+            $parameters = [];
+            foreach ($serviceIds as $index => $serviceId) {
+                $key = 'service_id_' . $index;
+                $placeholders[] = ':' . $key;
+                $parameters[$key] = $serviceId;
+            }
+
+            $servicesStmt = $this->pdo->prepare(
+                "SELECT s.id, s.name, s.description, s.price
+                 FROM services AS s
+                 INNER JOIN service_categories AS c ON c.id = s.category_id
+                 WHERE s.status = 'active' AND c.status = 1
+                   AND s.id IN (" . implode(', ', $placeholders) . ')
+                 FOR UPDATE'
+            );
+            $servicesStmt->execute($parameters);
+            $services = $servicesStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (count($services) !== count($normalizedQuantities)) {
+                throw new InvalidArgumentException('Một hoặc nhiều dịch vụ không còn hoạt động hoặc không tồn tại.');
+            }
+
+            $attachedStmt = $this->pdo->prepare(
+                'SELECT service_id
+                 FROM maintenance_details
+                 WHERE ticket_id = :ticket_id AND service_id IN (' . implode(', ', $placeholders) . ')
+                 FOR UPDATE'
+            );
+            $attachedStmt->execute(['ticket_id' => $ticketId] + $parameters);
+            if ($attachedStmt->fetchColumn() !== false) {
+                throw new InvalidArgumentException('Dịch vụ đã có trong phiếu sửa chữa; hãy sửa số lượng tại danh sách hạng mục.');
+            }
+
+            $insert = $this->pdo->prepare(
+                'INSERT INTO maintenance_details
+                    (ticket_id, service_id, item_name, description, quantity, unit_price, status)
+                 VALUES
+                    (:ticket_id, :service_id, :item_name, :description, :quantity, :unit_price, :status)'
+            );
+            foreach ($services as $service) {
+                $serviceId = (int) $service['id'];
+                $insert->execute([
+                    'ticket_id' => $ticketId,
+                    'service_id' => $serviceId,
+                    'item_name' => (string) $service['name'],
+                    'description' => is_string($service['description']) && trim($service['description']) !== ''
+                        ? $service['description']
+                        : null,
+                    'quantity' => $normalizedQuantities[$serviceId],
+                    'unit_price' => $service['price'],
+                    'status' => 'pending',
+                ]);
+            }
+
+            $this->syncUnpaidInvoice($ticketId, $ticket);
+
+            return count($services);
+        });
     }
 
     /**
@@ -529,34 +641,64 @@ final class MaintenanceTicket
         ?string $note
     ): bool {
         $name = trim($itemName);
-        if ($name === '') {
-            throw new InvalidArgumentException('Tên hạng mục sửa chữa không được để trống.');
+        if ($name === '' || $ticketId < 1 || $itemId < 1 || $quantity < 1
+            || !is_finite($unitPrice) || $unitPrice < 0 || $unitPrice > 999999999999.99) {
+            throw new InvalidArgumentException('Thông tin hạng mục sửa chữa không hợp lệ.');
         }
         if (!array_key_exists($status, self::ITEM_STATUS_LABELS)) {
             $status = 'pending';
         }
 
-        $stmt = $this->pdo->prepare(
-            'UPDATE maintenance_details
-             SET item_name = :item_name,
-                 description = :description,
-                 quantity = :quantity,
-                 unit_price = :unit_price,
-                 status = :status,
-                 note = :note
-             WHERE id = :id AND ticket_id = :ticket_id'
-        );
+        return $this->withTransaction(function () use (
+            $itemId,
+            $ticketId,
+            $name,
+            $description,
+            $quantity,
+            $unitPrice,
+            $status,
+            $note
+        ): bool {
+            $ticket = $this->lockEditableTicket($ticketId);
+            $itemStmt = $this->pdo->prepare(
+                'SELECT status FROM maintenance_details
+                 WHERE id = :id AND ticket_id = :ticket_id
+                 LIMIT 1 FOR UPDATE'
+            );
+            $itemStmt->execute(['id' => $itemId, 'ticket_id' => $ticketId]);
+            $currentStatus = $itemStmt->fetchColumn();
+            if ($currentStatus === false) {
+                throw new InvalidArgumentException('Không tìm thấy hạng mục trong phiếu sửa chữa.');
+            }
+            if (in_array($currentStatus, ['completed', 'skipped'], true)) {
+                throw new InvalidArgumentException('Không thể chỉnh sửa hạng mục đã hoàn tất hoặc đã bỏ qua.');
+            }
 
-        return $stmt->execute([
-            'item_name' => $name,
-            'description' => ($description !== null && trim($description) !== '') ? trim($description) : null,
-            'quantity' => max(1, $quantity),
-            'unit_price' => max(0.0, $unitPrice),
-            'status' => $status,
-            'note' => ($note !== null && trim($note) !== '') ? trim($note) : null,
-            'id' => $itemId,
-            'ticket_id' => $ticketId,
-        ]);
+            $stmt = $this->pdo->prepare(
+                'UPDATE maintenance_details
+                 SET item_name = :item_name,
+                     description = :description,
+                     quantity = :quantity,
+                     unit_price = :unit_price,
+                     status = :status,
+                     note = :note
+                 WHERE id = :id AND ticket_id = :ticket_id'
+            );
+            $stmt->execute([
+                'item_name' => $name,
+                'description' => ($description !== null && trim($description) !== '') ? trim($description) : null,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'status' => $status,
+                'note' => ($note !== null && trim($note) !== '') ? trim($note) : null,
+                'id' => $itemId,
+                'ticket_id' => $ticketId,
+            ]);
+
+            $this->syncUnpaidInvoice($ticketId, $ticket);
+
+            return true;
+        });
     }
 
     /**
@@ -564,11 +706,128 @@ final class MaintenanceTicket
      */
     public function deleteItem(int $itemId, int $ticketId): bool
     {
-        $stmt = $this->pdo->prepare(
-            'DELETE FROM maintenance_details WHERE id = :id AND ticket_id = :ticket_id'
-        );
+        if ($itemId < 1 || $ticketId < 1) {
+            throw new InvalidArgumentException('Phiếu hoặc hạng mục không hợp lệ.');
+        }
 
-        return $stmt->execute(['id' => $itemId, 'ticket_id' => $ticketId]);
+        return $this->withTransaction(function () use ($itemId, $ticketId): bool {
+            $ticket = $this->lockEditableTicket($ticketId);
+            $itemStmt = $this->pdo->prepare(
+                'SELECT status FROM maintenance_details
+                 WHERE id = :id AND ticket_id = :ticket_id
+                 LIMIT 1 FOR UPDATE'
+            );
+            $itemStmt->execute(['id' => $itemId, 'ticket_id' => $ticketId]);
+            $status = $itemStmt->fetchColumn();
+            if ($status === false) {
+                throw new InvalidArgumentException('Không tìm thấy hạng mục trong phiếu sửa chữa.');
+            }
+            if ($status !== 'pending') {
+                throw new InvalidArgumentException('Chỉ có thể xóa hạng mục chưa bắt đầu thực hiện.');
+            }
+
+            $stmt = $this->pdo->prepare(
+                'DELETE FROM maintenance_details WHERE id = :id AND ticket_id = :ticket_id'
+            );
+            $stmt->execute(['id' => $itemId, 'ticket_id' => $ticketId]);
+            $this->syncUnpaidInvoice($ticketId, $ticket);
+
+            return true;
+        });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lockEditableTicket(int $ticketId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT t.id, t.status, inv.id AS invoice_id, inv.status AS invoice_status,
+                    inv.amount_paid, inv.discount
+             FROM maintenance_tickets AS t
+             LEFT JOIN invoices AS inv ON inv.ticket_id = t.id
+             WHERE t.id = :id
+             LIMIT 1 FOR UPDATE'
+        );
+        $stmt->execute(['id' => $ticketId]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($ticket === false) {
+            throw new InvalidArgumentException('Không tìm thấy phiếu sửa chữa.');
+        }
+        if (in_array($ticket['status'], ['completed', 'cancelled'], true)) {
+            throw new InvalidArgumentException('Không thể thay đổi hạng mục của phiếu đã hoàn tất hoặc đã hủy.');
+        }
+        if (
+            $ticket['invoice_status'] !== null
+            && ($ticket['invoice_status'] !== 'unpaid' || (float) $ticket['amount_paid'] > 0)
+        ) {
+            throw new InvalidArgumentException('Hóa đơn đã phát sinh thanh toán hoặc đã khóa, không thể thay đổi hạng mục.');
+        }
+
+        return $ticket;
+    }
+
+    private function assertServiceIsActive(int $serviceId): void
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT s.id
+             FROM services AS s
+             INNER JOIN service_categories AS c ON c.id = s.category_id
+             WHERE s.id = :id AND s.status = 'active' AND c.status = 1
+             LIMIT 1 FOR UPDATE"
+        );
+        $stmt->execute(['id' => $serviceId]);
+        if ($stmt->fetchColumn() === false) {
+            throw new InvalidArgumentException('Dịch vụ không tồn tại hoặc đã ngừng hoạt động.');
+        }
+    }
+
+    private function assertServiceNotAttached(int $ticketId, int $serviceId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM maintenance_details
+             WHERE ticket_id = :ticket_id AND service_id = :service_id
+             LIMIT 1 FOR UPDATE'
+        );
+        $stmt->execute(['ticket_id' => $ticketId, 'service_id' => $serviceId]);
+        if ($stmt->fetchColumn() !== false) {
+            throw new InvalidArgumentException('Dịch vụ đã có trong phiếu sửa chữa.');
+        }
+    }
+
+    /**
+     * Keep an existing unpaid invoice in sync with its ticket lines.
+     *
+     * @param array<string, mixed> $ticket
+     */
+    private function syncUnpaidInvoice(int $ticketId, array $ticket): void
+    {
+        if ($ticket['invoice_id'] !== null) {
+            (new Invoice($this->pdo))->createOrSyncFromTicket($ticketId, (float) $ticket['discount']);
+        }
+    }
+
+    private function withTransaction(callable $operation): mixed
+    {
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $result = $operation();
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            return $result;
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     /**
