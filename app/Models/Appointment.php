@@ -120,7 +120,7 @@ final class Appointment
                     a.cancellation_requested_at, a.cancellation_decided_by,
                     a.cancellation_decided_at,
                     u.full_name, u.phone, u.email,
-                    b.name AS brand_name, v.model, v.license_plate, v.manufacture_year,
+                    b.name AS brand_name, v.model, v.license_plate, v.manufacture_year, v.current_mileage,
                     t.id AS maintenance_ticket_id, t.ticket_code,
                     t.status AS maintenance_ticket_status
              FROM appointments AS a

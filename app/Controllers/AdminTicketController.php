@@ -83,7 +83,7 @@ final class AdminTicketController extends Controller
 
         if ($selectedAppointmentId !== false && $selectedAppointmentId > 0) {
             $appointmentModel = new Appointment(Database::connection($this->databaseConfig));
-            $detail = $appointmentModel->findAdminDetail($selectedAppointmentId);
+            $detail = $appointmentModel->findForAdmin($selectedAppointmentId);
             if ($detail && ($detail['status'] === 'confirmed' || $detail['status'] === 'checked_in')) {
                 $selectedAppointment = $detail;
             }
