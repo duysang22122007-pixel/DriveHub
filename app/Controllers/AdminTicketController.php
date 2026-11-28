@@ -158,15 +158,24 @@ final class AdminTicketController extends Controller
         $histories = $model->getHistories($id);
 
         $serviceModel = new Service($pdo);
-        $services = $serviceModel->listActive(48);
+        $services = $serviceModel->searchActive();
 
         $totalCost = array_sum(array_map(
             static fn (array $i): float => (float) ($i['line_total'] ?? 0),
-            $items
+            array_filter($items, static fn (array $item): bool => $item['status'] !== 'skipped')
         ));
 
         $invoiceModel = new Invoice($pdo);
         $invoice = $invoiceModel->findByTicketId($id);
+        $attachedServiceIds = array_values(array_unique(array_map(
+            static fn (array $item): int => (int) $item['service_id'],
+            array_filter($items, static fn (array $item): bool => $item['service_id'] !== null)
+        )));
+        $canEditItems = !in_array($ticket['status'], ['completed', 'cancelled'], true)
+            && ($invoice === null || (
+                $invoice['status'] === 'unpaid'
+                && (float) $invoice['amount_paid'] <= 0
+            ));
         $invoiceDetails = $invoice !== null ? $invoiceModel->getDetails((int) $invoice['id']) : [];
         $payments = $invoice !== null ? $invoiceModel->getPayments((int) $invoice['id']) : [];
         $reviewRequestSentAt = $invoiceModel->reviewRequestSentAt($id);
@@ -175,6 +184,8 @@ final class AdminTicketController extends Controller
         return $this->view('admin/tickets/show', [
             'ticket' => $ticket,
             'items' => $items,
+            'attachedServiceIds' => $attachedServiceIds,
+            'canEditItems' => $canEditItems,
             'histories' => $histories,
             'services' => $services,
             'totalCost' => $totalCost,
@@ -274,15 +285,27 @@ final class AdminTicketController extends Controller
             return Response::notFound();
         }
 
-        $serviceId = filter_var($request->input('service_id'), FILTER_VALIDATE_INT);
+        $serviceIdInput = $request->input('service_id');
+        $serviceId = $serviceIdInput === null || $serviceIdInput === ''
+            ? null
+            : filter_var($serviceIdInput, FILTER_VALIDATE_INT);
         $itemName = trim((string) $request->input('item_name', ''));
         $description = trim((string) $request->input('description', ''));
         $quantity = filter_var($request->input('quantity', 1), FILTER_VALIDATE_INT);
         $unitPrice = filter_var($request->input('unit_price', 0), FILTER_VALIDATE_FLOAT);
         $note = trim((string) $request->input('note', ''));
 
-        if ($itemName === '') {
-            flash('error', 'Tên hạng mục không được để trống.');
+        if (
+            $itemName === ''
+            || ($serviceIdInput !== null && $serviceIdInput !== '' && ($serviceId === false || $serviceId < 1))
+            || $quantity === false
+            || $quantity < 1
+            || $unitPrice === false
+            || !is_finite((float) $unitPrice)
+            || $unitPrice < 0
+            || $unitPrice > 999999999999.99
+        ) {
+            flash('error', 'Tên, số lượng hoặc đơn giá hạng mục không hợp lệ.');
 
             return Response::redirect(url('admin/tickets/' . $id));
         }
@@ -291,11 +314,11 @@ final class AdminTicketController extends Controller
             $model = new MaintenanceTicket(Database::connection($this->databaseConfig));
             $model->addItem(
                 $id,
-                $serviceId !== false && $serviceId > 0 ? (int) $serviceId : null,
+                $serviceId === null ? null : (int) $serviceId,
                 $itemName,
                 $description !== '' ? $description : null,
-                max(1, (int) $quantity),
-                max(0.0, (float) $unitPrice),
+                (int) $quantity,
+                (float) $unitPrice,
                 $note !== '' ? $note : null
             );
 
@@ -305,6 +328,60 @@ final class AdminTicketController extends Controller
         }
 
         return Response::redirect(url('admin/tickets/' . $id));
+    }
+
+    /**
+     * Add multiple catalog services to a repair ticket.
+     *
+     * @param array<string, string> $parameters
+     */
+    public function addServices(Request $request, array $parameters): Response
+    {
+        $ticketId = filter_var($parameters['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($ticketId === false || $ticketId < 1) {
+            return Response::notFound();
+        }
+
+        $serviceIds = $request->input('service_ids');
+        $quantities = $request->input('service_quantities', []);
+        if (!is_array($serviceIds) || $serviceIds === [] || count($serviceIds) > 100 || !is_array($quantities)) {
+            flash('error', 'Hãy chọn từ 1 đến 100 dịch vụ hợp lệ.');
+
+            return Response::redirect(url('admin/tickets/' . $ticketId));
+        }
+
+        $serviceQuantities = [];
+        foreach ($serviceIds as $rawServiceId) {
+            $serviceId = filter_var($rawServiceId, FILTER_VALIDATE_INT);
+            if ($serviceId === false || $serviceId < 1) {
+                flash('error', 'Một hoặc nhiều dịch vụ được chọn không hợp lệ.');
+
+                return Response::redirect(url('admin/tickets/' . $ticketId));
+            }
+            if (array_key_exists($serviceId, $serviceQuantities)) {
+                flash('error', 'Không thể chọn trùng một dịch vụ trong cùng một lần thêm.');
+
+                return Response::redirect(url('admin/tickets/' . $ticketId));
+            }
+
+            $quantity = filter_var($quantities[$serviceId] ?? null, FILTER_VALIDATE_INT);
+            if ($quantity === false || $quantity < 1) {
+                flash('error', 'Số lượng dịch vụ phải là số nguyên lớn hơn 0.');
+
+                return Response::redirect(url('admin/tickets/' . $ticketId));
+            }
+            $serviceQuantities[(int) $serviceId] = (int) $quantity;
+        }
+
+        try {
+            $model = new MaintenanceTicket(Database::connection($this->databaseConfig));
+            $addedCount = $model->addServicesToTicket((int) $ticketId, $serviceQuantities);
+            flash('success', 'Đã thêm ' . $addedCount . ' dịch vụ vào phiếu sửa chữa.');
+        } catch (Throwable $e) {
+            flash('error', 'Lỗi thêm dịch vụ: ' . $e->getMessage());
+        }
+
+        return Response::redirect(url('admin/tickets/' . $ticketId));
     }
 
     /**
@@ -327,8 +404,16 @@ final class AdminTicketController extends Controller
         $status = (string) $request->input('status', 'pending');
         $note = trim((string) $request->input('note', ''));
 
-        if ($itemName === '') {
-            flash('error', 'Tên hạng mục không được để trống.');
+        if (
+            $itemName === ''
+            || $quantity === false
+            || $quantity < 1
+            || $unitPrice === false
+            || !is_finite((float) $unitPrice)
+            || $unitPrice < 0
+            || $unitPrice > 999999999999.99
+        ) {
+            flash('error', 'Tên, số lượng hoặc đơn giá hạng mục không hợp lệ.');
 
             return Response::redirect(url('admin/tickets/' . $ticketId));
         }
@@ -340,8 +425,8 @@ final class AdminTicketController extends Controller
                 (int) $ticketId,
                 $itemName,
                 $description !== '' ? $description : null,
-                max(1, (int) $quantity),
-                max(0.0, (float) $unitPrice),
+                (int) $quantity,
+                (float) $unitPrice,
                 $status,
                 $note !== '' ? $note : null
             );

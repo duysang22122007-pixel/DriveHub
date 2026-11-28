@@ -27,9 +27,44 @@ $currentStatus = (string) $ticket['status'];
 $statusLabel = $statuses[$currentStatus] ?? $currentStatus;
 $receivedDate = date('d/m/Y H:i', strtotime((string) $ticket['received_at']));
 $completedDate = !empty($ticket['completed_at']) ? date('d/m/Y H:i', strtotime((string) $ticket['completed_at'])) : '—';
+$canEditItems = ($canEditItems ?? false) === true;
+$attachedServiceIds = is_array($attachedServiceIds ?? null) ? $attachedServiceIds : [];
 
 $pageDescription = 'Phiếu ' . $ticket['ticket_code'] . ' · Tiếp nhận ngày ' . $receivedDate;
 $pageActions = '<a class="button secondary" href="' . e(url('admin/tickets')) . '">← Danh sách phiếu</a>';
+$pageStyles = (string) ($pageStyles ?? '') . '
+.service-picker-dialog,.item-edit-dialog{width:min(820px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:0;overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);box-shadow:0 24px 70px rgba(11,39,64,.28)}
+.service-picker-dialog::backdrop,.item-edit-dialog::backdrop{background:rgba(11,39,64,.56);backdrop-filter:blur(2px)}
+.ticket-dialog-head{position:sticky;top:0;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px 14px;border-bottom:1px solid var(--line);background:#fff}
+.ticket-dialog-head h2{margin:0;color:var(--navy);font-size:1.08rem}
+.ticket-dialog-head p{margin:5px 0 0;color:var(--muted);font-size:.82rem;line-height:1.45}
+.ticket-dialog-body{padding:16px 22px}
+.ticket-dialog-footer{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 22px;border-top:1px solid var(--line);background:#fff}
+.service-picker-search{width:100%;min-height:40px;padding:8px 11px;border:1px solid var(--line-strong);border-radius:8px;font:inherit}
+.service-picker-search:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+.service-option-list{display:grid;max-height:48vh;margin-top:12px;overflow:auto;gap:9px}
+.service-option{display:grid;grid-template-columns:22px minmax(0,1fr) 105px;align-items:start;gap:12px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff}
+.service-option:has(input[type=checkbox]:checked){border-color:#9fc3e8;background:#f4f9ff}
+.service-option[hidden]{display:none!important}
+.service-option>input[type=checkbox]{width:17px;height:17px;margin:3px 0 0;accent-color:var(--blue)}
+.service-option-main{min-width:0}
+.service-option-main strong{display:block;color:var(--navy);font-size:.88rem}
+.service-option-meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:5px;color:var(--muted);font-size:.75rem}
+.service-option-description{margin:6px 0 0;color:#526678;font-size:.8rem;line-height:1.5}
+.service-option-quantity{display:grid;gap:4px;color:#526678;font-size:.72rem;font-weight:700}
+.service-option-quantity input,.item-edit-fields input,.item-edit-fields select,.item-edit-fields textarea{width:100%;min-height:36px;padding:7px 9px;border:1px solid var(--line-strong);border-radius:7px;background:#fff;font:inherit;font-size:.84rem}
+.service-option-quantity input:disabled{background:var(--surface-soft);color:var(--muted)}
+.service-picker-empty{padding:20px;color:var(--muted);text-align:center}
+.ticket-dialog-actions{display:flex;justify-content:flex-end;gap:8px}
+.item-edit-dialog{width:min(480px,calc(100vw - 32px))}
+.item-edit-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.item-edit-fields label{display:grid;gap:5px;color:#526678;font-size:.76rem;font-weight:700}
+.item-edit-fields .wide{grid-column:1/-1}
+.item-edit-fields textarea{min-height:72px;resize:vertical}
+.item-editor{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.item-total-preview{margin:12px 0 0;color:var(--muted);font-size:.82rem}
+@media(max-width:640px){.ticket-dialog-head,.ticket-dialog-body{padding-right:15px;padding-left:15px}.ticket-dialog-footer{padding-right:15px;padding-left:15px}.service-option{grid-template-columns:20px minmax(0,1fr)}.service-option-quantity{grid-column:2}.item-edit-fields{grid-template-columns:1fr}.item-edit-fields .wide{grid-column:auto}}
+';
 
 ob_start();
 ?>
@@ -115,14 +150,19 @@ ob_start();
 
         <!-- 3. HẠNG MỤC SỬA CHỮA, THAY THẾ VẬT TƯ & TỔNG CHI PHÍ -->
         <section class="panel">
-            <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;gap:14px;">
                 <div>
                     <h2 class="panel-title">Hạng mục sửa chữa & Phụ tùng thay thế</h2>
                     <p class="panel-description">Chi tiết các công việc thực hiện và vật tư sử dụng trong phiếu.</p>
                 </div>
-                <div style="text-align:right;">
-                    <span style="font-size:13px;color:#667788;">Tổng chi phí:</span>
-                    <strong style="font-size:18px;color:#067647;display:block;"><?= number_format($totalCost, 0, ',', '.') ?> ₫</strong>
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;">
+                    <div style="text-align:right;">
+                        <span style="font-size:13px;color:#667788;">Tổng chi phí:</span>
+                        <strong data-ticket-total style="font-size:18px;color:#067647;display:block;"><?= number_format($totalCost, 0, ',', '.') ?> ₫</strong>
+                    </div>
+                    <?php if ($canEditItems): ?>
+                        <button class="button" type="button" id="open-service-picker"<?= $services === [] ? ' disabled' : '' ?>>+ Thêm dịch vụ</button>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="panel-body">
@@ -138,7 +178,7 @@ ob_start();
                                     <th style="padding:10px 8px;text-align:right;width:120px;">Đơn giá</th>
                                     <th style="padding:10px 8px;text-align:right;width:130px;">Thành tiền</th>
                                     <th style="padding:10px 8px;text-align:center;width:110px;">Trạng thái</th>
-                                    <th style="padding:10px 8px;text-align:right;width:70px;">Xóa</th>
+                                    <th style="padding:10px 8px;text-align:right;width:125px;">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -147,9 +187,10 @@ ob_start();
                                     $iSt = $itemStatusClass[$item['status']] ?? 'pending';
                                     $iStLbl = $itemStatuses[$item['status']] ?? $item['status'];
                                     ?>
-                                    <tr style="border-bottom:1px solid #e7edf3;">
+                                    <tr data-ticket-item-row="<?= (int) $item['id'] ?>" data-line-total-value="<?= e((string) $item['line_total']) ?>" style="border-bottom:1px solid #e7edf3;">
                                         <td style="padding:10px 8px;">
                                             <strong><?= e($item['item_name']) ?></strong>
+                                            <?php if ($item['service_id'] !== null): ?><span class="status completed" style="margin-left:5px;font-size:10px;padding:2px 6px;">Dịch vụ</span><?php endif; ?>
                                             <?php if (!empty($item['description'])): ?>
                                                 <div style="color:#667788;font-size:12px;"><?= e($item['description']) ?></div>
                                             <?php endif; ?>
@@ -164,16 +205,58 @@ ob_start();
                                             <?= number_format((float)$item['unit_price'], 0, ',', '.') ?> ₫
                                         </td>
                                         <td style="padding:10px 8px;text-align:right;">
-                                            <strong><?= number_format((float)$item['line_total'], 0, ',', '.') ?> ₫</strong>
+                                            <strong data-item-line-total><?= number_format((float)$item['line_total'], 0, ',', '.') ?> ₫</strong>
                                         </td>
                                         <td style="padding:10px 8px;text-align:center;">
                                             <span class="status <?= e($iSt) ?>" style="font-size:11px;padding:2px 6px;"><?= e($iStLbl) ?></span>
                                         </td>
                                         <td style="padding:10px 8px;text-align:right;">
-                                            <form method="post" action="<?= e(url('admin/tickets/' . (int)$ticket['id'] . '/items/' . (int)$item['id'] . '/delete')) ?>" onsubmit="return confirm('Bạn có chắc muốn xóa hạng mục này?');" style="display:inline;">
-                                                <?= csrf_field() ?>
-                                                <button type="submit" style="background:none;border:none;color:#b42318;cursor:pointer;font-size:12px;text-decoration:underline;">Xóa</button>
-                                            </form>
+                                            <?php if ($canEditItems && !in_array($item['status'], ['completed', 'skipped'], true)): ?>
+                                                <div class="item-editor">
+                                                    <button class="button secondary small" type="button" data-open-item-dialog="edit-item-<?= (int) $item['id'] ?>">Sửa</button>
+                                                    <?php if ($item['status'] === 'pending'): ?>
+                                                        <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/items/' . (int) $item['id'] . '/delete')) ?>" onsubmit="return confirm('Bạn có chắc muốn xóa hạng mục chưa thực hiện này?');" style="display:inline;">
+                                                            <?= csrf_field() ?>
+                                                            <button type="submit" class="button danger small">Xóa</button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <dialog class="item-edit-dialog" id="edit-item-<?= (int) $item['id'] ?>" aria-labelledby="edit-item-title-<?= (int) $item['id'] ?>">
+                                                    <div class="ticket-dialog-head">
+                                                        <div>
+                                                            <h2 id="edit-item-title-<?= (int) $item['id'] ?>">Chỉnh sửa hạng mục</h2>
+                                                            <p><?= e($item['item_name']) ?></p>
+                                                        </div>
+                                                    </div>
+                                                    <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/items/' . (int) $item['id'] . '/update')) ?>">
+                                                        <?= csrf_field() ?>
+                                                        <input type="hidden" name="item_name" value="<?= e($item['item_name']) ?>">
+                                                        <input type="hidden" name="description" value="<?= e((string) ($item['description'] ?? '')) ?>">
+                                                        <input type="hidden" name="status" value="<?= e($item['status']) ?>">
+                                                        <input type="hidden" name="note" value="<?= e((string) ($item['note'] ?? '')) ?>">
+                                                        <div class="ticket-dialog-body">
+                                                            <div class="item-edit-fields">
+                                                                <label>Số lượng
+                                                                    <input type="number" name="quantity" min="1" step="1" required value="<?= (int) $item['quantity'] ?>" data-edit-quantity>
+                                                                </label>
+                                                                <label>Đơn giá (₫)
+                                                                    <input type="number" name="unit_price" min="0" max="999999999999.99" step="0.01" required value="<?= e((string) $item['unit_price']) ?>" data-edit-unit-price>
+                                                                </label>
+                                                            </div>
+                                                            <p class="item-total-preview">Thành tiền sau cập nhật: <strong data-edit-line-total><?= number_format((float) $item['line_total'], 0, ',', '.') ?> ₫</strong></p>
+                                                        </div>
+                                                        <div class="ticket-dialog-footer">
+                                                            <span class="muted">Tổng phiếu được tính lại khi lưu.</span>
+                                                            <div class="ticket-dialog-actions">
+                                                                <button class="button secondary" type="button" data-close-ticket-dialog>Hủy</button>
+                                                                <button class="button" type="submit">Lưu thay đổi</button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </dialog>
+                                            <?php else: ?>
+                                                <span class="muted">—</span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -181,7 +264,7 @@ ob_start();
                             <tfoot>
                                 <tr style="background:#f8fafc;font-weight:700;">
                                     <td colspan="3" style="padding:10px 8px;text-align:right;">Tổng cộng chi phí:</td>
-                                    <td style="padding:10px 8px;text-align:right;color:#067647;font-size:15px;"><?= number_format($totalCost, 0, ',', '.') ?> ₫</td>
+                                    <td style="padding:10px 8px;text-align:right;color:#067647;font-size:15px;"><span data-ticket-total><?= number_format($totalCost, 0, ',', '.') ?></span> ₫</td>
                                     <td colspan="2"></td>
                                 </tr>
                             </tfoot>
@@ -190,6 +273,7 @@ ob_start();
                 <?php endif; ?>
 
                 <!-- FORM THÊM HẠNG MỤC MỚI -->
+                <?php if ($canEditItems): ?>
                 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;">
                     <h3 style="margin-top:0;margin-bottom:12px;font-size:14px;color:#123b5d;">+ Thêm hạng mục sửa chữa / vật tư mới</h3>
                     <form method="post" action="<?= e(url('admin/tickets/' . (int)$ticket['id'] . '/items')) ?>">
@@ -200,7 +284,7 @@ ob_start();
                                 <select id="quick_service" style="width:100%;padding:6px 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;">
                                     <option value="">-- Chọn dịch vụ có sẵn để điền nhanh --</option>
                                     <?php foreach ($services as $s): ?>
-                                        <option value="<?= (int)$s['id'] ?>" data-name="<?= e($s['name']) ?>" data-price="<?= (float)$s['price'] ?>">
+                                        <option value="<?= (int)$s['id'] ?>" data-name="<?= e($s['name']) ?>" data-price="<?= (float)$s['price'] ?>"<?= in_array((int) $s['id'], $attachedServiceIds, true) ? ' disabled' : '' ?>>
                                             <?= e($s['name']) ?> (<?= number_format((float)$s['price'], 0, ',', '.') ?> ₫)
                                         </option>
                                     <?php endforeach; ?>
@@ -220,7 +304,7 @@ ob_start();
                             </div>
                             <div>
                                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Đơn giá (₫) <span style="color:#b42318;">*</span></label>
-                                <input type="number" name="unit_price" id="item_price" min="0" step="1000" value="0" required style="width:100%;padding:6px 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;">
+                                <input type="number" name="unit_price" id="item_price" min="0" max="999999999999.99" step="0.01" value="0" required style="width:100%;padding:6px 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;">Mô tả chi tiết / Mã phụ tùng</label>
@@ -245,12 +329,70 @@ ob_start();
                                         nameInput.value = opt.getAttribute('data-name') || '';
                                         priceInput.value = opt.getAttribute('data-price') || '0';
                                         serviceIdInput.value = opt.value;
+                                    } else if (serviceIdInput) {
+                                        serviceIdInput.value = '';
                                     }
                                 });
                             }
                         }());
                     </script>
                 </div>
+                <?php else: ?>
+                    <p class="notice" role="status">Các hạng mục đã bị khóa vì phiếu đã hoàn tất/hủy hoặc hóa đơn đã có thanh toán.</p>
+                <?php endif; ?>
+
+                <?php if ($canEditItems): ?>
+                    <dialog class="service-picker-dialog" id="add-services-dialog" aria-labelledby="service-picker-title">
+                        <form method="post" action="<?= e(url('admin/tickets/' . (int) $ticket['id'] . '/services')) ?>">
+                            <?= csrf_field() ?>
+                            <div class="ticket-dialog-head">
+                                <div>
+                                    <h2 id="service-picker-title">Thêm dịch vụ vào phiếu sửa chữa</h2>
+                                    <p>Dữ liệu tên, mô tả và giá lấy từ danh mục dịch vụ đang hoạt động. Mỗi dịch vụ chỉ được thêm một lần.</p>
+                                </div>
+                                <button class="button secondary small" type="button" aria-label="Đóng" data-close-ticket-dialog>Đóng</button>
+                            </div>
+                            <div class="ticket-dialog-body">
+                                <label for="service-picker-search" class="sr-only">Tìm kiếm dịch vụ</label>
+                                <input class="service-picker-search" type="search" id="service-picker-search" placeholder="Tìm theo tên, nhóm hoặc mô tả dịch vụ..." autocomplete="off">
+                                <div class="service-option-list" id="service-option-list">
+                                    <?php foreach ($services as $service): ?>
+                                        <?php
+                                            $serviceId = (int) $service['id'];
+                                            $alreadyAttached = in_array($serviceId, $attachedServiceIds, true);
+                                        ?>
+                                        <div class="service-option" data-service-option data-service-price="<?= e((string) $service['price']) ?>">
+                                            <input type="checkbox" id="select-service-<?= $serviceId ?>" name="service_ids[]" value="<?= $serviceId ?>" data-service-checkbox<?= $alreadyAttached ? ' disabled' : '' ?>>
+                                            <label class="service-option-main" for="select-service-<?= $serviceId ?>">
+                                                <strong><?= e($service['name']) ?><?= $alreadyAttached ? ' · Đã có trong phiếu' : '' ?></strong>
+                                                <span class="service-option-meta">
+                                                    <span><?= e($service['category_name']) ?></span>
+                                                    <span><?= number_format((float) $service['price'], 0, ',', '.') ?> ₫</span>
+                                                    <?php if ((int) $service['duration'] > 0): ?><span><?= (int) $service['duration'] ?> phút</span><?php endif; ?>
+                                                </span>
+                                                <?php if (is_string($service['description']) && trim($service['description']) !== ''): ?>
+                                                    <span class="service-option-description"><?= e($service['description']) ?></span>
+                                                <?php endif; ?>
+                                            </label>
+                                            <span class="service-option-quantity">
+                                                <span>Số lượng</span>
+                                                <input type="number" name="service_quantities[<?= $serviceId ?>]" min="1" step="1" value="1" aria-label="Số lượng <?= e($service['name']) ?>" data-service-quantity<?= $alreadyAttached ? ' disabled' : '' ?>>
+                                            </span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <p class="service-picker-empty" id="service-picker-empty" hidden>Không tìm thấy dịch vụ phù hợp.</p>
+                            </div>
+                            <div class="ticket-dialog-footer">
+                                <span class="muted"><strong id="service-selection-count">0 dịch vụ được chọn</strong> · Tạm tính: <strong id="service-selection-total">0 ₫</strong></span>
+                                <div class="ticket-dialog-actions">
+                                    <button class="button secondary" type="button" data-close-ticket-dialog>Hủy</button>
+                                    <button class="button" type="submit" id="confirm-add-services" disabled>Thêm dịch vụ đã chọn</button>
+                                </div>
+                            </div>
+                        </form>
+                    </dialog>
+                <?php endif; ?>
             </div>
         </section>
 
@@ -507,6 +649,111 @@ ob_start();
         </section>
     </div>
 </div>
+
+<script>
+    (function () {
+        var formatMoney = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
+        var serviceDialog = document.getElementById('add-services-dialog');
+        var openServicePicker = document.getElementById('open-service-picker');
+
+        document.querySelectorAll('[data-open-item-dialog]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var dialog = document.getElementById(button.getAttribute('data-open-item-dialog'));
+                if (dialog) {
+                    dialog.showModal();
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-close-ticket-dialog]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var dialog = button.closest('dialog');
+                if (dialog) {
+                    dialog.close();
+                }
+            });
+        });
+
+        document.querySelectorAll('.item-edit-dialog').forEach(function (dialog) {
+            var quantityInput = dialog.querySelector('[data-edit-quantity]');
+            var priceInput = dialog.querySelector('[data-edit-unit-price]');
+            var totalOutput = dialog.querySelector('[data-edit-line-total]');
+            var updatePreview = function () {
+                var quantity = Number(quantityInput.value);
+                var price = Number(priceInput.value);
+                var total = Number.isFinite(quantity) && Number.isFinite(price) ? quantity * price : 0;
+                totalOutput.textContent = formatMoney.format(total) + ' ₫';
+            };
+            quantityInput.addEventListener('input', updatePreview);
+            priceInput.addEventListener('input', updatePreview);
+        });
+
+        if (!serviceDialog || !openServicePicker) {
+            return;
+        }
+
+        var searchInput = document.getElementById('service-picker-search');
+        var serviceOptions = Array.prototype.slice.call(serviceDialog.querySelectorAll('[data-service-option]'));
+        var checkboxes = Array.prototype.slice.call(serviceDialog.querySelectorAll('[data-service-checkbox]'));
+        var selectionCount = document.getElementById('service-selection-count');
+        var selectionTotal = document.getElementById('service-selection-total');
+        var confirmButton = document.getElementById('confirm-add-services');
+        var emptyMessage = document.getElementById('service-picker-empty');
+
+        openServicePicker.addEventListener('click', function () {
+            serviceDialog.showModal();
+            searchInput.focus();
+        });
+
+        var updateSelection = function () {
+            var selected = checkboxes.filter(function (checkbox) {
+                return checkbox.checked;
+            });
+            var total = selected.reduce(function (sum, checkbox) {
+                var option = checkbox.closest('[data-service-option]');
+                var quantityInput = option.querySelector('[data-service-quantity]');
+                return sum + Number(option.getAttribute('data-service-price')) * Number(quantityInput.value);
+            }, 0);
+            selectionCount.textContent = selected.length + ' dịch vụ được chọn';
+            selectionTotal.textContent = formatMoney.format(total) + ' ₫';
+            confirmButton.disabled = selected.length === 0;
+        };
+
+        checkboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('change', updateSelection);
+        });
+        serviceDialog.querySelectorAll('[data-service-quantity]').forEach(function (input) {
+            input.addEventListener('input', updateSelection);
+        });
+
+        searchInput.addEventListener('input', function () {
+            var query = searchInput.value.trim().toLocaleLowerCase('vi');
+            var visibleCount = 0;
+            serviceOptions.forEach(function (option) {
+                option.hidden = query !== '' && !option.textContent.toLocaleLowerCase('vi').includes(query);
+                if (!option.hidden) {
+                    visibleCount += 1;
+                }
+            });
+            emptyMessage.hidden = visibleCount > 0;
+        });
+
+        serviceDialog.addEventListener('click', function (event) {
+            if (event.target === serviceDialog) {
+                serviceDialog.close();
+            }
+        });
+        document.querySelectorAll('.item-edit-dialog').forEach(function (dialog) {
+            dialog.addEventListener('click', function (event) {
+                if (event.target === dialog) {
+                    dialog.close();
+                }
+            });
+        });
+
+        updateSelection();
+    }());
+</script>
 
 <?php
 $content = ob_get_clean();

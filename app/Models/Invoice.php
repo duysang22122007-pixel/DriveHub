@@ -109,7 +109,11 @@ final class Invoice
             throw new InvalidArgumentException('Giảm giá không được nhỏ hơn 0.');
         }
 
-        $this->pdo->beginTransaction();
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
         try {
             $ticketStmt = $this->pdo->prepare(
                 'SELECT t.id, t.appointment_id, t.status, t.ticket_code
@@ -236,11 +240,13 @@ final class Invoice
                 $this->createReviewNotificationIfNeeded($ticketId);
             }
 
-            $this->pdo->commit();
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
 
             return $invoiceId;
         } catch (Throwable $e) {
-            if ($this->pdo->inTransaction()) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $e;
